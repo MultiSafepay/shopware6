@@ -1,0 +1,12 @@
+parameters:
+  git_dir: .
+  bin_dir: vendor/bin
+  tasks:
+    phpcs:
+      standard: phpcs.ruleset.xml
+    phpmd:
+      triggered_by: ['php']
+      ruleset: ['codesize','unusedcode','cleancode']
+    phpunit:
+      config_file: phpunit.xml.dist
+      testsuite: MultiSafepay Unit tests

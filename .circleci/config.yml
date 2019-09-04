@@ -1,0 +1,96 @@
+version: 2
+jobs:
+  codesniffer:
+    docker:
+      - image: circleci/php:7.2-node-browsers
+    working_directory: /var/www/html
+    steps:
+      - run:
+          name: Install System Package
+          command: |
+            sudo apt update
+            sudo apt install -y sendmail sendmail-bin libpng-dev
+      - run:
+          name: Install PHP extension
+          command: |
+            sudo docker-php-ext-install zip pdo_mysql gd
+      - checkout
+      - restore_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+      - run:
+          name: Composer install
+          command: |
+            composer install --prefer-dist
+      - save_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+          paths:
+            - /var/www/html/vendor
+      - run:
+          name: Run Code Sniffer
+          command: |
+            vendor/bin/phpcs --ignore=*/vendor/* -v --standard=phpcs.ruleset.xml /var/www/html
+  mess_detector:
+    docker:
+      - image: circleci/php:7.2-node-browsers
+    working_directory: /var/www/html
+    steps:
+      - run:
+          name: Install System Package
+          command: |
+            sudo apt update
+            sudo apt install -y sendmail sendmail-bin libpng-dev
+      - run:
+          name: Install PHP extension
+          command: |
+            sudo docker-php-ext-install zip pdo_mysql gd
+      - checkout
+      - restore_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+      - run:
+          name: Composer install
+          command: |
+            composer install --prefer-dist
+      - save_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+          paths:
+            - /var/www/html/vendor
+      - run:
+          name: Run Mess Detector on source folder
+          command: |
+            vendor/bin/phpmd /var/www/html/src text codesize,unusedcode,cleancode
+  phpunit:
+    docker:
+      - image: circleci/php:7.2-node-browsers
+    working_directory: /var/www/html
+    steps:
+      - run:
+          name: Install System Package
+          command: |
+            sudo apt update
+            sudo apt install -y sendmail sendmail-bin libpng-dev
+      - run:
+          name: Install PHP extension
+          command: |
+            sudo docker-php-ext-install zip pdo_mysql gd
+      - checkout
+      - restore_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+      - run:
+          name: Composer install
+          command: |
+            composer install --prefer-dist
+      - save_cache:
+          key: -v1-{{ checksum "/var/www/html/composer.json"}}
+          paths:
+            - /var/www/html/vendor
+      - run:
+          name: Run Phpunit With test suite unit test
+          command: |
+            vendor/bin/phpunit
+workflows:
+  version: 2
+  default_check:
+    jobs:
+      - codesniffer
+      - mess_detector
+      - phpunit
