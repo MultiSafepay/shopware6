@@ -4,9 +4,12 @@ parameters:
   tasks:
     phpcs:
       standard: phpcs.ruleset.xml
+      ignore_patterns: ['tests/Bootstrap.php']
     phpmd:
+      whitelist_patterns: ['src']
+      exclude: ['src/API']
       triggered_by: ['php']
       ruleset: ['codesize','unusedcode','cleancode']
     phpunit:
-      config_file: phpunit.xml.dist
+      config_file: unittest.phpunit.xml
       testsuite: MultiSafepay Unit tests
