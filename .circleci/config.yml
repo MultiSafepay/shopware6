@@ -72,7 +72,7 @@ jobs:
           name: Run Phpunit With test suite unit test
           command: |
             vendor/bin/phpunit --testsuite="MultiSafepay Unit tests" --bootstrap="vendor/autoload.php"
-  integration_tests:
+  integration_tests_master:
     docker:
       - image: shopware/development
       - image: circleci/mysql:5.7
@@ -90,7 +90,50 @@ jobs:
       - run:
           name: Download shopware
           command: |
-            git clone https://github.com/shopware/development.git .
+            git clone https://github.com/shopware/development.git --depth=1 .
+      - run:
+          name: Install shopware
+          command: |
+            ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="shopware"
+      - checkout:
+          path: /var/www/html/custom/plugins/MultiSafepay
+      - run:
+          name: Install MultiSafepay plugin
+          command: |
+            php bin/console plugin:refresh
+            php bin/console plugin:install --activate MultiSafepay
+            php bin/console cache:clear
+      - run:
+          name: Import production database to test database
+          command: |
+            ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="shopware"
+      - run:
+          name: Run integration tests
+          command: |
+            cd /var/www/html/custom/plugins/MultiSafepay
+            composer dump-autoload
+            ../../../vendor/bin/phpunit --testsuite="MultiSafepay Integration tests"
+  integration_tests_release:
+    docker:
+      - image: shopware/development
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_PASSWORD: app
+          MYSQL_USER: app
+          MYSQL_DATABASE: shopware
+          MYSQL_ROOT_PASSWORD: shopware
+    working_directory: /var/www/html
+    environment:
+      SHOPWARE_VERSION: "6.0+ea"
+    steps:
+      - run:
+          name: Clear html folder
+          command: |
+            rm -rf index.html
+      - run:
+          name: Download shopware
+          command: |
+            git clone https://github.com/shopware/development.git --branch=$SHOPWARE_VERSION --depth=1 .
       - run:
           name: Install shopware
           command: |
@@ -120,7 +163,12 @@ workflows:
       - codesniffer
       - mess_detector
       - phpunit
-      - integration_tests:
+      - integration_tests_master:
+          requires:
+            - codesniffer
+            - mess_detector
+            - phpunit
+      - integration_tests_release:
           requires:
             - codesniffer
             - mess_detector
