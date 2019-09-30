@@ -4,13 +4,12 @@
 
 # MultiSafepay plugin Shopware 6
 
-We are proud to be developing our own Shopware 6 plugin that will soon be available for you to try out.
-
-Be aware that we do not yet offer a fully functional and stable Shopware 6 plugin. Shopware 6 itself is currently in Early Access and it is meant for the community to try it out and improve it at an early stage.
-
-Please note that certain significant pieces of functionality are not fully implemented. This release should not be used on live/production environments, as it may contain bugs and/or limited functionality. Our primary goal is to reach out to interested developers and work together on creating a seamless product to be launched in the first official release.
-
-In this, there is a chance for you to be among the pioneers of Shopware 6 as part of a new e-commerce revolution, as well as an opportunity to become an active voice in the MultiSafepay community.
+We’re proud to be able to launch our first beta of the Shopware 6 plugin!
+This release should not be used on live/production environments, as it may contain bugs and/or limited functionality.
+It does not contain our full range of features and or functionalities as Shopware 6 is also still in Early Access mode.
+Our primary goal is to reach out to interested developers and work together on creating a seamless product to be launched in the first official release.
+In this, there is a chance for you to be among the pioneers of Shopware 6 as part of a new e-commerce revolution, as well as an opportunity to become an active voice within the MultiSafepay community.
+Let’s iron out the bugs and improve together.
 
 ## What is Shopware 6?
 Shopware 6 is the sequel to Shopware 5, a popular open source ecommerce platform. For more information, make sure you check out [Shopware 6](https://www.shopware.com/en/products/shopware-6/).
