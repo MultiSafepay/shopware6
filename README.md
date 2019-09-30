@@ -5,9 +5,12 @@
 # MultiSafepay plugin Shopware 6
 
 We’re proud to be able to launch our first beta of the Shopware 6 plugin!
+
 This release should not be used on live/production environments, as it may contain bugs and/or limited functionality.
+
 It does not contain our full range of features and or functionalities as Shopware 6 is also still in Early Access mode.
 Our primary goal is to reach out to interested developers and work together on creating a seamless product to be launched in the first official release.
+
 In this, there is a chance for you to be among the pioneers of Shopware 6 as part of a new e-commerce revolution, as well as an opportunity to become an active voice within the MultiSafepay community.
 Let’s iron out the bugs and improve together.
 
