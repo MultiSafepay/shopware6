@@ -4,23 +4,24 @@
 
 # MultiSafepay plugin Shopware 6
 
-Easily integrate MultiSafepay payment solutions into your Shopware 6 webshop with the free and completely new MultiSafepay Shopware 6 plugin.
+We are proud to be developing our own Shopware 6 plugin that will soon be available for you to try out.
 
-## About MultiSafepay ##
-MultiSafepay is a collecting payment service provider which means we take care of the agreements, technical details and payment collection required for each payment method. You can start selling online today and manage all your transactions from one place.
-## Supported Payment Methods ##
-The supported Payment Methods & Giftcards for this plugin can be found over here: [Payment Methods & Giftcards](https://docs.multisafepay.com/integrations/shopware6/faq/#available-payment-methods-in-shopware-6)
+Be aware that we do not yet offer a fully functional and stable Shopware 6 plugin. Shopware 6 itself is currently in Early Access and it is meant for the community to try it out and improve it at an early stage.
 
-## Requirements
-- Shopware 6.0.x
-- Tested on PHP 7.2.0
+Please note that certain significant pieces of functionality are not fully implemented. This release should not be used on live/production environments, as it may contain bugs and/or limited functionality. Our primary goal is to reach out to interested developers and work together on creating a seamless product to be launched in the first official release.
 
-## Installation
+In this, there is a chance for you to be among the pioneers of Shopware 6 as part of a new e-commerce revolution, as well as an opportunity to become an active voice in the MultiSafepay community.
 
-For additional information or instructions please see our [installation & configuration manual](https://docs.multisafepay.com/integrations/shopware6/manual/)
+## What is Shopware 6?
+Shopware 6 is the sequel to Shopware 5, a popular open source ecommerce platform. For more information, make sure you check out [Shopware 6](https://www.shopware.com/en/products/shopware-6/).
 
-## Support
-You can create issues on our repository. If you need any additional help or support, please contact <a href="mailto:integration@multisafepay.com">integration@multisafepay.com</a>
+## Feedback
+We look forward to receiving your input.
+Have you seen an opportunity to change things for better? We invite you to create a pull request on GitHub.
+Are you missing something and would like us to fix it? Suggest an improvement by sending us an [email](mailto:integration@multisafepay.com) or by creating an issue.
+
+## Testing
+Would you like to try out a working version of a Shopware 6 webshop? Reach out to our Integration team at <integration@multisafepay.com> and one of our colleagues will assist you in opening a test account, where you can install the MultiSafepay's latest Shopware 6 plugin and its current functionality.
 
 ## License
-[MIT License](https://github.com/MultiSafepay/shopware6-internal/blob/develop/LICENSE)
+[MIT License](https://github.com/MultiSafepay/shopware6/blob/develop/LICENSE)
