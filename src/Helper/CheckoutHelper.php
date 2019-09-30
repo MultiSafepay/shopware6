@@ -6,6 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Symfony\Component\HttpFoundation\Request;
@@ -67,7 +68,7 @@ class CheckoutHelper
             'zip_code' => $customer->getDefaultBillingAddress()->getZipcode(),
             'state' => $customer->getDefaultBillingAddress()->getCountryState(),
             'city' => $customer->getDefaultBillingAddress()->getCity(),
-            'country' => $customer->getDefaultBillingAddress()->getCountry()->getIso(),
+            'country' => $this->getCountryIso($customer->getDefaultBillingAddress()),
             'phone' => $customer->getDefaultBillingAddress()->getPhoneNumber(),
             'email' => $customer->getEmail(),
             'referrer' => $request->server->get('HTTP_REFERER'),
@@ -94,7 +95,7 @@ class CheckoutHelper
             'zip_code' => $customer->getDefaultShippingAddress()->getZipcode(),
             'state' => $customer->getDefaultShippingAddress()->getCountryState(),
             'city' => $customer->getDefaultShippingAddress()->getCity(),
-            'country' => $customer->getDefaultShippingAddress()->getCountry()->getIso(),
+            'country' => $this->getCountryIso($customer->getDefaultShippingAddress()),
             'phone' => $customer->getDefaultShippingAddress()->getPhoneNumber(),
             'email' => $customer->getEmail()
         ];
@@ -148,5 +149,18 @@ class CheckoutHelper
                 break;
         }
         return $translatedLocale;
+    }
+
+    /**
+     * @param CustomerAddressEntity $customerAddress
+     * @return string|null
+     */
+    private function getCountryIso(CustomerAddressEntity $customerAddress): ?string
+    {
+        $country = $customerAddress->getCountry();
+        if (!$country) {
+            return null;
+        }
+        return $country->getIso();
     }
 }
