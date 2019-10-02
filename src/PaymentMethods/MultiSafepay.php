@@ -20,8 +20,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineInvalidEntityIdException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineInvalidStateFieldException;
 use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
 use Shopware\Core\System\StateMachine\Exception\StateMachineStateNotFoundException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -142,9 +140,8 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
 
         try {
             $this->transitionPaymentState($details->status, $orderTransactionId, $context);
-        } catch (InconsistentCriteriaIdsException | IllegalTransitionException | StateMachineInvalidEntityIdException |
-        StateMachineInvalidStateFieldException | StateMachineNotFoundException | StateMachineStateNotFoundException
-        $exception) {
+        } catch (InconsistentCriteriaIdsException | IllegalTransitionException | StateMachineNotFoundException |
+        StateMachineStateNotFoundException $exception) {
             throw new AsyncPaymentFinalizeException($orderTransactionId, $exception->getMessage());
         }
     }
@@ -155,8 +152,6 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
      * @param Context $context
      * @throws IllegalTransitionException
      * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineInvalidEntityIdException
-     * @throws StateMachineInvalidStateFieldException
      * @throws StateMachineNotFoundException
      * @throws StateMachineStateNotFoundException
      */

@@ -20,7 +20,7 @@ use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\Context\SystemSource;
 
-class MultiSafepay extends Plugin
+class MltisafeMultiSafepay extends Plugin
 {
     /**
      * @param InstallContext $context
