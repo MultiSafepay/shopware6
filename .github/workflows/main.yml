@@ -1,6 +1,5 @@
-name: Run matrix builds
+name: Default check
 on: [push]
-
 jobs:
   integration_tests:
     services:
