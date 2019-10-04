@@ -6,24 +6,37 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Helper;
 
+use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ServerBag;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class CheckoutHelperTest extends TestCase
 {
-    use IntegrationTestBehaviour;
+    use IntegrationTestBehaviour, Customers, Orders {
+        IntegrationTestBehaviour::getContainer insteadof Customers;
+        IntegrationTestBehaviour::getKernel insteadof Customers;
+        IntegrationTestBehaviour::getContainer insteadof Orders;
+        IntegrationTestBehaviour::getKernel insteadof Orders;
+    }
 
     /**
      * @var object
@@ -42,66 +55,142 @@ class CheckoutHelperTest extends TestCase
     {
         parent::setUp();
         $this->context = Context::createDefaultContext();
-        $this->customerRepository = $this->getContainer()->get('customer.repository');
     }
 
     /**
-     * @param Context $context
-     * @return string
-     */
-    private function createCustomer(Context $context): string
-    {
-        $customerId = Uuid::randomHex();
-        $addressId = Uuid::randomHex();
-        $customer = [
-            'id' => $customerId,
-            'customerNumber' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
-            'email' => Uuid::randomHex() . '@example.com',
-            'password' => 'shopware',
-            'defaultPaymentMethodId' => $this->getValidPaymentMethodId(),
-            'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
-            'salesChannelId' => Defaults::SALES_CHANNEL,
-            'defaultBillingAddressId' => $addressId,
-            'defaultShippingAddressId' => $addressId,
-            'addresses' => [
-                [
-                    'id' => $addressId,
-                    'customerId' => $customerId,
-                    'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                    'street' => 'Ebbinghoff 10',
-                    'zipcode' => '48624',
-                    'city' => 'Schöppingen',
-                    'phoneNumber' => '0123456789'
-                ],
-            ],
-        ];
-        $this->customerRepository->upsert([$customer], $context);
-        return $customerId;
-    }
-
-    /**
-     * @param string $customerId
-     * @return CustomerEntity
      * @throws InconsistentCriteriaIdsException
      */
-    private function getCustomer(string $customerId): CustomerEntity
+    public function testGetShoppingCartWithNoTaxAndNoDiscounts(): void
     {
-        /** @var EntityRepositoryInterface $orderRepo */
-        $orderRepo = $this->getContainer()->get('customer.repository');
-        $criteria = new Criteria([$customerId]);
-        $criteria->addAssociation('defaultBillingAddress');
-        $criteria->addAssociation('defaultShippingAddress');
-        $criteria->addAssociation('defaultBillingAddress.country');
-        $criteria->addAssociation('defaultShippingAddress.country');
-        /** @var CustomerEntity $customer */
-        $customer = $orderRepo->search($criteria, $this->context)->get($customerId);
-        return $customer;
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $order = $this->getOrder($orderId, $this->context);
+
+        /** @var CheckoutHelper $checkoutHelper */
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+
+        $shoppingCart = $checkoutHelper->getShoppingCart($order);
+        $this->assertArrayHasKey('items', $shoppingCart);
+
+        $shoppingCartItems = $shoppingCart['items'];
+        $this->assertCount(2, $shoppingCartItems);
+
+        $shipping = end($shoppingCartItems);
+
+        $this->assertEquals('test', $shoppingCartItems[0]['name']);
+        $this->assertEquals(10, $shoppingCartItems[0]['unit_price']);
+        $this->assertEquals(1, $shoppingCartItems[0]['quantity']);
+        $this->assertEquals('12345', $shoppingCartItems[0]['merchant_item_id']);
+        $this->assertEquals('0', $shoppingCartItems[0]['tax_table_selector']);
+        $this->assertEquals('Shipping', $shipping['name']);
+        $this->assertEquals(10, $shipping['unit_price']);
+        $this->assertEquals(1, $shipping['quantity']);
+        $this->assertEquals('msp-shipping', $shipping['merchant_item_id']);
+        $this->assertEquals('0', $shipping['tax_table_selector']);
+    }
+
+    /**
+     * @throws InconsistentCriteriaIdsException
+     */
+    public function testGetShoppingCartWithDiscountsAndNoTax(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $order = $this->getOrder($orderId, $this->context);
+
+        $order->getLineItems()->add(
+            (new OrderLineItemEntity())->assign([
+                'priceDefinition' => new PercentagePriceDefinition(-10, 2),
+                'price' => new CalculatedPrice(
+                    -5,
+                    -5,
+                    new CalculatedTaxCollection([new CalculatedTax(0, 0, 0)]),
+                    new TaxRuleCollection()
+                ),
+                'label' => 'Discount',
+                'id' => 'D',
+                'quantity' => 1,
+                'type' => 'promotion',
+                'payload' => [
+                    'discountId' => '54321'
+                ]
+            ])
+        );
+
+        /** @var CheckoutHelper $checkoutHelper */
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $shoppingCart = $checkoutHelper->getShoppingCart($order);
+
+        $this->assertArrayHasKey('items', $shoppingCart);
+        $shoppingCartItems = $shoppingCart['items'];
+        $shipping = end($shoppingCartItems);
+
+        $this->assertCount(3, $shoppingCartItems);
+        $this->assertEquals('test', $shoppingCartItems[0]['name']);
+        $this->assertEquals(10, $shoppingCartItems[0]['unit_price']);
+        $this->assertEquals(1, $shoppingCartItems[0]['quantity']);
+        $this->assertEquals('12345', $shoppingCartItems[0]['merchant_item_id']);
+        $this->assertEquals('0', $shoppingCartItems[0]['tax_table_selector']);
+        $this->assertEquals('Discount', $shoppingCartItems[1]['name']);
+        $this->assertEquals(-5, $shoppingCartItems[1]['unit_price']);
+        $this->assertEquals(1, $shoppingCartItems[1]['quantity']);
+        $this->assertEquals('54321', $shoppingCartItems[1]['merchant_item_id']);
+        $this->assertEquals('0', $shoppingCartItems[1]['tax_table_selector']);
+        $this->assertEquals('Shipping', $shipping['name']);
+        $this->assertEquals(10, $shipping['unit_price']);
+        $this->assertEquals(1, $shipping['quantity']);
+        $this->assertEquals('msp-shipping', $shipping['merchant_item_id']);
+        $this->assertEquals('0', $shipping['tax_table_selector']);
+    }
+
+    /**
+     * @throws InconsistentCriteriaIdsException
+     */
+    public function testGetShoppingCartWithTax(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $order = $this->getOrder($orderId, $this->context);
+
+        $order->setShippingCosts(new CalculatedPrice(
+            11.9,
+            11.9,
+            new CalculatedTaxCollection([new CalculatedTax(0, 19, 0)]),
+            new TaxRuleCollection()
+        ));
+        /** @var OrderLineItemEntity $firstProduct */
+        $firstProduct = $order->getLineItems()->first();
+        $firstProduct->setPrice(
+            new CalculatedPrice(
+                121,
+                121,
+                new CalculatedTaxCollection([new CalculatedTax(0, 21, 0)]),
+                new TaxRuleCollection()
+            )
+        );
+        $firstProduct->setUnitPrice(121);
+
+        /** @var CheckoutHelper $checkoutHelper */
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+
+        $shoppingCart = $checkoutHelper->getShoppingCart($order);
+        $this->assertArrayHasKey('items', $shoppingCart);
+
+        $shoppingCartItems = $shoppingCart['items'];
+        $shipping = end($shoppingCartItems);
+
+
+        $this->assertCount(2, $shoppingCartItems);
+        $this->assertEquals('test', $shoppingCartItems[0]['name']);
+        $this->assertEquals(100, $shoppingCartItems[0]['unit_price']);
+        $this->assertEquals(1, $shoppingCartItems[0]['quantity']);
+        $this->assertEquals('12345', $shoppingCartItems[0]['merchant_item_id']);
+        $this->assertEquals('21', $shoppingCartItems[0]['tax_table_selector']);
+        $this->assertEquals('Shipping', $shipping['name']);
+        $this->assertEquals(10, $shipping['unit_price']);
+        $this->assertEquals(1, $shipping['quantity']);
+        $this->assertEquals('msp-shipping', $shipping['merchant_item_id']);
+        $this->assertEquals('19', $shipping['tax_table_selector']);
     }
 
     /**
@@ -110,7 +199,7 @@ class CheckoutHelperTest extends TestCase
     public function testGetCustomerData(): void
     {
         $customerId = $this->createCustomer($this->context);
-        $customer = $this->getCustomer($customerId);
+        $customer = $this->getCustomer($customerId, $this->context);
         $billingAddress = $customer->getDefaultBillingAddress();
 
 
@@ -184,7 +273,7 @@ class CheckoutHelperTest extends TestCase
     public function testGetDeliveryData(): void
     {
         $customerId = $this->createCustomer($this->context);
-        $customer = $this->getCustomer($customerId);
+        $customer = $this->getCustomer($customerId, $this->context);
         $shippingAddress = $customer->getDefaultShippingAddress();
 
         $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)
@@ -243,7 +332,7 @@ class CheckoutHelperTest extends TestCase
     public function testGetGatewayInfo(): void
     {
         $customerId = $this->createCustomer($this->context);
-        $customer = $this->getCustomer($customerId);
+        $customer = $this->getCustomer($customerId, $this->context);
         $billingAddress = $customer->getDefaultBillingAddress();
 
         $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)

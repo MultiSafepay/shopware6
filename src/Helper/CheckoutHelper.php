@@ -8,6 +8,9 @@ namespace MultiSafepay\Shopware6\Helper;
 
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -132,6 +135,75 @@ class CheckoutHelper
     }
 
     /**
+     * @param OrderEntity $order
+     * @return array
+     */
+    public function getShoppingCart(OrderEntity $order): array
+    {
+        $shoppingCart = [];
+        foreach ($order->getLineItems() as $item) {
+            $shoppingCart['items'][] = [
+                'name' => $item->getLabel(),
+                'description' => $item->getDescription(),
+                'unit_price' => $this->getUnitPriceExclTax($item->getPrice()),
+                'quantity' => $item->getQuantity(),
+                'merchant_item_id' => $this->getMerchantItemId($item),
+                'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
+            ];
+        }
+
+        // Add Shipping-cost
+        $shoppingCart['items'][] = [
+            'name' => 'Shipping',
+            'description' => 'Shipping',
+            'unit_price' => $this->getUnitPriceExclTax($order->getShippingCosts()),
+            'quantity' => $order->getShippingCosts()->getQuantity(),
+            'merchant_item_id' => 'msp-shipping',
+            'tax_table_selector' => (string) $this->getTaxRate($order->getShippingCosts()),
+        ];
+
+        return $shoppingCart;
+    }
+
+
+    /**
+     * @param OrderEntity $order
+     * @return array
+     */
+    public function getCheckoutOptions(OrderEntity $order): array
+    {
+        $checkoutOptions['tax_tables']['default'] = [
+            'shipping_taxed' => true,
+            'rate' => ''
+        ];
+
+        // Create array with unique tax rates from order_items
+        foreach ($order->getLineItems() as $item) {
+            $taxRates[] = $this->getTaxRate($item->getPrice());
+        }
+        // Add shippingTax to array with unique tax rates
+        $taxRates[] = $this->getTaxRate($order->getShippingCosts());
+
+        $uniqueTaxRates = array_unique($taxRates);
+
+        // Add unique tax rates to CheckoutOptions
+        foreach ($uniqueTaxRates as $taxRate) {
+            $checkoutOptions['tax_tables']['alternate'][] = [
+                'name' => (string) $taxRate,
+                'standalone' => true,
+                'rules' => [
+                    [
+                        'rate' => $taxRate / 100
+                    ]
+                ]
+            ];
+        }
+
+        return $checkoutOptions;
+    }
+
+
+    /**
      * @param $locale
      * @return string
      */
@@ -162,5 +234,46 @@ class CheckoutHelper
             return null;
         }
         return $country->getIso();
+    }
+
+    /**
+     * @param OrderLineItemEntity $item
+     * @return mixed
+     */
+    private function getMerchantItemId(OrderLineItemEntity $item)
+    {
+        if ($item->getType() === 'promotion') {
+            return $item->getPayload()['discountId'];
+        }
+        return $item->getPayload()['productNumber'];
+    }
+
+    /**
+     * @param CalculatedPrice $calculatedPrice
+     * @return float
+     */
+    public function getTaxRate(CalculatedPrice $calculatedPrice) : float
+    {
+        $rates = [];
+        foreach ($calculatedPrice->getCalculatedTaxes() as $tax) {
+            $rates[] = $tax->getTaxRate();
+        }
+        // return highest taxRate
+        return (float) max($rates);
+    }
+
+    /**
+     * @param CalculatedPrice $calculatedPrice
+     * @return float
+     */
+    public function getUnitPriceExclTax(CalculatedPrice $calculatedPrice) : float
+    {
+        $unitPrice = $calculatedPrice->getUnitPrice();
+        $taxRate = $this->getTaxRate($calculatedPrice);
+
+        if ($unitPrice && $taxRate) {
+            $unitPrice /= (1 + ($taxRate / 100));
+        }
+        return (float) $unitPrice;
     }
 }

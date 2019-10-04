@@ -6,34 +6,28 @@
 namespace MultiSafepay\Shopware6\Tests\Integration\PaymentMethods;
 
 use MultiSafepay\Shopware6\API\MspClient;
-use MultiSafepay\Shopware6\API\Object\Orders;
+use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\MspHelper;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
+use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
-use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
-use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
-use Shopware\Core\Checkout\Test\Customer\Rule\OrderFixture;
-use Shopware\Core\Checkout\Test\Payment\Handler\AsyncTestPaymentHandler;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
@@ -42,13 +36,22 @@ use Shopware\Core\System\StateMachine\Exception\StateMachineStateNotFoundExcepti
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use stdClass;
 
 class MultiSafepayTest extends TestCase
 {
-    use OrderFixture;
-    use KernelTestBehaviour;
-    use DatabaseTransactionBehaviour;
+    use IntegrationTestBehaviour, Orders, Transactions, Customers, PaymentMethods {
+        IntegrationTestBehaviour::getContainer insteadof Transactions;
+        IntegrationTestBehaviour::getContainer insteadof Customers;
+        IntegrationTestBehaviour::getContainer insteadof PaymentMethods;
+        IntegrationTestBehaviour::getContainer insteadof Orders;
+
+        IntegrationTestBehaviour::getKernel insteadof Transactions;
+        IntegrationTestBehaviour::getKernel insteadof Customers;
+        IntegrationTestBehaviour::getKernel insteadof PaymentMethods;
+        IntegrationTestBehaviour::getKernel insteadof Orders;
+    }
 
     private const API_KEY = '11111111111111111111111';
     private const API_ENV = 'test';
@@ -83,7 +86,7 @@ class MultiSafepayTest extends TestCase
     {
         $paymentMethodId = $this->createPaymentMethod($this->context);
         $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
         $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
 
         /** @var MultiSafepay $multiSafepay */
@@ -112,7 +115,7 @@ class MultiSafepayTest extends TestCase
     {
         $paymentMethodId = $this->createPaymentMethod($this->context);
         $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
         $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
 
         /** @var MultiSafepay $multiSafepay */
@@ -149,7 +152,7 @@ class MultiSafepayTest extends TestCase
     {
         $paymentMethodId = $this->createPaymentMethod($this->context);
         $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
         $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
 
         /** @var MultiSafepay $multiSafepay */
@@ -172,147 +175,6 @@ class MultiSafepayTest extends TestCase
         $this->expectException(CustomerCanceledAsyncPaymentException::class);
         $multiSafepay->finalize($transactionMock, $requestMock, $salesChannelMock);
     }
-
-    /**
-     * @param Context $context
-     * @return string
-     */
-    private function createCustomer(Context $context): string
-    {
-        $customerId = Uuid::randomHex();
-        $addressId = Uuid::randomHex();
-        $customer = [
-            'id' => $customerId,
-            'customerNumber' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
-            'email' => Uuid::randomHex() . '@example.com',
-            'password' => 'shopware',
-            'defaultPaymentMethodId' => $this->getValidPaymentMethodId(),
-            'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
-            'salesChannelId' => Defaults::SALES_CHANNEL,
-            'defaultBillingAddressId' => $addressId,
-            'defaultShippingAddressId' => $addressId,
-            'addresses' => [
-                [
-                    'id' => $addressId,
-                    'customerId' => $customerId,
-                    'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                    'street' => 'Ebbinghoff 10',
-                    'zipcode' => '48624',
-                    'city' => 'Schöppingen',
-                ],
-            ],
-        ];
-        $this->customerRepository->upsert([$customer], $context);
-        return $customerId;
-    }
-
-    /**
-     * @param Context $context
-     * @return string
-     */
-    private function createOrder(Context $context): string
-    {
-        $id = Uuid::randomHex();
-        $orderData = $this->getOrderData($id, $context);
-        $this->orderRepository->create($orderData, $context);
-
-        return $id;
-    }
-
-    /**
-     * @param string $orderId
-     * @param string $paymentMethodId
-     * @param Context $context
-     * @return string
-     */
-    private function createTransaction(string $orderId, string $paymentMethodId, Context $context): string
-    {
-        $id = Uuid::randomHex();
-        $transaction = [
-            'id' => $id,
-            'orderId' => $orderId,
-            'paymentMethodId' => $paymentMethodId,
-            'stateId' => $this->stateMachineRegistry->getInitialState(
-                OrderTransactionStates::STATE_MACHINE,
-                $context
-            )->getId(),
-            'amount' => new CalculatedPrice(100, 100, new CalculatedTaxCollection(), new TaxRuleCollection(), 1),
-            'payload' => '{}',
-        ];
-
-        $this->orderTransactionRepository->upsert([$transaction], $context);
-
-        return $id;
-    }
-
-    /**
-     * @param Context $context
-     * @param string $handlerIdentifier
-     * @return string
-     */
-    private function createPaymentMethod(
-        Context $context,
-        string $handlerIdentifier = AsyncTestPaymentHandler::class
-    ): string {
-        $id = Uuid::randomHex();
-        $payment = [
-            'id' => $id,
-            'handlerIdentifier' => $handlerIdentifier,
-            'name' => 'Test Payment',
-            'description' => 'Test payment handler',
-            'active' => true,
-        ];
-
-        $this->paymentMethodRepository->upsert([$payment], $context);
-
-        return $id;
-    }
-
-    /**
-     * @param string $orderId
-     * @return OrderEntity
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getOrder(string $orderId): OrderEntity
-    {
-        /** @var EntityRepositoryInterface $orderRepo */
-        $orderRepo = $this->getContainer()->get('order.repository');
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('transactions');
-        $criteria->addAssociation('lineItems');
-        $criteria->addAssociation('tax');
-        /** @var OrderEntity $order */
-        $order = $orderRepo->search($criteria, $this->context)->get($orderId);
-        $order->setOrderNumber(self::ORDER_NUMBER);
-
-        return $order;
-    }
-
-    /**
-     * @param string $customerId
-     * @return CustomerEntity
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getCustomer(string $customerId): CustomerEntity
-    {
-        /** @var EntityRepositoryInterface $orderRepo */
-        $orderRepo = $this->getContainer()->get('customer.repository');
-        $criteria = new Criteria([$customerId]);
-        $criteria->addAssociation('defaultBillingAddress');
-        $criteria->addAssociation('defaultShippingAddress');
-        $criteria->addAssociation('defaultBillingAddress.country');
-        $criteria->addAssociation('defaultShippingAddress.country');
-        /** @var CustomerEntity $customer */
-        $customer = $orderRepo->search($criteria, $this->context)->get($customerId);
-        return $customer;
-    }
-
 
     /**
      * @return MockObject
@@ -381,7 +243,7 @@ class MultiSafepayTest extends TestCase
     private function initiateSalesChannelContext(string $customerId, Context $context): MockObject
     {
         /** @var CustomerEntity $customer */
-        $customer = $this->getCustomer($customerId);
+        $customer = $this->getCustomer($customerId, $this->context);
 
         $currencyMock = $this->getMockBuilder(CurrencyEntity::class)
             ->disableOriginalConstructor()
@@ -426,7 +288,7 @@ class MultiSafepayTest extends TestCase
             ->getMock();
 
         $paymentTransactionMock->method('getOrder')
-            ->willReturn($this->getOrder($orderId));
+            ->willReturn($this->getOrder($orderId, $this->context));
 
         $paymentTransactionMock->method('getOrderTransaction')
             ->willReturn($OrderTransactionMock);
@@ -450,7 +312,7 @@ class MultiSafepayTest extends TestCase
         $multiSafepayOrderData = new stdClass();
         $multiSafepayOrderData->status = 'completed';
 
-        $multiSafepayClientOrdersMock = $this->getMockBuilder(Orders::class)
+        $multiSafepayClientOrdersMock = $this->getMockBuilder(MspOrders::class)
             ->disableOriginalConstructor()
             ->getMock();
         $multiSafepayClientOrdersMock->expects($this->once())
@@ -557,7 +419,7 @@ class MultiSafepayTest extends TestCase
             ->withConsecutive([$this->equalTo('environment')], [$this->equalTo('apiKey')])
             ->willReturnOnConsecutiveCalls(self::API_ENV, self::API_KEY);
 
-        $mspOrdersMock = $this->getMockBuilder(Orders::class)
+        $mspOrdersMock = $this->getMockBuilder(MspOrders::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -595,7 +457,8 @@ class MultiSafepayTest extends TestCase
      */
     public function testTransitionPaymentStatePay(): void
     {
-        $orderId = $this->createOrder($this->context);
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
         $paymentId = $this->createPaymentMethod($this->context);
         $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
 
@@ -643,7 +506,8 @@ class MultiSafepayTest extends TestCase
      */
     public function testTransitionPaymentStateCancel(): void
     {
-        $orderId = $this->createOrder($this->context);
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
         $paymentId = $this->createPaymentMethod($this->context);
         $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
 

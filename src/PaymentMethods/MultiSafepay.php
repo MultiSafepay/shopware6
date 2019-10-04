@@ -84,7 +84,9 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
             'gateway_info' => $this->checkoutHelper->getGatewayInfo($customer),
             'payment_options' => $this->checkoutHelper->getPaymentOptions($transaction),
             'customer' => $this->checkoutHelper->getCustomerData($request, $customer),
-            'delivery' => $this->checkoutHelper->getDeliveryData($customer)
+            'delivery' => $this->checkoutHelper->getDeliveryData($customer),
+            'shopping_cart' => $this->checkoutHelper->getShoppingCart($order),
+            'checkout_options' => $this->checkoutHelper->getCheckoutOptions($order)
         ];
 
         try {
