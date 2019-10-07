@@ -6,20 +6,20 @@
 namespace MultiSafepay\Shopware6\Tests\Integration\PaymentMethods;
 
 use MultiSafepay\Shopware6\API\MspClient;
-use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\MspHelper;
-use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\Service\SettingsService;
-use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
-use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
+use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
+use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
+use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
@@ -36,7 +36,6 @@ use Shopware\Core\System\StateMachine\Exception\StateMachineStateNotFoundExcepti
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use stdClass;
 
 class MultiSafepayTest extends TestCase
@@ -181,8 +180,6 @@ class MultiSafepayTest extends TestCase
      */
     private function setupConnectMockForPay(): MockObject
     {
-        /** @var OrderTransactionStateHandler $orderStateHandler */
-        $orderStateHandler = $this->getContainer()->get(OrderTransactionStateHandler::class);
         /** @var ApiHelper $apiHelper */
         $apiHelper = $this->setupApiHelperMockForPay();
         /** @var CheckoutHelper $checkoutHelper */
@@ -192,12 +189,11 @@ class MultiSafepayTest extends TestCase
 
         $multiSafepay =  $this->getMockBuilder(MultiSafepay::class)
             ->setConstructorArgs([
-                $orderStateHandler,
                 $apiHelper,
                 $checkoutHelper,
                 $mspHelper
             ])
-            ->setMethodsExcept(['pay', 'finalize', 'transitionPaymentState'])
+            ->setMethodsExcept(['pay', 'finalize'])
             ->getMock();
 
         return $multiSafepay;
@@ -209,8 +205,6 @@ class MultiSafepayTest extends TestCase
      */
     private function setupConnectMockForFinalize(Context $context)
     {
-        /** @var OrderTransactionStateHandler $orderStateHandler */
-        $orderStateHandler = $this->getContainer()->get(OrderTransactionStateHandler::class);
         /** @var CheckoutHelper $checkoutHelper */
         $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
         /** @var MspHelper $mspHelper */
@@ -222,12 +216,11 @@ class MultiSafepayTest extends TestCase
 
         $multiSafepay =  $this->getMockBuilder(MultiSafepay::class)
             ->setConstructorArgs([
-                $orderStateHandler,
                 $apiHelper,
                 $checkoutHelper,
                 $mspHelper
             ])
-            ->setMethodsExcept(['pay', 'finalize', 'transitionPaymentState'])
+            ->setMethodsExcept(['pay', 'finalize'])
             ->getMock();
 
         return $multiSafepay;
@@ -449,104 +442,5 @@ class MultiSafepayTest extends TestCase
             ->getMock();
 
         return $apiHelperMock;
-    }
-
-
-    /**
-     *
-     */
-    public function testTransitionPaymentStatePay(): void
-    {
-        $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($customerId, $this->context);
-        $paymentId = $this->createPaymentMethod($this->context);
-        $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
-
-        $orderStateHandler = $this->getContainer()->get(OrderTransactionStateHandler::class);
-
-        $apiHelperMock = $this->getMockBuilder(ApiHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $mspHelperMock = $this->getMockBuilder(MspHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $multiSafepayMock = $this->getMockBuilder(MultiSafepay::class)
-            ->setConstructorArgs([
-                $orderStateHandler,
-                $apiHelperMock,
-                $checkoutHelperMock,
-                $mspHelperMock
-            ])
-            ->setMethodsExcept([
-                'transitionPaymentState'
-            ])
-            ->getMock();
-
-
-        $currentTransaction = $this->getTransaction($transactionId);
-        $originalTransactionStateId = $currentTransaction->getStateId();
-
-        $multiSafepayMock->transitionPaymentState('completed', $transactionId, $this->context);
-
-        $newTransaction = $this->getTransaction($transactionId);
-        $changedTransactionStateId = $newTransaction->getStateId();
-
-        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
-        $this->assertEquals('Paid', $newTransaction->getStateMachineState()->getName());
-    }
-
-    /**
-     *
-     */
-    public function testTransitionPaymentStateCancel(): void
-    {
-        $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($customerId, $this->context);
-        $paymentId = $this->createPaymentMethod($this->context);
-        $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
-
-        $orderStateHandler = $this->getContainer()->get(OrderTransactionStateHandler::class);
-
-        $apiHelperMock = $this->getMockBuilder(ApiHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $mspHelperMock = $this->getMockBuilder(MspHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $multiSafepayMock = $this->getMockBuilder(MultiSafepay::class)
-            ->setConstructorArgs([
-                $orderStateHandler,
-                $apiHelperMock,
-                $checkoutHelperMock,
-                $mspHelperMock
-            ])
-            ->setMethodsExcept([
-                'transitionPaymentState'
-            ])
-            ->getMock();
-
-
-        $currentTransaction = $this->getTransaction($transactionId);
-        $originalTransactionStateId = $currentTransaction->getStateId();
-
-        $multiSafepayMock->transitionPaymentState('cancelled', $transactionId, $this->context);
-
-        $newTransaction = $this->getTransaction($transactionId);
-        $changedTransactionStateId = $newTransaction->getStateId();
-
-        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
-        $this->assertEquals('Cancelled', $newTransaction->getStateMachineState()->getName());
     }
 }

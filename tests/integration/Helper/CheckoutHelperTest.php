@@ -6,42 +6,40 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Helper;
 
+use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
+use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
-use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\Framework\Uuid\Uuid;
-use MultiSafepay\Shopware6\Helper\CheckoutHelper;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ServerBag;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class CheckoutHelperTest extends TestCase
 {
-    use IntegrationTestBehaviour, Customers, Orders {
+    use IntegrationTestBehaviour, Orders, Transactions, Customers, PaymentMethods {
+        IntegrationTestBehaviour::getContainer insteadof Transactions;
         IntegrationTestBehaviour::getContainer insteadof Customers;
-        IntegrationTestBehaviour::getKernel insteadof Customers;
+        IntegrationTestBehaviour::getContainer insteadof PaymentMethods;
         IntegrationTestBehaviour::getContainer insteadof Orders;
+
+        IntegrationTestBehaviour::getKernel insteadof Transactions;
+        IntegrationTestBehaviour::getKernel insteadof Customers;
+        IntegrationTestBehaviour::getKernel insteadof PaymentMethods;
         IntegrationTestBehaviour::getKernel insteadof Orders;
     }
-
-    /**
-     * @var object
-     */
-    private $customerRepository;
 
     /**
      * @var Context
@@ -307,16 +305,7 @@ class CheckoutHelperTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $routerMock = $this->getMockBuilder(UrlGeneratorInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)
-            ->setConstructorArgs([$routerMock])
-            ->setMethodsExcept([
-                'getPaymentOptions'
-            ])
-            ->getMock();
+        $checkoutHelperMock = $this->getContainer()->get(CheckoutHelper::class);
 
         $result = $checkoutHelperMock->getPaymentOptions($paymentTransactionMock);
 
@@ -346,5 +335,91 @@ class CheckoutHelperTest extends TestCase
 
         $this->assertArrayHasKey('phone', $result);
         $this->assertArrayHasKey('email', $result);
+    }
+
+    /**
+     * Test transaction flow from Open -> Cancelled.
+     */
+    public function testTransitionPaymentStateCancel(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $paymentId = $this->createPaymentMethod($this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+
+        $currentTransaction = $this->getTransaction($transactionId, $this->context);
+        $originalTransactionStateId = $currentTransaction->getStateId();
+
+
+        $checkoutHelper->transitionPaymentState('cancelled', $transactionId, $this->context);
+
+        $newTransaction = $this->getTransaction($transactionId, $this->context);
+        $changedTransactionStateId = $newTransaction->getStateId();
+
+        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
+        $this->assertEquals('Cancelled', $newTransaction->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test transaction flow from Open -> Paid.
+     */
+    public function testTransitionPaymentStatePay(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $paymentId = $this->createPaymentMethod($this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+
+        $currentTransaction = $this->getTransaction($transactionId, $this->context);
+        $originalTransactionStateId = $currentTransaction->getStateId();
+
+        $checkoutHelper->transitionPaymentState('completed', $transactionId, $this->context);
+
+        $newTransaction = $this->getTransaction($transactionId, $this->context);
+        $changedTransactionStateId = $newTransaction->getStateId();
+
+        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
+        $this->assertEquals('Paid', $newTransaction->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test flow for Open -> Cancelled -> Completed
+     */
+    public function testTransitionPaymentStateWithCancelledAndReopenCompleted(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $paymentId = $this->createPaymentMethod($this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentId, $this->context);
+        /** @var CheckoutHelper $checkoutHelper */
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+
+        $openTransaction = $this->getTransaction($transactionId, $this->context);
+        $openTransactionStateId = $openTransaction->getStateId();
+
+
+        $checkoutHelper->transitionPaymentState('cancelled', $transactionId, $this->context);
+
+        $cancelledTransaction = $this->getTransaction($transactionId, $this->context);
+        $cancelledTransactionStateId = $cancelledTransaction->getStateId();
+
+        $this->assertNotEquals($openTransactionStateId, $cancelledTransactionStateId);
+        $this->assertEquals(
+            ucfirst(OrderTransactionStates::STATE_CANCELLED),
+            $cancelledTransaction->getStateMachineState()->getName()
+        );
+
+        $checkoutHelper->transitionPaymentState('completed', $transactionId, $this->context);
+
+        $paidTransaction = $this->getTransaction($transactionId, $this->context);
+        $paidTransactionStateId = $paidTransaction->getStateId();
+
+        $this->assertNotEquals($paidTransactionStateId, $cancelledTransactionStateId);
+        $this->assertEquals(
+            ucfirst(OrderTransactionStates::STATE_PAID),
+            $paidTransaction->getStateMachineState()->getName()
+        );
     }
 }
