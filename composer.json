@@ -30,7 +30,8 @@
     "extra": {
         "shopware-plugin-class": "MultiSafepay\\Shopware6\\MltisafeMultiSafepay",
         "label": {
-            "en-GB": "MultiSafepay module for Shopware 6"
+            "en-GB": "MultiSafepay module for Shopware 6",
+            "de-DE": "MultiSafepay Module für Shopware 6"
         }
     },
     "require-dev": {
