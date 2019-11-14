@@ -6,13 +6,13 @@
 
 namespace MultiSafepay\Shopware6\Handlers;
 
-use MultiSafepay\Shopware6\PaymentMethods\Afterpay;
+use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class AfterpayPaymentHandler extends AsyncPaymentHandler
+class AfterPayPaymentHandler extends AsyncPaymentHandler
 {
     /**
      * @param AsyncPaymentTransactionStruct $transaction
@@ -32,7 +32,7 @@ class AfterpayPaymentHandler extends AsyncPaymentHandler
         string $type = null,
         array $gatewayInfo = []
     ): RedirectResponse {
-        $paymentMethod = new Afterpay();
+        $paymentMethod = new AfterPay();
         return parent::pay(
             $transaction,
             $dataBag,

@@ -5,9 +5,9 @@
  */
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
-use MultiSafepay\Shopware6\Handlers\AfterpayPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
 
-class Afterpay implements PaymentMethodInterface
+class AfterPay implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -16,7 +16,7 @@ class Afterpay implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Afterpay';
+        return 'AfterPay';
     }
 
     /**
@@ -26,7 +26,7 @@ class Afterpay implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Pay with Afterpay';
+        return 'Pay with AfterPay';
     }
 
     /**
@@ -36,7 +36,7 @@ class Afterpay implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return AfterpayPaymentHandler::class;
+        return AfterPayPaymentHandler::class;
     }
 
     /**
@@ -79,7 +79,7 @@ class Afterpay implements PaymentMethodInterface
         return [
             'de-DE' => [
                 'name'        => $this->getName(),
-                'description' => 'Bezahlen mit Afterpay',
+                'description' => 'Bezahlen mit AfterPay',
             ],
             'en-GB' => [
                 'name'        => $this->getName(),
