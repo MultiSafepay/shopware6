@@ -9,7 +9,8 @@
         "shopware/core": "^v6.0.0+ea2 || dev-master",
         "ext-curl": "*",
         "ext-json": "*",
-        "ext-pcre": "*"
+        "ext-pcre": "*",
+        "ext-fileinfo": "*"
     },
     "authors": [{
         "name": "MultiSafepay",

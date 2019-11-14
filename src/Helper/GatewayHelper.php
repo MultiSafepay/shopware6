@@ -6,16 +6,13 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 
 class GatewayHelper
 {
     public const GATEWAYS = [
-        'msp_connect' =>
-            [
-                'class' => MultiSafepay::class,
-                'name' => 'MultiSafepay',
-                'description' => 'Pay with MultiSafepay'
-            ],
+        MultiSafepay::class,
+        Ideal::class,
     ];
 }

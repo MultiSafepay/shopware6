@@ -316,28 +316,6 @@ class CheckoutHelperTest extends TestCase
     }
 
     /**
-     * @throws InconsistentCriteriaIdsException
-     */
-    public function testGetGatewayInfo(): void
-    {
-        $customerId = $this->createCustomer($this->context);
-        $customer = $this->getCustomer($customerId, $this->context);
-        $billingAddress = $customer->getDefaultBillingAddress();
-
-        $checkoutHelperMock = $this->getMockBuilder(CheckoutHelper::class)
-            ->disableOriginalConstructor()
-            ->setMethodsExcept([
-                'getGatewayInfo'
-            ])
-            ->getMock();
-
-        $result = $checkoutHelperMock->getGatewayInfo($customer, $billingAddress);
-
-        $this->assertArrayHasKey('phone', $result);
-        $this->assertArrayHasKey('email', $result);
-    }
-
-    /**
      * Test transaction flow from Open -> Cancelled.
      */
     public function testTransitionPaymentStateCancel(): void

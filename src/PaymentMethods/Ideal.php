@@ -3,12 +3,11 @@
  * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
-use MultiSafepay\Shopware6\Handlers\MultiSafepayPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 
-class MultiSafepay implements PaymentMethodInterface
+class Ideal implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -17,7 +16,7 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'MultiSafepay';
+        return 'iDEAL';
     }
 
     /**
@@ -27,17 +26,7 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Pay with MultiSafepay';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
-    public function getMedia(): string
-    {
-        return '';
+        return 'Pay with iDEAL';
     }
 
     /**
@@ -47,7 +36,7 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return MultiSafepayPaymentHandler::class;
+        return IdealPaymentHandler::class;
     }
 
     /**
@@ -57,7 +46,7 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return '';
+        return 'IDEAL';
     }
 
     /**
@@ -67,7 +56,17 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getTemplate(): ?string
     {
-        return null;
+        return '@MltisafeMultiSafepay/multisafepay/ideal/issuers.html.twig';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
+    public function getMedia(): string
+    {
+        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/ideal.png';
     }
 
     /**
@@ -80,7 +79,7 @@ class MultiSafepay implements PaymentMethodInterface
         return [
             'de-DE' => [
                 'name'        => $this->getName(),
-                'description' => 'Bezahlen mit MultiSafepay',
+                'description' => 'Bezahlen mit iDEAL',
             ],
             'en-GB' => [
                 'name'        => $this->getName(),
@@ -96,6 +95,6 @@ class MultiSafepay implements PaymentMethodInterface
      */
     public function getType(): string
     {
-        return 'redirect';
+        return 'direct';
     }
 }

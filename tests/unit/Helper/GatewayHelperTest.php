@@ -6,31 +6,23 @@
 
 namespace MultiSafepay\Shopware6\Tests\Unit\Helper;
 
+use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use PHPUnit\Framework\TestCase;
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
 
 class GatewayHelperTest extends TestCase
 {
     /**
-     * @dataProvider gatewayNamesProvider
-     * @param string $gatewayCode
-     * @param string $expected
+     * @return void
      */
-    public function testGatewayConstantContainsConnect(string $gatewayCode, string $expected): void
+    public function testPaymentMethodsHavingCorrectInterface(): void
     {
-        $gateways = GatewayHelper::GATEWAYS;
-        $this->assertArrayHasKey($gatewayCode, $gateways);
-        $this->assertArrayHasKey('name', $gateways[$gatewayCode]);
-        $this->assertEquals($expected, $gateways[$gatewayCode]['name']);
-    }
-
-    /**
-     * @return array
-     */
-    public function gatewayNamesProvider(): array
-    {
-        return [
-            ['msp_connect', 'MultiSafepay'],
-        ];
+        foreach (GatewayHelper::GATEWAYS as $gateway) {
+            /** @var PaymentMethodInterface $paymentMethod */
+            $paymentMethod = new $gateway();
+            $this->assertInstanceOf(PaymentMethodInterface::class, $paymentMethod);
+            $this->assertArrayHasKey('en-GB', $paymentMethod->getTranslations());
+            $this->assertArrayHasKey('de-DE', $paymentMethod->getTranslations());
+        }
     }
 }

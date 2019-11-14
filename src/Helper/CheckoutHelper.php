@@ -155,18 +155,6 @@ class CheckoutHelper
     }
 
     /**
-     * @param CustomerEntity $customer
-     * @return array
-     */
-    public function getGatewayInfo(CustomerEntity $customer): array
-    {
-        return [
-            'phone' => $customer->getDefaultBillingAddress()->getPhoneNumber(),
-            'email' => $customer->getEmail()
-        ];
-    }
-
-    /**
      * @param OrderEntity $order
      * @return array
      */
