@@ -11,11 +11,9 @@ use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -28,8 +26,6 @@ use MultiSafepay\Shopware6\Helper\MspHelper;
 
 class MultiSafepay implements AsynchronousPaymentHandlerInterface
 {
-    /** @var OrderTransactionStateHandler */
-    protected $orderTransactionStateHandler;
     /** @var ApiHelper $apiHelper */
     public $apiHelper;
     /** @var CheckoutHelper $checkoutHelper */
@@ -39,18 +35,15 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
 
     /**
      * MultiSafepay constructor.
-     * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param ApiHelper $apiHelper
      * @param CheckoutHelper $checkoutHelper
      * @param MspHelper $mspHelper
      */
     public function __construct(
-        OrderTransactionStateHandler $orderTransactionStateHandler,
         ApiHelper $apiHelper,
         CheckoutHelper $checkoutHelper,
         MspHelper $mspHelper
     ) {
-        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->apiHelper = $apiHelper;
         $this->checkoutHelper = $checkoutHelper;
         $this->mspHelper = $mspHelper;
@@ -84,7 +77,9 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
             'gateway_info' => $this->checkoutHelper->getGatewayInfo($customer),
             'payment_options' => $this->checkoutHelper->getPaymentOptions($transaction),
             'customer' => $this->checkoutHelper->getCustomerData($request, $customer),
-            'delivery' => $this->checkoutHelper->getDeliveryData($customer)
+            'delivery' => $this->checkoutHelper->getDeliveryData($customer),
+            'shopping_cart' => $this->checkoutHelper->getShoppingCart($order),
+            'checkout_options' => $this->checkoutHelper->getCheckoutOptions($order)
         ];
 
         try {
@@ -139,34 +134,10 @@ class MultiSafepay implements AsynchronousPaymentHandlerInterface
         $context = $salesChannelContext->getContext();
 
         try {
-            $this->transitionPaymentState($details->status, $orderTransactionId, $context);
-        } catch (InconsistentCriteriaIdsException | IllegalTransitionException | StateMachineNotFoundException |
-        StateMachineStateNotFoundException $exception) {
+            $this->checkoutHelper->transitionPaymentState($details->status, $orderTransactionId, $context);
+        } catch (InconsistentCriteriaIdsException | IllegalTransitionException | StateMachineNotFoundException
+        | StateMachineStateNotFoundException $exception) {
             throw new AsyncPaymentFinalizeException($orderTransactionId, $exception->getMessage());
-        }
-    }
-
-    /**
-     * @param string $status
-     * @param string $orderTransactionId
-     * @param Context $context
-     * @throws IllegalTransitionException
-     * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineNotFoundException
-     * @throws StateMachineStateNotFoundException
-     */
-    public function transitionPaymentState(string $status, string $orderTransactionId, Context $context): void
-    {
-        switch ($status) {
-            case 'completed':
-                $this->orderTransactionStateHandler->pay($orderTransactionId, $context);
-                break;
-            case 'declined':
-            case 'cancelled':
-            case 'void':
-            case 'expired':
-                $this->orderTransactionStateHandler->cancel($orderTransactionId, $context);
-                break;
         }
     }
 }

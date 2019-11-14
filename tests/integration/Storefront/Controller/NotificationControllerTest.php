@@ -6,37 +6,334 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\StoreFront\Controller;
 
+use MultiSafepay\Shopware6\API\MspClient;
+use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
+use MultiSafepay\Shopware6\Helper\ApiHelper;
+use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use MultiSafepay\Shopware6\Helper\MspHelper;
 use MultiSafepay\Shopware6\Storefront\Controller\NotificationController;
+use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
+use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
+use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Symfony\Component\HttpFoundation\Response;
+use stdClass;
+use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\Request;
 
 class NotificationControllerTest extends TestCase
 {
-    /**
-     * @var NotificationController
-     */
-    protected $notificationController;
+    use IntegrationTestBehaviour, Orders, Transactions, Customers, PaymentMethods {
+        IntegrationTestBehaviour::getContainer insteadof Transactions;
+        IntegrationTestBehaviour::getContainer insteadof Customers;
+        IntegrationTestBehaviour::getContainer insteadof PaymentMethods;
+        IntegrationTestBehaviour::getContainer insteadof Orders;
+
+        IntegrationTestBehaviour::getKernel insteadof Transactions;
+        IntegrationTestBehaviour::getKernel insteadof Customers;
+        IntegrationTestBehaviour::getKernel insteadof PaymentMethods;
+        IntegrationTestBehaviour::getKernel insteadof Orders;
+    }
+
+    public const ORDER_NUMBER = '12345';
 
     /**
-     * {@inheritdoc}
+     * @var Context
+     */
+    protected $context;
+
+    /**
+     * {@inheritDoc}
      */
     protected function setUp(): void
     {
         parent::setUp();
-        $this->notificationController = new NotificationController();
+        $this->context = Context::createDefaultContext();
     }
 
-    use IntegrationTestBehaviour;
 
     /**
-     * Test the Result of the notification url
+     * @param string $orderId
+     * @param string $status
+     * @return MockObject
+     * @throws InconsistentCriteriaIdsException
      */
-    public function testNotificationStringOkDefaultFlow(): void
+    public function generateNotificationMock(string $orderId, string $status = 'completed'): MockObject
     {
-        $result = $this->notificationController->notification();
+        $orderRepository = $this->getContainer()->get('order.repository');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $apiHelper = $this->getMockBuilder(ApiHelper::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $this->assertInstanceOf(Response::class, $result);
+        $mockResponse = new stdClass();
+        $mockResponse->status = $status;
+
+        $mspClient = $this->getMockBuilder(MspClient::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mspOrder = $this->getMockBuilder(MspOrders::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mspOrder->expects($this->once())
+            ->method('get')
+            ->with($this->equalTo('orders'), $this->equalTo(self::ORDER_NUMBER))
+            ->willReturn($mockResponse);
+
+        $mspOrder->success = true;
+
+        $mspClient->orders = $mspOrder;
+
+        $apiHelper->expects($this->once())
+            ->method('initializeMultiSafepayClient')
+            ->willReturn($mspClient);
+
+        $mspHelper = $this->getMockBuilder(MspHelper::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $request = $this->getMockBuilder(Request::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $parameterBagMock = $this->getMockBuilder(ParameterBag::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $parameterBagMock->expects($this->once())
+            ->method('get')
+            ->with($this->equalTo('transactionid'))
+            ->willReturn(self::ORDER_NUMBER);
+
+        $request->query = $parameterBagMock;
+
+        $mspHelper->expects($this->once())
+            ->method('getGlobals')
+            ->willReturn($request);
+
+
+        $notificationController = $this->getMockBuilder(NotificationController::class)
+            ->setConstructorArgs([
+                $orderRepository,
+                $checkoutHelper,
+                $apiHelper,
+                $mspHelper
+            ])
+            ->setMethodsExcept(['notification'])
+            ->getMock();
+
+        $notificationController->expects($this->once())
+            ->method('getOrderFromNumber')
+            ->with($this->equalTo(self::ORDER_NUMBER))
+            ->willReturn($this->getOrder($orderId, $this->context));
+
+        return $notificationController;
+    }
+
+    /**
+     * Test the flow from Open -> Completed
+     */
+    public function testNotificationFromOpenToCompleted(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId);
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
         $this->assertEquals('OK', $result->getContent());
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Paid', $afterTransactionDetails->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test the flow from Open -> Completed -> Refunded
+     */
+    public function testNotificationFromOpenToCompletedToRefunded(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId);
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
+        $this->assertEquals('OK', $result->getContent());
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Paid', $afterTransactionDetails->getStateMachineState()->getName());
+
+        $notificationController = $this->generateNotificationMock($orderId, 'refunded');
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+        $notificationController->notification();
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Refunded', $afterTransactionDetails->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test the flow from Open -> Completed -> Partially refunded
+     */
+    public function testNotificationFromOpenToCompletedToPartiallyRefunded(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId);
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
+        $this->assertEquals('OK', $result->getContent());
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Paid', $afterTransactionDetails->getStateMachineState()->getName());
+
+        $notificationController = $this->generateNotificationMock($orderId, 'partial_refunded');
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+        $notificationController->notification();
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Refunded (partially)', $afterTransactionDetails->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test the flow from Open -> Cancelled -> Reopen
+     */
+    public function testNotificationFromOpenToCancelToReopen(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId, 'expired');
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
+        $this->assertEquals('OK', $result->getContent());
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Cancelled', $afterTransactionDetails->getStateMachineState()->getName());
+
+        $notificationController = $this->generateNotificationMock($orderId, 'initialized');
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+        $notificationController->notification();
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Open', $afterTransactionDetails->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test the flow from Open -> Cancelled -> Completed
+     */
+    public function testNotificationFromOpenToExpiredToCompleted(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId, 'expired');
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
+        $this->assertEquals('OK', $result->getContent());
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Cancelled', $afterTransactionDetails->getStateMachineState()->getName());
+
+        $notificationController = $this->generateNotificationMock($orderId);
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+        $notificationController->notification();
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Paid', $afterTransactionDetails->getStateMachineState()->getName());
+    }
+
+    /**
+     * Test the flow from Open -> Uncleared -> Completed
+     */
+    public function testNotificationFromOpenToCompletedWithUnclearedStatus(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $paymentMethodId = $this->createPaymentMethod($this->context);
+        $orderId = $this->createOrder($customerId, $this->context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+
+        /** @var NotificationController $notificationController */
+        $notificationController = $this->generateNotificationMock($orderId, 'uncleared');
+
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+
+        $result = $notificationController->notification();
+
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+
+        $this->assertEquals('OK', $result->getContent());
+        $this->assertEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Open', $afterTransactionDetails->getStateMachineState()->getName());
+
+        $notificationController = $this->generateNotificationMock($orderId);
+        $preTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $preTransactionDetailsStateId = $preTransactionDetails->getStateId();
+        $notificationController->notification();
+        $afterTransactionDetails = $this->getTransaction($transactionId, $this->context);
+        $afterTransactionDetailsStateId = $afterTransactionDetails->getStateId();
+        $this->assertNotEquals($preTransactionDetailsStateId, $afterTransactionDetailsStateId);
+        $this->assertEquals('Paid', $afterTransactionDetails->getStateMachineState()->getName());
     }
 }

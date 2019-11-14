@@ -1,0 +1,104 @@
+name: Default check
+on: [push]
+jobs:
+  integration_tests:
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: shopware
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['7.2', '7.3']
+        shopware_version: ['master']
+    name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
+    steps:
+      - name: Install php
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: ${{ matrix.php-version }}
+          extension-csv: intl
+      - name: Checkout code
+        uses: actions/checkout@v1
+        with:
+          path: MultiSafepay
+      - name: Checkout Shopware 6 code
+        uses: actions/checkout@v1
+        with:
+          repository: shopware/development
+          ref: ${{ matrix.shopware_version }}
+      - name: Move plugin to Shopware plugins folder
+        run: |
+          cd ..
+          mkdir -p development/custom/plugins/MltisafeMultiSafepay
+          mv MultiSafepay/* development/custom/plugins/MltisafeMultiSafepay
+      - name: Install Shopware
+        working-directory:
+        run: |
+          cd ../development
+          ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
+      - name: Install Multisafepay Plugin
+        run: |
+          cd ../development
+          php bin/console plugin:install -c --activate MltisafeMultiSafepay
+      - name: prepare unit test database
+        run: |
+          cd ../development
+          ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
+      - name: Run integration test for MultiSafepay
+        run: |
+          cd ../development
+          cd custom/plugins/MltisafeMultiSafepay
+          composer dump-autoload
+          ../../../vendor/bin/phpunit --testsuite="MultiSafepay Integration tests"
+  phpcs:
+    runs-on: ubuntu-latest
+    name: Code sniffer
+    steps:
+      - name: Install php dependencies
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: '7.3'
+          extension-csv: intl
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Install dependencies
+        run: composer install
+      - name: Run Code sniffer
+        run: vendor/bin/phpcs --ignore=*/vendor/*,*/tests/Bootstrap.php -v --standard=phpcs.ruleset.xml .
+  phpmd:
+    runs-on: ubuntu-latest
+    name: Mess Detector
+    steps:
+      - name: Install php dependencies
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: '7.3'
+          extension-csv: intl
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Install dependencies
+        run: composer install
+      - name: Run Mess Detector
+        run: vendor/bin/phpmd src text codesize,unusedcode,cleancode --exclude src/API
+  phpunit:
+    runs-on: ubuntu-latest
+    name: Php unit test
+    steps:
+      - name: Install php dependencies
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: '7.3'
+          extension-csv: intl
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Install dependencies
+        run: composer install
+      - name: Run Php Unit
+        run: vendor/bin/phpunit --testsuite="MultiSafepay Unit tests" --bootstrap="vendor/autoload.php"
