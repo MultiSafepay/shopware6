@@ -4,10 +4,12 @@
 
     <card>
         <title>Configuration</title>
+        <title lang="de-DE">Konfiguration</title>
 
         <input-field type="single-select">
             <name>environment</name>
             <label>Test or Live:</label>
+            <label lang="de-DE">Test oder Live</label>
             <options>
                 <option>
                     <id>test</id>
@@ -23,6 +25,7 @@
         <input-field>
             <name>apiKey</name>
             <label>Api Key:</label>
+            <label lang="de-DE">Api Schlüssel</label>
         </input-field>
 
     </card>
