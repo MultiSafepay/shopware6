@@ -8,11 +8,13 @@ namespace MultiSafepay\Shopware6\Helper;
 
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\Afterpay;
 
 class GatewayHelper
 {
     public const GATEWAYS = [
         MultiSafepay::class,
         Ideal::class,
+        Afterpay::class,
     ];
 }
