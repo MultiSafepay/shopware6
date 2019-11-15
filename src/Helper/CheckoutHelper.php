@@ -96,8 +96,8 @@ class CheckoutHelper
         return [
             'locale' => $this->getTranslatedLocale($request->getLocale()),
             'ip_address' => $request->getClientIp(),
-            'first_name' => $customer->getFirstName(),
-            'last_name' => $customer->getLastName(),
+            'first_name' => $customer->getDefaultBillingAddress()->getFirstName(),
+            'last_name' => $customer->getDefaultBillingAddress()->getLastName(),
             'address1' => $billingStreet,
             'house_number' => $billingHouseNumber,
             'zip_code' => $customer->getDefaultBillingAddress()->getZipcode(),
@@ -123,8 +123,8 @@ class CheckoutHelper
         ] = $this->parseAddress($customer->getDefaultShippingAddress()->getStreet());
 
         return [
-            'first_name' => $customer->getFirstName(),
-            'last_name' => $customer->getLastName(),
+            'first_name' => $customer->getDefaultShippingAddress()->getFirstName(),
+            'last_name' => $customer->getDefaultShippingAddress()->getLastName(),
             'address1' => $shippingStreet,
             'house_number' => $shippingHouseNumber,
             'zip_code' => $customer->getDefaultShippingAddress()->getZipcode(),
