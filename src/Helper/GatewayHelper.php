@@ -11,6 +11,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\Visa;
 
 class GatewayHelper
 {
@@ -20,5 +21,6 @@ class GatewayHelper
         Ideal::class,
         Mastercard::class,
         MultiSafepay::class,
+        Visa::class,
     ];
 }
