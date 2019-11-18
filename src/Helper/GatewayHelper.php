@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Helper;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
+use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
@@ -27,6 +28,7 @@ class GatewayHelper
         AfterPay::class,
         AmericanExpress::class,
         Bancontact::class,
+        Belfius::class,
         DirectDebit::class,
         Eps::class,
         Giropay::class,
