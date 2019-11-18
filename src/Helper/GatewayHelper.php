@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
+use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
@@ -30,6 +31,7 @@ class GatewayHelper
         Giropay::class,
         Ideal::class,
         IngHomePay::class,
+        Maestro::class,
         Mastercard::class,
         MultiSafepay::class,
         SofortBanking::class,
