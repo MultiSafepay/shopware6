@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
+use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Content\Media\File\FileSaver;
 use Shopware\Core\Content\Media\File\MediaFile;
@@ -106,7 +107,7 @@ class MediaInstaller implements InstallerInterface
 
         $this->fileSaver->persistFileToMedia(
             $mediaFile,
-            'msp_' . $paymentMethod->getName(),
+            $this->getMediaName($paymentMethod),
             $mediaId,
             $context
         );
@@ -137,7 +138,7 @@ class MediaInstaller implements InstallerInterface
         $criteria = (new Criteria())->addFilter(
             new EqualsFilter(
                 'fileName',
-                'msp_' . $paymentMethod->getName()
+                $this->getMediaName($paymentMethod)
             )
         );
 
@@ -145,5 +146,18 @@ class MediaInstaller implements InstallerInterface
         $media = $this->mediaRepository->search($criteria, $context)->first();
 
         return $media ? true : false;
+    }
+
+    /**
+     * @param PaymentMethodInterface $paymentMethod
+     * @return string
+     */
+    private function getMediaName(PaymentMethodInterface $paymentMethod): string
+    {
+        if ($paymentMethod->getName() === (new IngHomePay())->getName()) {
+            return 'msp_ING-HomePay';
+        }
+
+        return 'msp_' . $paymentMethod->getName();
     }
 }

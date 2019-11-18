@@ -7,6 +7,7 @@ namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Content\Media\MediaEntity;
@@ -176,7 +177,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $criteria = (new Criteria())->addFilter(
             new EqualsFilter(
                 'fileName',
-                'msp_' . $paymentMethod->getName()
+                $this->getMediaName($paymentMethod)
             )
         );
 
@@ -218,5 +219,18 @@ class PaymentMethodsInstaller implements InstallerInterface
         ];
 
         $this->paymentMethodRepository->upsert([$paymentData], $context);
+    }
+
+    /**
+     * @param PaymentMethodInterface $paymentMethod
+     * @return string
+     */
+    private function getMediaName(PaymentMethodInterface $paymentMethod): string
+    {
+        if ($paymentMethod->getName() === (new IngHomePay())->getName()) {
+            return 'msp_ING-HomePay';
+        }
+
+        return 'msp_' . $paymentMethod->getName();
     }
 }
