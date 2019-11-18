@@ -10,6 +10,7 @@ use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
+use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
@@ -23,6 +24,7 @@ class GatewayHelper
         AmericanExpress::class,
         Bancontact::class,
         DirectDebit::class,
+        Giropay::class,
         Ideal::class,
         Mastercard::class,
         MultiSafepay::class,
