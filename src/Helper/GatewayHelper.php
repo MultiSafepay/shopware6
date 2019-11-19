@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
+use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
@@ -39,6 +40,7 @@ class GatewayHelper
         Betaalplan::class,
         DirectDebit::class,
         Dotpay::class,
+        Einvoice::class,
         Eps::class,
         Giropay::class,
         Ideal::class,
