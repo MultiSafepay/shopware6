@@ -25,6 +25,7 @@ use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
+use MultiSafepay\Shopware6\PaymentMethods\Trustly;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
 
 class GatewayHelper
@@ -49,6 +50,7 @@ class GatewayHelper
         PayPal::class,
         Paysafecard::class,
         SofortBanking::class,
+        Trustly::class,
         Visa::class,
     ];
 }
