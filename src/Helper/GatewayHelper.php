@@ -23,6 +23,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
+use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
 
@@ -46,6 +47,7 @@ class GatewayHelper
         Mastercard::class,
         MultiSafepay::class,
         PayPal::class,
+        Paysafecard::class,
         SofortBanking::class,
         Visa::class,
     ];
