@@ -11,6 +11,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\Belfius;
+use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
@@ -33,6 +34,7 @@ class GatewayHelper
         AmericanExpress::class,
         Bancontact::class,
         Belfius::class,
+        Betaalplan::class,
         DirectDebit::class,
         Dotpay::class,
         Eps::class,
