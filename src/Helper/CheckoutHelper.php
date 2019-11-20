@@ -437,4 +437,19 @@ class CheckoutHelper
         $string = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
         return lcfirst($string);
     }
+
+    /**
+     * @param CustomerEntity $customer
+     * @return string|null
+     */
+    public function getGenderFromSalutation(CustomerEntity $customer): ?string
+    {
+        switch ($customer->getSalutation()->getSalutationKey()) {
+            case 'mr':
+                return 'male';
+            case 'mrs':
+                return 'female';
+        }
+        return null;
+    }
 }

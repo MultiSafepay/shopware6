@@ -20,6 +20,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\Kbc;
+use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
@@ -47,6 +48,7 @@ class GatewayHelper
         Ideal::class,
         IngHomePay::class,
         Kbc::class,
+        Klarna::class,
         Maestro::class,
         Mastercard::class,
         MultiSafepay::class,

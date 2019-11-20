@@ -75,6 +75,7 @@ trait Customers
         $criteria->addAssociation('defaultShippingAddress');
         $criteria->addAssociation('defaultBillingAddress.country');
         $criteria->addAssociation('defaultShippingAddress.country');
+        $criteria->addAssociation('salutation');
         /** @var CustomerEntity $customer */
         $customer = $customerRepository->search($criteria, $context)->get($customerId);
         return $customer;

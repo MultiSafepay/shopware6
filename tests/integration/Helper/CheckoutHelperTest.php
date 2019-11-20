@@ -400,4 +400,67 @@ class CheckoutHelperTest extends TestCase
             $paidTransaction->getStateMachineState()->getName()
         );
     }
+
+    /**
+     * Assert whether or not the returned value for Male is 'mr'
+     */
+    public function testGetGenderFromSalutationReturnsMaleWhenProvidedSalutationKeyIsMr(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $customer = $this->getCustomer($customerId, $this->context);
+        $customer->getSalutation()->setSalutationKey('mr');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $result = $checkoutHelper->getGenderFromSalutation($customer);
+        $this->assertEquals('male', $result);
+    }
+    /**
+     * Assert whether or not the returned value for Female is 'mrs'
+     */
+    public function testGetGenderFromSalutationReturnsFemaleWhenProvidedSalutationKeyIsMrs(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $customer = $this->getCustomer($customerId, $this->context);
+        $customer->getSalutation()->setSalutationKey('mrs');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $result = $checkoutHelper->getGenderFromSalutation($customer);
+        $this->assertEquals('female', $result);
+    }
+    /**
+     * Assert whether or not the returned value for '' is null
+     */
+    public function testGetGenderFromSalutationReturnsNullWhenProvidedSalutationKeyIsNull(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $customer = $this->getCustomer($customerId, $this->context);
+        $customer->getSalutation()->setSalutationKey('');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $result = $checkoutHelper->getGenderFromSalutation($customer);
+        $this->assertNull($result);
+    }
+
+    /**
+     * Assert whether or not the returned value for '2' is null
+     */
+    public function testGetGenderFromSalutationReturnsNullWhenProvidedSalutationKeyIsStringTwo(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $customer = $this->getCustomer($customerId, $this->context);
+        $customer->getSalutation()->setSalutationKey('2');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $result = $checkoutHelper->getGenderFromSalutation($customer);
+        $this->assertNull($result);
+    }
+
+    /**
+     * Assert whether or not the returned value for 'others' is null
+     */
+    public function testGetGenderFromSalutationReturnsNullWhenProvidedSalutationKeyIsStringOthers(): void
+    {
+        $customerId = $this->createCustomer($this->context);
+        $customer = $this->getCustomer($customerId, $this->context);
+        $customer->getSalutation()->setSalutationKey('others');
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $result = $checkoutHelper->getGenderFromSalutation($customer);
+        $this->assertNull($result);
+    }
 }
