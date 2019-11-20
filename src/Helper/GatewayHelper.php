@@ -16,6 +16,7 @@ use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
 use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
+use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
@@ -45,6 +46,7 @@ class GatewayHelper
         Dotpay::class,
         Einvoice::class,
         Eps::class,
+        Fashioncheque::class,
         Giropay::class,
         Ideal::class,
         IngHomePay::class,

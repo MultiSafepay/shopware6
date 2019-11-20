@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+
+        <!-- Gift cards -->
+
+        <service id="MultiSafepay\Shopware6\Handlers\FashionchequePaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <!-- /Gift cards -->
+
+    </services>
+</container>
