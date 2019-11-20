@@ -24,6 +24,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\PayAfterDelivery;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
@@ -52,6 +53,7 @@ class GatewayHelper
         Maestro::class,
         Mastercard::class,
         MultiSafepay::class,
+        PayAfterDelivery::class,
         PayPal::class,
         Paysafecard::class,
         SofortBanking::class,
