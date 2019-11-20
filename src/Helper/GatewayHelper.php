@@ -19,6 +19,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
+use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\Kbc;
@@ -50,6 +51,7 @@ class GatewayHelper
         Eps::class,
         Fashioncheque::class,
         Giropay::class,
+        GivaCard::class,
         Ideal::class,
         IngHomePay::class,
         Kbc::class,
