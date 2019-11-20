@@ -10,6 +10,7 @@ use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
+use MultiSafepay\Shopware6\PaymentMethods\Banktransfer;
 use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
@@ -40,6 +41,7 @@ class GatewayHelper
         Alipay::class,
         AmericanExpress::class,
         Bancontact::class,
+        Banktransfer::class,
         Belfius::class,
         Betaalplan::class,
         DirectDebit::class,
