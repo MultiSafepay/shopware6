@@ -34,6 +34,7 @@ use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
 use MultiSafepay\Shopware6\PaymentMethods\Trustly;
 use MultiSafepay\Shopware6\PaymentMethods\TrustPay;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
+use MultiSafepay\Shopware6\PaymentMethods\VvvCadeaukaart;
 
 class GatewayHelper
 {
@@ -66,5 +67,6 @@ class GatewayHelper
         Trustly::class,
         TrustPay::class,
         Visa::class,
+        VvvCadeaukaart::class,
     ];
 }
