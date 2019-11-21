@@ -35,6 +35,7 @@ use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PayAfterDelivery;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
+use MultiSafepay\Shopware6\PaymentMethods\PodiumCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
 use MultiSafepay\Shopware6\PaymentMethods\Trustly;
 use MultiSafepay\Shopware6\PaymentMethods\TrustPay;
@@ -78,6 +79,7 @@ class GatewayHelper
         PayAfterDelivery::class,
         PayPal::class,
         Paysafecard::class,
+        PodiumCadeaukaart::class,
         SofortBanking::class,
         Trustly::class,
         TrustPay::class,
