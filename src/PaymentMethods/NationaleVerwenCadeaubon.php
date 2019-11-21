@@ -5,7 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
-use MultiSafepay\Shopware6\Handlers\NationaleTuinbonPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\NationaleVerwenCadeaubonPaymentHandler;
 
 class NationaleVerwenCadeaubon implements PaymentMethodInterface
 {
