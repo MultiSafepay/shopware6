@@ -37,6 +37,7 @@ use MultiSafepay\Shopware6\PaymentMethods\TrustPay;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
 use MultiSafepay\Shopware6\PaymentMethods\VvvCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\WebshopGiftcard;
+use MultiSafepay\Shopware6\PaymentMethods\WellnessGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 
 class GatewayHelper
@@ -73,6 +74,7 @@ class GatewayHelper
         Visa::class,
         VvvCadeaukaart::class,
         WebshopGiftcard::class,
+        WellnessGiftcard::class,
         YourGift::class,
     ];
 }
