@@ -25,6 +25,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Fietsenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Gezondheidsbon;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
+use MultiSafepay\Shopware6\PaymentMethods\Goodcard;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\Kbc;
@@ -69,6 +70,7 @@ class GatewayHelper
         Gezondheidsbon::class,
         Giropay::class,
         GivaCard::class,
+        Goodcard::class,
         Ideal::class,
         IngHomePay::class,
         Kbc::class,
