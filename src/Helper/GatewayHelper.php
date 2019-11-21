@@ -40,6 +40,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Visa;
 use MultiSafepay\Shopware6\PaymentMethods\VvvCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\WebshopGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\WellnessGiftcard;
+use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 
@@ -80,6 +81,7 @@ class GatewayHelper
         VvvCadeaukaart::class,
         WebshopGiftcard::class,
         WellnessGiftcard::class,
+        WijnCadeau::class,
         WinkelCheque::class,
         YourGift::class,
     ];

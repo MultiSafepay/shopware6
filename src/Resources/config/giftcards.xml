@@ -56,6 +56,12 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\WijnCadeauPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\WinkelChequePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
