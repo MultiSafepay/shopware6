@@ -11,6 +11,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\Banktransfer;
+use MultiSafepay\Shopware6\PaymentMethods\BeautyAndWellness;
 use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\Boekenbon;
@@ -52,6 +53,7 @@ class GatewayHelper
         AmericanExpress::class,
         Bancontact::class,
         Banktransfer::class,
+        BeautyAndWellness::class,
         Belfius::class,
         Betaalplan::class,
         Boekenbon::class,
