@@ -33,6 +33,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\NationaleErotiekbon;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleTuinbon;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleVerwenCadeaubon;
 use MultiSafepay\Shopware6\PaymentMethods\ParfumCadeaukaart;
@@ -81,6 +82,7 @@ class GatewayHelper
         Maestro::class,
         Mastercard::class,
         MultiSafepay::class,
+        NationaleErotiekbon::class,
         NationaleTuinbon::class,
         NationaleVerwenCadeaubon::class,
         ParfumCadeaukaart::class,
