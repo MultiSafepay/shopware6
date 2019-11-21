@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\Banktransfer;
 use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
+use MultiSafepay\Shopware6\PaymentMethods\Boekenbon;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
 use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
@@ -48,6 +49,7 @@ class GatewayHelper
         Banktransfer::class,
         Belfius::class,
         Betaalplan::class,
+        Boekenbon::class,
         DirectDebit::class,
         Dotpay::class,
         Einvoice::class,

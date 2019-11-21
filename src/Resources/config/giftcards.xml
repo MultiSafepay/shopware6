@@ -8,6 +8,12 @@
 
         <!-- Gift cards -->
 
+        <service id="MultiSafepay\Shopware6\Handlers\BoekenbonPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\FashionchequePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
