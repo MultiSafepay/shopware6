@@ -19,6 +19,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
 use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
+use MultiSafepay\Shopware6\PaymentMethods\FashionGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
@@ -56,6 +57,7 @@ class GatewayHelper
         Einvoice::class,
         Eps::class,
         Fashioncheque::class,
+        FashionGiftcard::class,
         Giropay::class,
         GivaCard::class,
         Ideal::class,
