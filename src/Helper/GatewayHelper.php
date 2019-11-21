@@ -21,6 +21,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
 use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\FashionGiftcard;
+use MultiSafepay\Shopware6\PaymentMethods\Fietsenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Gezondheidsbon;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
@@ -63,6 +64,7 @@ class GatewayHelper
         Eps::class,
         Fashioncheque::class,
         FashionGiftcard::class,
+        Fietsenbon::class,
         Gezondheidsbon::class,
         Giropay::class,
         GivaCard::class,
