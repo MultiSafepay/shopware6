@@ -34,6 +34,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleTuinbon;
+use MultiSafepay\Shopware6\PaymentMethods\NationaleVerwenCadeaubon;
 use MultiSafepay\Shopware6\PaymentMethods\ParfumCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\PayAfterDelivery;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
@@ -81,6 +82,7 @@ class GatewayHelper
         Mastercard::class,
         MultiSafepay::class,
         NationaleTuinbon::class,
+        NationaleVerwenCadeaubon::class,
         ParfumCadeaukaart::class,
         PayAfterDelivery::class,
         PayPal::class,
