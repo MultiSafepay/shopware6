@@ -8,7 +8,6 @@ namespace MultiSafepay\Shopware6\Tests\Fixtures;
 
 use Shopware\Core\Checkout\Test\Payment\Handler\AsyncTestPaymentHandler;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 

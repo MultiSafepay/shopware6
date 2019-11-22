@@ -172,7 +172,7 @@ trait Orders
                     ]
                 ],
             ],
-            'deepLinkCode' => 'BwvdEInxOHBbwfRw6oHF1Q_orfYeo9RY',
+            'deepLinkCode' => Uuid::randomHex(),
             'billingAddressId' => $addressId,
             'addresses' => [
                 [
