@@ -1,5 +1,9 @@
 name: Default check
-on: [push]
+on:
+  schedule:
+  # Run script every sunday
+    - cron:  '* * * * 0'
+  push:
 jobs:
   integration_tests:
     services:
