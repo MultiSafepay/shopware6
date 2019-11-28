@@ -56,7 +56,7 @@ jobs:
           cd ../development
           cd custom/plugins/MltisafeMultiSafepay
           composer dump-autoload
-          ../../../vendor/bin/phpunit --testsuite="MultiSafepay Integration tests"
+          ../../../vendor/bin/phpunit
   phpcs:
     runs-on: ubuntu-latest
     name: Code sniffer
@@ -87,18 +87,3 @@ jobs:
         run: composer install
       - name: Run Mess Detector
         run: vendor/bin/phpmd src text codesize,unusedcode,cleancode --exclude src/API
-  phpunit:
-    runs-on: ubuntu-latest
-    name: Php unit test
-    steps:
-      - name: Install php dependencies
-        uses: shivammathur/setup-php@master
-        with:
-          php-version: '7.3'
-          extension-csv: intl
-      - name: Checkout code
-        uses: actions/checkout@v1
-      - name: Install dependencies
-        run: composer install
-      - name: Run Php Unit
-        run: vendor/bin/phpunit --testsuite="MultiSafepay Unit tests" --bootstrap="vendor/autoload.php"
