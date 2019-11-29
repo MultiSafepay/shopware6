@@ -55,12 +55,15 @@ jobs:
         run: |
           cd ../development
           ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
-      - name: Run integration test for MultiSafepay
+      - name: Run PHPUnit
         run: |
           cd ../development
           cd custom/plugins/MltisafeMultiSafepay
           composer dump-autoload
-          ../../../vendor/bin/phpunit
+          ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
+      - name: Send clover to codecov
+        working-directory: ../development/custom/plugins/MltisafeMultiSafepay
+        run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -R .
   phpcs:
     runs-on: ubuntu-latest
     name: Code sniffer
