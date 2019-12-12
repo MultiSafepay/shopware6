@@ -6,7 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Resources\snippet\de_DE;
 
-use Shopware\Core\Framework\Snippet\Files\SnippetFileInterface;
+use Shopware\Core\System\Snippet\Files\SnippetFileInterface;
 
 class GermanTranslations implements SnippetFileInterface
 {
