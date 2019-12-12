@@ -4,9 +4,11 @@
     "type": "shopware-platform-plugin",
     "version": "0.0.1",
     "license": "MIT",
+    "minimum-stability": "dev",
     "require": {
         "php": "^7.1",
-        "shopware/core": "^v6.0.0+ea2 || dev-master",
+        "shopware/core": "~6.1",
+        "shopware/storefront": "~6.1",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-pcre": "*",
