@@ -22,11 +22,11 @@
     </php>
 
     <testsuites>
-        <testsuite name="MultiSafepay Unit tests">
-            <directory>tests/unit</directory>
-        </testsuite>
         <testsuite name="MultiSafepay Integration tests">
             <directory>tests/integration</directory>
+        </testsuite>
+        <testsuite name="MultiSafepay Unit tests">
+            <directory>tests/unit</directory>
         </testsuite>
     </testsuites>
     <filter>
