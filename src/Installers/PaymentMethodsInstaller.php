@@ -22,7 +22,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Context\SystemSource;
 
 class PaymentMethodsInstaller implements InstallerInterface
 {
@@ -95,7 +94,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {
-        $paymentMethodId = $this->getPaymentMethodId($paymentMethod);
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethod, $context);
 
         $pluginId = $this->pluginIdProvider->getPluginIdByBaseClass(MltisafeMultiSafepay::class, $context);
 
@@ -120,10 +119,10 @@ class PaymentMethodsInstaller implements InstallerInterface
 
     /**
      * @param PaymentMethodInterface $paymentMethod
+     * @param Context $context
      * @return string|null
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
-    public function getPaymentMethodId(PaymentMethodInterface $paymentMethod): ?string
+    public function getPaymentMethodId(PaymentMethodInterface $paymentMethod, Context $context): ?string
     {
         $paymentCriteria = (new Criteria())->addFilter(
             new EqualsFilter(
@@ -134,7 +133,7 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $paymentIds = $this->paymentMethodRepository->searchIds(
             $paymentCriteria,
-            new Context(new SystemSource())
+            $context
         );
 
         if ($paymentIds->getTotal() === 0) {
@@ -152,7 +151,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     public function setPaymentMethodActive(bool $active, PaymentMethodInterface $paymentMethod, Context $context): void
     {
-        $paymentMethodId = $this->getPaymentMethodId($paymentMethod);
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethod, $context);
 
         if (!$paymentMethodId) {
             return;
@@ -206,7 +205,7 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $paymentIds = $this->paymentMethodRepository->searchIds(
             $paymentCriteria,
-            new Context(new SystemSource())
+            $context
         );
 
         if ($paymentIds->getTotal() === 0) {
