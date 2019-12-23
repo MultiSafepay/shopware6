@@ -56,7 +56,7 @@ class Ideal implements PaymentMethodInterface
      */
     public function getTemplate(): ?string
     {
-        return '@MltisafeMultiSafepay/multisafepay/ideal/issuers.html.twig';
+        return '@MltisafeMultiSafepay/storefront/multisafepay/ideal/issuers.html.twig';
     }
 
     /**
