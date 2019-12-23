@@ -20,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Plugin\PluginService;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
@@ -41,6 +42,15 @@ class CheckoutHelper
     /** @var EntityRepository $stateMachineRepository */
     private $stateMachineRepository;
 
+    /**
+     * @var string
+     */
+    private $shopwareVersion;
+
+    /**
+     * @var PluginService
+     */
+    private $pluginService;
 
     /**
      * CheckoutHelper constructor.
@@ -48,17 +58,23 @@ class CheckoutHelper
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param EntityRepository $transactionRepository
      * @param EntityRepository $stateMachineRepository
+     * @param string $shopwareVersion
+     * @param PluginService $pluginService
      */
     public function __construct(
         UrlGeneratorInterface $router,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         EntityRepository $transactionRepository,
-        EntityRepository $stateMachineRepository
+        EntityRepository $stateMachineRepository,
+        string $shopwareVersion,
+        PluginService $pluginService
     ) {
         $this->router = $router;
         $this->transactionRepository = $transactionRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepository = $stateMachineRepository;
+        $this->shopwareVersion = $shopwareVersion;
+        $this->pluginService = $pluginService;
     }
 
     /**
@@ -451,5 +467,20 @@ class CheckoutHelper
                 return 'female';
         }
         return null;
+    }
+
+    /**
+     * @param Context $context
+     * @return array
+     * @throws \Shopware\Core\Framework\Plugin\Exception\PluginNotFoundException
+     */
+    public function getPluginMetadata(Context $context): array
+    {
+        return [
+            'shop' => 'Shopware',
+            'shop_version' => $this->shopwareVersion,
+            'plugin_version' => $this->pluginService->getPluginByName('MltisafeMultiSafepay', $context)->getVersion(),
+            'partner' => 'MultiSafepay',
+        ];
     }
 }

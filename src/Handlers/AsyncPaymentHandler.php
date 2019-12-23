@@ -86,7 +86,8 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             'delivery' => $this->checkoutHelper->getDeliveryData($customer),
             'shopping_cart' => $this->checkoutHelper->getShoppingCart($order),
             'checkout_options' => $this->checkoutHelper->getCheckoutOptions($order),
-            'gateway_info' => $gatewayInfo
+            'gateway_info' => $gatewayInfo,
+            'plugin' => $this->checkoutHelper->getPluginMetadata($salesChannelContext->getContext())
         ];
 
         try {
