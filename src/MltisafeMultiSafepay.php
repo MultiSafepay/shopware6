@@ -25,10 +25,13 @@ class MltisafeMultiSafepay extends Plugin
      */
     public function build(ContainerBuilder $container): void
     {
+        parent::build($container);
+
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
         $loader->load('services.xml');
 
-        parent::build($container);
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection'));
+        $loader->load('events.xml');
     }
 
     /**
