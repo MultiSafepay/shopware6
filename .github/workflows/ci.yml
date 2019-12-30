@@ -78,18 +78,3 @@ jobs:
         run: composer install
       - name: Run Code sniffer
         run: vendor/bin/phpcs --ignore=*/vendor/*,*/tests/Bootstrap.php -v --standard=phpcs.ruleset.xml .
-  phpmd:
-    runs-on: ubuntu-latest
-    name: Mess Detector
-    steps:
-      - name: Install php dependencies
-        uses: shivammathur/setup-php@master
-        with:
-          php-version: '7.3'
-          extensions: intl
-      - name: Checkout code
-        uses: actions/checkout@v1
-      - name: Install dependencies
-        run: composer install
-      - name: Run Mess Detector
-        run: vendor/bin/phpmd src text codesize,unusedcode,cleancode --exclude src/API

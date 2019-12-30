@@ -81,7 +81,6 @@ class MediaInstaller implements InstallerInterface
      * @throws \Shopware\Core\Content\Media\Exception\EmptyMediaFilenameException
      * @throws \Shopware\Core\Content\Media\Exception\IllegalFileNameException
      * @throws \Shopware\Core\Content\Media\Exception\MediaNotFoundException
-     * @SuppressWarnings(PHPMD.StaticAccess)
      */
     private function addMedia(PaymentMethodInterface $paymentMethod, Context $context): void
     {
