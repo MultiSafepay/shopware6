@@ -1,0 +1,8 @@
+{% sw_extends '@Storefront/storefront/component/payment/payment-fields.html.twig' %}
+
+{% block component_payment_fieldset_template %}
+    {% if payment.translated.customFields.is_multisafepay and payment.translated.customFields.template %}
+        {% include payment.translated.customFields.template %}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

@@ -6,129 +6,79 @@
 
 namespace MultiSafepay\Shopware6;
 
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
-use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay as MultiSafepayPaymentMethod;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use MultiSafepay\Shopware6\Installers\MediaInstaller;
+use MultiSafepay\Shopware6\Installers\PaymentMethodsInstaller;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
-use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
-use Shopware\Core\Framework\Context\SystemSource;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
 class MltisafeMultiSafepay extends Plugin
 {
     /**
-     * @param InstallContext $context
-     * @throws InconsistentCriteriaIdsException
+     * @param ContainerBuilder $container
      */
-    public function install(InstallContext $context): void
+    public function build(ContainerBuilder $container): void
     {
-        $this->addPaymentMethod($context->getContext());
+        parent::build($container);
+
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
+        $loader->load('services.xml');
+
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection'));
+        $loader->load('events.xml');
     }
 
     /**
-     * Only set the payment method to inactive when uninstalling. Removing the payment method would
-     * cause data consistency issues, since the payment method might have been used in several orders
-     *
-     * @param UninstallContext $context
-     * @throws InconsistentCriteriaIdsException
+     * @param InstallContext $installContext
      */
-    public function uninstall(UninstallContext $context): void
+    public function install(InstallContext $installContext): void
     {
-        $this->setPaymentMethodIsActive(false, $context->getContext());
+        (new MediaInstaller($this->container))->install($installContext);
+        (new PaymentMethodsInstaller($this->container))->install($installContext);
+        parent::install($installContext);
     }
 
     /**
-     * @param ActivateContext $context
-     * @throws InconsistentCriteriaIdsException
+     * @param ActivateContext $activateContext
      */
-    public function activate(ActivateContext $context): void
+    public function activate(ActivateContext $activateContext): void
     {
-        $this->setPaymentMethodIsActive(true, $context->getContext());
-        parent::activate($context);
+        (new PaymentMethodsInstaller($this->container))->activate($activateContext);
+        parent::activate($activateContext);
     }
 
     /**
-     * @param DeactivateContext $context
-     * @throws InconsistentCriteriaIdsException
+     * @param DeactivateContext $deactivateContext
      */
-    public function deactivate(DeactivateContext $context): void
+    public function deactivate(DeactivateContext $deactivateContext): void
     {
-        $this->setPaymentMethodIsActive(false, $context->getContext());
-        parent::deactivate($context);
+        (new PaymentMethodsInstaller($this->container))->deactivate($deactivateContext);
+        parent::deactivate($deactivateContext);
     }
 
     /**
-     * @param Context $context
-     * @throws InconsistentCriteriaIdsException
+     * @param UninstallContext $uninstallContext
      */
-    private function addPaymentMethod(Context $context): void
+    public function uninstall(UninstallContext $uninstallContext): void
     {
-        $paymentMethodExists = $this->getPaymentMethodId();
-
-        if ($paymentMethodExists) {
-            return;
-        }
-
-        $pluginIdProvider = $this->container->get(PluginIdProvider::class);
-        $pluginId = $pluginIdProvider->getPluginIdByBaseClass($this->getClassName(), $context);
-
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
-            $paymentData = [
-                'handlerIdentifier' => $gateway['class'],
-                'name' => $gateway['name'],
-                'description' => $gateway['description'],
-                'pluginId' => $pluginId,
-            ];
-        }
-
-        $paymentRepository = $this->container->get('payment_method.repository');
-        $paymentRepository->create([$paymentData], $context);
+        (new MediaInstaller($this->container))->uninstall($uninstallContext);
+        (new PaymentMethodsInstaller($this->container))->uninstall($uninstallContext);
+        parent::uninstall($uninstallContext);
     }
 
     /**
-     * @param bool $active
-     * @param Context $context
-     * @throws InconsistentCriteriaIdsException
+     * @return array
      */
-    private function setPaymentMethodIsActive(bool $active, Context $context): void
+    public function getViewPaths(): array
     {
-        $paymentRepository = $this->container->get('payment_method.repository');
-        $paymentMethodId = $this->getPaymentMethodId();
-
-        if (!$paymentMethodId) {
-            return;
-        }
-        $paymentMethod = [
-            'id' => $paymentMethodId,
-            'active' => $active,
-        ];
-        $paymentRepository->update([$paymentMethod], $context);
-    }
-
-    /**
-     * @return string|null
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getPaymentMethodId(): ?string
-    {
-        $paymentRepository = $this->container->get('payment_method.repository');
-
-        $paymentCriteria = (new Criteria())->addFilter(
-            new EqualsFilter(
-                'handlerIdentifier',
-                MultiSafepayPaymentMethod::class
-            )
-        );
-        $paymentIds = $paymentRepository->searchIds($paymentCriteria, new Context(new SystemSource()));
-        if ($paymentIds->getTotal() === 0) {
-            return null;
-        }
-        return $paymentIds->getIds()[0];
+        $viewPaths = parent::getViewPaths();
+        $viewPaths[] = 'Resources/views/storefront';
+        return $viewPaths;
     }
 }

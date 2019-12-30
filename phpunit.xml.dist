@@ -3,9 +3,16 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/7.1/phpunit.xsd"
          bootstrap="./tests/Bootstrap.php"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnError="false"
+         stopOnFailure="false"
+         stopOnRisky="false"
          cacheResult="false">
     <php>
-        <ini name="error_reporting" value="-1"/>
+        <ini name="error_reporting" value="E_ALL"/>
         <server name="KERNEL_CLASS" value="Shopware\Development\Kernel"/>
         <env name="APP_ENV" value="test"/>
         <env name="APP_DEBUG" value="1"/>
@@ -15,17 +22,20 @@
     </php>
 
     <testsuites>
-        <testsuite name="MultiSafepay Unit tests">
-            <directory>tests/unit</directory>
-        </testsuite>
         <testsuite name="MultiSafepay Integration tests">
             <directory>tests/integration</directory>
         </testsuite>
+        <testsuite name="MultiSafepay Unit tests">
+            <directory>tests/unit</directory>
+        </testsuite>
     </testsuites>
-
     <filter>
-        <whitelist>
-            <directory suffix=".php">./</directory>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./src</directory>
+            <exclude>
+                <directory>./tests</directory>
+                <directory>./vendor</directory>
+            </exclude>
         </whitelist>
     </filter>
 </phpunit>

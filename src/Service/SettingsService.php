@@ -30,6 +30,6 @@ class SettingsService
      */
     public function getSetting(string $setting)
     {
-        return $this->systemConfigService->get('MultiSafepay.config.' . $setting);
+        return $this->systemConfigService->get('MltisafeMultiSafepay.config.' . $setting);
     }
 }
