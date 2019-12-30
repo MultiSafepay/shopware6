@@ -42,7 +42,6 @@ class NotificationController extends StorefrontController
      * @param CheckoutHelper $checkoutHelper
      * @param ApiHelper $apiHelper
      * @param MspHelper $mspHelper
-     * @SuppressWarnings(PHPMD.StaticAccess)
      */
     public function __construct(
         EntityRepositoryInterface $orderRepository,

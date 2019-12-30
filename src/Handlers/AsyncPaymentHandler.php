@@ -58,7 +58,6 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @param array $gatewayInfo
      * @return RedirectResponse
      * @throws AsyncPaymentProcessException
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
