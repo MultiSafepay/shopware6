@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         php-version: ['7.2', '7.3']
-        shopware_version: ['v6.1.0-rc3']
+        shopware_version: ['v6.1.0']
     name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
     steps:
       - name: Install php
