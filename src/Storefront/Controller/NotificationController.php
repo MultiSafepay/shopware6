@@ -79,7 +79,7 @@ class NotificationController extends StorefrontController
         $transactionId = $order->getTransactions()->first()->getId();
 
         /** @var MspClient $mspClient */
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient();
+        $mspClient = $this->apiHelper->initializeMultiSafepayClient($order->getSalesChannelId());
 
         try {
             $result = $mspClient->orders->get('orders', $orderNumber);

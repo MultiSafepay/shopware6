@@ -74,7 +74,8 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
         $orderDelivery = $this->getOrderDeliveryData($event);
         $trackAndTraceCode = $orderDelivery->getTrackingCodes();
 
-        $client = $this->apiHelper->initializeMultiSafepayClient();
+        $salesChannelId = $order->getSalesChannelId();
+        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelId);
         $client->orders->patch(
             [
             'tracktrace_code' => reset($trackAndTraceCode),

@@ -67,7 +67,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient();
+        $mspClient = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
 
         $order = $transaction->getOrder();
         $customer = $salesChannelContext->getCustomer();
@@ -135,7 +135,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             throw new CustomerCanceledAsyncPaymentException($orderTransactionId, 'Canceled at payment page');
         }
 
-        $client = $this->apiHelper->initializeMultiSafepayClient();
+        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
 
         $details = $client->orders->get('orders', $transactionId);
         $context = $salesChannelContext->getContext();

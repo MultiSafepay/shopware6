@@ -55,7 +55,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     {
         $request = $this->mspHelper->getGlobals();
 
-        $customer = $event->getSalesChannelContext()->getCustomer();
+        $salesChannelContext = $event->getSalesChannelContext();
+        $customer = $salesChannelContext->getCustomer();
 
         $issuer = $request->get('issuer');
         if ($issuer) {
@@ -69,7 +70,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             $customer = $this->getCustomer($customer->getId(), $event->getContext());
         }
 
-        $client = $this->apiHelper->initializeMultiSafepayClient();
+        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
         $struct = new MultiSafepayStruct();
 
         $issuers = $client->issuers->get();
