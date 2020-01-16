@@ -1,3 +1,11 @@
+## 1.1.1
+Release date: Jan 16th, 2020
+
+### Fixed
++ PLGSHPS6-130: Fix support for different sales channels
+
+***
+
 ## 1.1.0
 Release date: Dec 27th, 2019
 
