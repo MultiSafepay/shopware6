@@ -42,7 +42,6 @@ class NotificationController extends StorefrontController
      * @param CheckoutHelper $checkoutHelper
      * @param ApiHelper $apiHelper
      * @param MspHelper $mspHelper
-     * @SuppressWarnings(PHPMD.StaticAccess)
      */
     public function __construct(
         EntityRepositoryInterface $orderRepository,
@@ -80,7 +79,7 @@ class NotificationController extends StorefrontController
         $transactionId = $order->getTransactions()->first()->getId();
 
         /** @var MspClient $mspClient */
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient();
+        $mspClient = $this->apiHelper->initializeMultiSafepayClient($order->getSalesChannelId());
 
         try {
             $result = $mspClient->orders->get('orders', $orderNumber);

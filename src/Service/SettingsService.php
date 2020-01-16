@@ -26,10 +26,11 @@ class SettingsService
 
     /**
      * @param string $setting
+     * @param string|null $salesChannelId
      * @return mixed|null
      */
-    public function getSetting(string $setting)
+    public function getSetting(string $setting, ?string $salesChannelId = null)
     {
-        return $this->systemConfigService->get('MltisafeMultiSafepay.config.' . $setting);
+        return $this->systemConfigService->get('MltisafeMultiSafepay.config.' . $setting, $salesChannelId);
     }
 }

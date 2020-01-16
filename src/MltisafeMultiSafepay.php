@@ -71,14 +71,4 @@ class MltisafeMultiSafepay extends Plugin
         (new PaymentMethodsInstaller($this->container))->uninstall($uninstallContext);
         parent::uninstall($uninstallContext);
     }
-
-    /**
-     * @return array
-     */
-    public function getViewPaths(): array
-    {
-        $viewPaths = parent::getViewPaths();
-        $viewPaths[] = 'Resources/views/storefront';
-        return $viewPaths;
-    }
 }
