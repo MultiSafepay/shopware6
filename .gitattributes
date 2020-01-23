@@ -1,4 +1,8 @@
 /.gitattributes export-ignore
 /.gitignore export-ignore
 /.github export-ignore
-/.circleci export-ignore
+/tests export-ignore
+/.grumphp.yml export-ignore
+/.phpcs.ruleset.xml export-ignore
+/.phpunit.xml.dist export-ignore
+/.unittest.phpunit.xml export-ignore
