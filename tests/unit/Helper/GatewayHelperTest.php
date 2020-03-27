@@ -39,17 +39,20 @@ class GatewayHelperTest extends TestCase
     }
 
     /**
-     * Test if payment dont have a template, except for iDEAL
+     * Test if a gateway has a template
      */
-    public function testPaymentMethodsNotHavingATemplateString()
+    public function testPaymentMethodsHavingATemplateStringOrNull()
     {
         foreach (GatewayHelper::GATEWAYS as $gateway) {
             /** @var PaymentMethodInterface $paymentMethod */
             $paymentMethod = new $gateway();
             //Don't test iDEAL because ideal has a template.
-            if ($paymentMethod->getName() !== (new Ideal())->getName()) {
+            if ($paymentMethod->getTemplate() === null) {
                 $this->assertNull($paymentMethod->getTemplate());
+                continue;
             }
+
+            $this->assertStringStartsWith('@MltisafeMultiSafepay', $paymentMethod->getTemplate());
         }
     }
 

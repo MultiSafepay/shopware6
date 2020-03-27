@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Helper;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
+use MultiSafepay\Shopware6\PaymentMethods\ApplePay;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
 use MultiSafepay\Shopware6\PaymentMethods\Banktransfer;
 use MultiSafepay\Shopware6\PaymentMethods\BeautyAndWellness;
@@ -60,6 +61,7 @@ class GatewayHelper
         AfterPay::class,
         Alipay::class,
         AmericanExpress::class,
+        ApplePay::class,
         Bancontact::class,
         Banktransfer::class,
         BeautyAndWellness::class,
