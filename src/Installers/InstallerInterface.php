@@ -10,6 +10,7 @@ use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 
 interface InstallerInterface
 {
@@ -19,6 +20,13 @@ interface InstallerInterface
      * @param InstallContext $context
      */
     public function install(InstallContext $context): void;
+
+    /**
+     * Runs when plugin is updated.
+     *
+     * @param UpdateContext $context
+     */
+    public function update(UpdateContext $context): void;
 
     /**
      * Run when plugin is uninstalled.

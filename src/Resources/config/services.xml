@@ -54,6 +54,12 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\ApplePayPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\BancontactPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
@@ -79,6 +85,12 @@
             <tag name="shopware.payment.method.async" />
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\DirectDebitPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
+        <service id="MultiSafepay\Shopware6\Handlers\DirectBankTransferPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>

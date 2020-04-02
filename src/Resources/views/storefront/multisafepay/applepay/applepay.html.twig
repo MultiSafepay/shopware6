@@ -1,0 +1,14 @@
+<div id="msp-applepay">
+    <script>
+        var applePayPaymentMethod = document.getElementById('msp-applepay').parentElement;
+        applePayPaymentMethod.style.display = 'none';
+
+        try {
+            if (window.ApplePaySession && window.ApplePaySession.canMakePayments()) {
+                applePayPaymentMethod.style.display = 'block';
+            }
+        } catch (error) {
+            console.warn('MultiSafepay error when trying to initialize Apple Pay:', error);
+        }
+    </script>
+</div>

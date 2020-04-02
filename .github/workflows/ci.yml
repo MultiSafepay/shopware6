@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         php-version: ['7.2', '7.3']
-        shopware_version: ['v6.1.0']
+        shopware_version: ['v6.1.2', 'v6.1.3']
     name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
     steps:
       - name: Install php
@@ -27,41 +27,28 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           extensions: intl
-      - name: Checkout code
-        uses: actions/checkout@v1
-        with:
-          path: MultiSafepay
       - name: Checkout Shopware 6 code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         with:
           repository: shopware/development
           ref: ${{ matrix.shopware_version }}
-      - name: Move plugin to Shopware plugins folder
-        run: |
-          cd ..
-          mkdir -p development/custom/plugins/MltisafeMultiSafepay
-          mv MultiSafepay/* development/custom/plugins/MltisafeMultiSafepay
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          path: custom/plugins/MltisafeMultiSafepay
       - name: Install Shopware
-        working-directory:
-        run: |
-          cd ../development
-          ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
+        run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Install Multisafepay Plugin
-        run: |
-          cd ../development
-          php bin/console plugin:install -c --activate MltisafeMultiSafepay
+        run: php bin/console plugin:install -c --activate MltisafeMultiSafepay
       - name: prepare unit test database
-        run: |
-          cd ../development
-          ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
+        run: ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Run PHPUnit
+        working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: |
-          cd ../development
-          cd custom/plugins/MltisafeMultiSafepay
           composer dump-autoload
           ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
       - name: Send clover to codecov
-        working-directory: ../development/custom/plugins/MltisafeMultiSafepay
+        working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -R .
   phpcs:
     runs-on: ubuntu-latest
@@ -73,7 +60,7 @@ jobs:
           php-version: '7.3'
           extensions: intl
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Install dependencies
         run: composer install
       - name: Run Code sniffer

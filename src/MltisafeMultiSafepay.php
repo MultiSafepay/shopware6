@@ -45,6 +45,16 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     * @param UpdateContext $updateContext
+     */
+    public function update(UpdateContext $updateContext): void
+    {
+        (new MediaInstaller($this->container))->update($updateContext);
+        (new PaymentMethodsInstaller($this->container))->update($updateContext);
+        parent::update($updateContext);
+    }
+
+    /**
      * @param ActivateContext $activateContext
      */
     public function activate(ActivateContext $activateContext): void
