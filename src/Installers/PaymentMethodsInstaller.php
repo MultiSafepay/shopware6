@@ -17,6 +17,7 @@ use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -50,6 +51,18 @@ class PaymentMethodsInstaller implements InstallerInterface
      * @param InstallContext $context
      */
     public function install(InstallContext $context): void
+    {
+        $this->updateMultiSafepayPaymentMethod($context->getContext());
+
+        foreach (GatewayHelper::GATEWAYS as $gateway) {
+            $this->addPaymentMethod(new $gateway(), $context->getContext());
+        }
+    }
+
+    /**
+     * @param UpdateContext $context
+     */
+    public function update(UpdateContext $context): void
     {
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 

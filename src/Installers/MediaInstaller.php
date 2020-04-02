@@ -20,6 +20,7 @@ use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -44,6 +45,16 @@ class MediaInstaller implements InstallerInterface
      * @param InstallContext $context
      */
     public function install(InstallContext $context): void
+    {
+        foreach (GatewayHelper::GATEWAYS as $gateway) {
+            $this->addMedia(new $gateway(), $context->getContext());
+        }
+    }
+
+    /**
+     * @param UpdateContext $context
+     */
+    public function update(UpdateContext $context): void
     {
         foreach (GatewayHelper::GATEWAYS as $gateway) {
             $this->addMedia(new $gateway(), $context->getContext());
