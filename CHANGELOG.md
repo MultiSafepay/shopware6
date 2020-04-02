@@ -1,3 +1,13 @@
+## 1.2.0
+Release date: Apr 2nd, 2020
+
+### Added
++ PLGSHPS6-135: Add Apple Pay
++ PLGSHPS6-134: Add Direct Bank Transfer
++ PLGSHPS6-136: Add update function
+
+***
+
 ## 1.1.1
 Release date: Jan 16th, 2020
 

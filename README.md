@@ -25,3 +25,6 @@ Would you like to try out a working version of a Shopware 6 webshop? Reach out t
 
 ## License
 [MIT License](https://github.com/MultiSafepay/shopware6/blob/develop/LICENSE)
+
+## Want to be part of the team?
+Are you a developer interested in working at MultiSafepay? [View](https://www.multisafepay.com/careers/#jobopenings) our job openings and feel free to get in touch with us.
