@@ -16,7 +16,7 @@ class Betaalplan implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Betaalplan';
+        return 'Betaal per Maand';
     }
 
     /**
