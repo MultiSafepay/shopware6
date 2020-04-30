@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <ruleset name="MultiSafepay">
     <description>MultiSafepay coding styles rules</description>
-
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/bootstrap.php</exclude-pattern>
+    <exclude-pattern>*/src/Resources/public/*</exclude-pattern>
     <rule ref="PSR2"/>
     <rule ref="PEAR.Commenting.FunctionComment.Missing"/>
 </ruleset>
