@@ -23,6 +23,9 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="MultiSafepay\Shopware6\API\MspClient"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Helper\GatewayHelper">
+            <argument type="service" id="order.repository"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Service\SettingsService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
@@ -215,6 +218,11 @@
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+        </service>
+        <service id="MultiSafepay\Shopware6\Storefront\Controller\RefundController" public="true">
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\GatewayHelper"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscribers\CheckoutConfirmTemplateSubscriber" >
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>

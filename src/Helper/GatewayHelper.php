@@ -6,6 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
@@ -54,9 +55,24 @@ use MultiSafepay\Shopware6\PaymentMethods\WellnessGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
 class GatewayHelper
 {
+    /** @var EntityRepositoryInterface */
+    private $orderRepository;
+
+    /**
+     * GatewayHelper constructor.
+     * @param EntityRepositoryInterface $orderRepository
+     */
+    public function __construct(EntityRepositoryInterface $orderRepository)
+    {
+        $this->orderRepository = $orderRepository;
+    }
+
     public const GATEWAYS = [
         AfterPay::class,
         Alipay::class,
@@ -107,4 +123,39 @@ class GatewayHelper
         WinkelCheque::class,
         YourGift::class,
     ];
+
+    /**
+     * @param string $orderId
+     * @param Context $context
+     * @return bool
+     */
+    public function isMultisafepayPaymentMethod(string $orderId, Context $context)
+    {
+        $order = $this->getOrderData($orderId, $context);
+        $transaction = $order->getTransactions()->first();
+        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
+            return false;
+        }
+
+        $plugin = $transaction->getPaymentMethod()->getPlugin();
+
+        return $plugin->getBaseClass() === MltisafeMultiSafepay::class;
+    }
+
+    /**
+     * @param string $orderId
+     * @param Context $context
+     * @return mixed|null
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     */
+    private function getOrderData(string $orderId, Context $context)
+    {
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('transactions');
+        $criteria->addAssociation('transactions.paymentMethod');
+        $criteria->addAssociation('transactions.paymentMethod.plugin');
+        $criteria->addAssociation('salesChannel');
+
+        return $this->orderRepository->search($criteria, $context)->get($orderId);
+    }
 }

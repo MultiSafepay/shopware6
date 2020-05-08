@@ -1,0 +1,8 @@
+<sw-card title="Refund"
+         v-show="isRefundAllowed"
+         :isLoading="isLoading"
+         class="sw-order-detail-base__line-item-grid-card">
+    <sw-number-field type="number" label="Amount"  v-model="amount" placeholder="0.00" numberType="float" step="0.01" :max="maxAmount"/>
+    <sw-button variant="primary" @click="refund">Refund</sw-button>
+    <span class="float-right"><strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmount }}</strong></span>
+</sw-card>

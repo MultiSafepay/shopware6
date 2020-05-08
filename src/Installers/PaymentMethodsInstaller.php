@@ -55,7 +55,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
         foreach (GatewayHelper::GATEWAYS as $gateway) {
-            $this->addPaymentMethod(new $gateway(), $context->getContext());
+            $this->addPaymentMethod(new $gateway(), $context->getContext(), false);
         }
     }
 
@@ -67,7 +67,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
         foreach (GatewayHelper::GATEWAYS as $gateway) {
-            $this->addPaymentMethod(new $gateway(), $context->getContext());
+            $this->addPaymentMethod(new $gateway(), $context->getContext(), $context->getPlugin()->isActive());
         }
     }
 
@@ -104,8 +104,9 @@ class PaymentMethodsInstaller implements InstallerInterface
     /**
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
+     * @param bool $isActive
      */
-    public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
+    public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context, bool $isActive): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod, $context);
 
@@ -126,6 +127,10 @@ class PaymentMethodsInstaller implements InstallerInterface
                 self::TEMPLATE => $paymentMethod->getTemplate()
             ]
         ];
+
+        if ($isActive && $paymentMethodId === null) {
+            $paymentData['active'] = true;
+        }
 
         $this->paymentMethodRepository->upsert([$paymentData], $context);
     }

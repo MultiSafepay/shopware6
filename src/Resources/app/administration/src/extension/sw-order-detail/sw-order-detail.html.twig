@@ -1,0 +1,5 @@
+{% block sw_order_detail_base_line_items_card %}
+    {% parent %}
+
+    <multisafepay-refund :orderId="orderId"/>
+{% endblock %}
