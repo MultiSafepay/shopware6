@@ -1,3 +1,15 @@
+## 1.3.0
+Release date: May 7th, 2020
+
+### Added
++ PLGSHPS6-51: Add refund for non billing suite payment methods
+
+### Changed
++ DAVAMS-227: New logo and title for Santander
++ PLGSHPS6-140: Set payment method default active on update
+
+***
+
 ## 1.2.0
 Release date: Apr 2nd, 2020
 
