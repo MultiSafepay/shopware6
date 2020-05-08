@@ -1,4 +1,4 @@
-## 1.3.0-RC1
+## 1.3.0
 Release date: May 7th, 2020
 
 ### Added
@@ -7,9 +7,6 @@ Release date: May 7th, 2020
 ### Changed
 + DAVAMS-227: New logo and title for Santander
 + PLGSHPS6-140: Set payment method default active on update
-
-### Removed
-+ PLGSHPS6-116: Remove version from composer.json
 
 ***
 
