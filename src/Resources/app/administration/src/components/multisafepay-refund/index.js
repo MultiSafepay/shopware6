@@ -41,6 +41,7 @@ Component.register('multisafepay-refund', {
             maxAmount: 0,
             isRefundAllowed: true,
             refundedAmount: 0,
+            showModal: false,
         };
     },
     watch: {
@@ -55,7 +56,10 @@ Component.register('multisafepay-refund', {
         }
     },
     methods: {
-        refund() {
+        closeModal() {
+            this.showModal = false;
+        },
+        showRefundModal() {
             if (this.amount < 0.01) {
                 this.createNotificationWarning({
                     title: 'Invalid amount',
@@ -63,27 +67,26 @@ Component.register('multisafepay-refund', {
                 });
                 return;
             }
-            if (confirm('Are you sure you want to refund ' + this.order.currency.symbol + this.amount + '?')) {
-                this.multiSafepayApiService.refund(this.amount, this.orderId).then((ApiResponse) => {
-                    if (ApiResponse.status === false) {
-                        this.createNotificationError({
-                            title: 'Failed to refund',
-                            message: ApiResponse.message
-                        });
-                        return;
-                    }
-                    this.createNotificationSuccess({
-                        title: 'Success',
-                        message: 'Successfully refunded'
+            this.showModal = true;
+            return;
+        },
+        applyRefund() {
+            this.closeModal()
+            this.multiSafepayApiService.refund(this.amount, this.orderId).then((ApiResponse) => {
+                if (ApiResponse.status === false) {
+                    this.createNotificationError({
+                        title: 'Failed to refund',
+                        message: ApiResponse.message
                     });
-                    this.reloadEntityData();
+                    return;
+                }
+                this.createNotificationSuccess({
+                    title: 'Success',
+                    message: 'Successfully refunded'
                 });
-                return;
-            }
-            this.createNotificationError({
-                title: 'Failed',
-                message: 'Failed to refund'
+                this.reloadEntityData();
             });
+            return;
 
         },
         createdComponent() {
