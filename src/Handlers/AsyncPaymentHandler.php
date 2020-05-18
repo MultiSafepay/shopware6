@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Handlers;
 use Exception;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -73,12 +74,17 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         $customer = $salesChannelContext->getCustomer();
         $request = $this->mspHelper->getGlobals();
 
+        $activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token');
+
         $requestData = [
-            'type' => $type,
+            'type' => $activeToken === null ? $type : 'direct',
+            'recurring_id' => $activeToken,
             'gateway' => $gateway,
             'order_id' => $order->getOrderNumber(),
             'currency' => $salesChannelContext->getCurrency()->getIsoCode(),
             'amount' => $order->getAmountTotal() * 100,
+            'recurring_model' => $this->canSaveToken($dataBag, $salesChannelContext->getCustomer()) ?
+                'cardOnFile' : null,
             'description' => 'Payment for order #' . $order->getOrderNumber(),
             'payment_options' => $this->checkoutHelper->getPaymentOptions($transaction),
             'customer' => $this->checkoutHelper->getCustomerData($request, $customer),
@@ -146,5 +152,18 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         | StateMachineStateNotFoundException $exception) {
             throw new AsyncPaymentFinalizeException($orderTransactionId, $exception->getMessage());
         }
+    }
+
+    /**
+     * @param RequestDataBag $dataBag
+     * @param CustomerEntity $customer
+     * @return bool
+     */
+    private function canSaveToken(RequestDataBag $dataBag, CustomerEntity $customer): bool
+    {
+        if ($customer->getGuest()) {
+            return false;
+        }
+        return $dataBag->getBoolean('saveToken', false);
     }
 }

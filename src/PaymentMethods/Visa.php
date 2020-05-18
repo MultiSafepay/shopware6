@@ -67,7 +67,7 @@ class Visa implements PaymentMethodInterface
      */
     public function getTemplate(): ?string
     {
-        return null;
+        return '@MltisafeMultiSafepay/storefront/multisafepay/tokenization/select-token.html.twig';
     }
 
     /**

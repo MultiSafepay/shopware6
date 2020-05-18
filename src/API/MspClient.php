@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\API;
 use Exception;
 use MultiSafepay\Shopware6\API\Object\Orders;
 use MultiSafepay\Shopware6\API\Object\Issuers;
+use MultiSafepay\Shopware6\API\Object\Tokens;
 
 /**
  * @codeCoverageIgnore
@@ -17,6 +18,7 @@ class MspClient
 {
     public $orders;
     public $issuers;
+    public $tokens;
     public $transactions;
     public $gateways;
     protected $api_key;
@@ -33,6 +35,7 @@ class MspClient
     {
         $this->orders = new Orders($this);
         $this->issuers = new Issuers($this);
+        $this->tokens = new Tokens($this);
     }
 
     /**
@@ -119,8 +122,8 @@ class MspClient
         }
 
         if (curl_errno($ch)) {
-            throw new Exception("Unable to communicate with the 
-            MultiSafepay payment server (" . curl_errno($ch) . "): " . curl_error($ch) . ".");
+            throw new Exception("Unable to communicate with the " .
+            "MultiSafepay payment server (" . curl_errno($ch) . "): " . curl_error($ch) . ".");
         }
 
         curl_close($ch);

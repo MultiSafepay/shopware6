@@ -1,10 +1,27 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
 
 {% block page_checkout_confirm_payment_current_text %}
-
     {% if context.paymentMethod.translated.name == 'iDEAL' %}
-    <strong>{{ "checkout.confirmCurrentPaymentShipping"|trans }}</strong>
-    {{ page.extensions.multisafepay.payment_method_name }}
+        <strong>{{ "checkout.confirmCurrentPaymentShipping"|trans }}</strong>
+        {{ page.extensions.multisafepay.payment_method_name }}
+    {% elseif context.paymentMethod.translated.name == 'Visa' or context.paymentMethod.translated.name == 'Mastercard' or context.paymentMethod.translated.name == 'American Express' %}
+        {% if page.extensions.multisafepay.active_token %}
+            <strong>{{ "checkout.confirmCurrentPaymentShipping"|trans }}</strong>
+            {{ page.extensions.multisafepay.payment_method_name }}
+        {% else %}
+            {{ parent() }}
+            {% if shopware.config.MltisafeMultiSafepay.config.tokenization == true and page.extensions.multisafepay.is_guest == false %}
+                <span class="custom-control custom-checkbox" style="margin-top: 1rem">
+                    <input type="checkbox" class="custom-control-input" id="saveToken" form="confirmOrderForm" checked
+                           name="saveToken"/>
+
+                    <label for="saveToken" class="custom-control-label">
+                        {{ "msp-tokenization.saveYourCreditCard"|trans }}
+                    </label>
+                </span>
+            {% endif %}
+
+        {% endif %}
     {% else %}
         {{ parent() }}
     {% endif %}

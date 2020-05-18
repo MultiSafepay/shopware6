@@ -1,5 +1,9 @@
 {
   "msp-ideal": {
     "selectBankIssuer": "Bank auswählen"
+  },
+  "msp-tokenization": {
+    "useDifferentCreditCard" : "Verwenden Sie eine andere Kreditkarte",
+    "saveYourCreditCard" : "Speichern Sie Ihre Kreditkarte für den nächsten Einkauf"
   }
 }

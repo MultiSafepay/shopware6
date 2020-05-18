@@ -10,5 +10,10 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <tag name="kernel.event_subscriber"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Events\SalesChannelContextSwitchEvent">
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="payment_method.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
     </services>
 </container>

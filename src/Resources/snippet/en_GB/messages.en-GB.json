@@ -1,5 +1,9 @@
 {
   "msp-ideal": {
     "selectBankIssuer": "Select your bank"
+  },
+  "msp-tokenization": {
+    "useDifferentCreditCard" : "Use a different credit card",
+    "saveYourCreditCard" : "Save your credit card for the next purchase"
   }
 }

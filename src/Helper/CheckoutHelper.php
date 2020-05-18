@@ -123,7 +123,8 @@ class CheckoutHelper
             'phone' => $customer->getDefaultBillingAddress()->getPhoneNumber(),
             'email' => $customer->getEmail(),
             'referrer' => $request->server->get('HTTP_REFERER'),
-            'user_agent' => $request->headers->get('User-Agent')
+            'user_agent' => $request->headers->get('User-Agent'),
+            'reference' => $customer->getGuest() ? null : $customer->getId()
         ];
     }
 
