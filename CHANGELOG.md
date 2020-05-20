@@ -1,3 +1,14 @@
+## 1.4.0-RC1
+Release date: May 20th, 2020
+
+### Added
++ PLGSHPS6-51: Add Tokenization for Visa, Mastercard and Maestro. 
+
+### Changed
++ PLGSHPS6-145: Replace refund confirm dialog with modal.
+
+***
+
 ## 1.3.0
 Release date: May 7th, 2020
 
