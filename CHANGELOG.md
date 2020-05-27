@@ -1,5 +1,5 @@
-## 1.4.0-RC1
-Release date: May 20th, 2020
+## 1.4.0
+Release date: May 27th, 2020
 
 ### Added
 + PLGSHPS6-51: Add Tokenization for Visa, Mastercard and Maestro. 
