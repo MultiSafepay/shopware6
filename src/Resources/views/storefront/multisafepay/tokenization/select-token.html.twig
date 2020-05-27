@@ -1,0 +1,36 @@
+{% if shopware.config.MltisafeMultiSafepay.config.tokenization == true and page.extensions.multisafepay.is_guest == false and page.extensions.multisafepay.tokens|length > 0 %}
+    {% set formattedName = payment.name|lower %}
+    {% set formattedName = formattedName|replace({' ': '_'}) %}
+
+    {% set haveTokens = false %}
+    {% if formattedName == 'american_express' %}
+        {% set code = 'AMEX' %}
+    {% elseif formattedName == 'mastercard' %}
+        {% set code = 'MASTERCARD' %}
+    {% elseif formattedName == 'visa' %}
+        {% set code = 'VISA' %}
+    {% endif %}
+
+    {% for token in page.extensions.multisafepay.tokens %}
+        {% if code == token.code %}
+            {% set haveTokens = true %}
+        {% endif %}
+    {% endfor %}
+
+    {% if haveTokens == true %}
+
+        <select name="token_{{ formattedName }}" id="selectToken" class="custom-select"
+                style="margin-top: -2rem; margin-bottom: 1rem;max-width: 300px;margin-left: 1.5rem;">
+            {% for token in page.extensions.multisafepay.tokens %}
+                {% if code == token.code %}
+                    <option {% if page.extensions.multisafepay.active_token == token.token %} selected="selected" {% endif %}
+                        value="{{ token.token }}">{{ token.display }}</option>
+                {% endif %}
+            {% endfor %}
+            <option value="">{{ "msp-tokenization.useDifferentCreditCard"|trans }}</option>
+
+        </select>
+        <input type="hidden" form="confirmOrderForm" name="active_token"
+               value="{{ page.extensions.multisafepay.active_token }}">
+    {% endif %}
+{% endif %}

@@ -28,5 +28,11 @@
             <label lang="de-DE">Api Schlüssel</label>
         </input-field>
 
+        <input-field type="bool">
+            <name>tokenization</name>
+            <label>Enable tokenization</label>
+            <label lang="de-DE">Tokenisierung aktivieren</label>
+        </input-field>
+
     </card>
 </config>
