@@ -6,3 +6,4 @@
 /phpcs.ruleset.xml export-ignore
 /phpunit.xml.dist export-ignore
 /unittest.phpunit.xml export-ignore
+/bin export-ignore
