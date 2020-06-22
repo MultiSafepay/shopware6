@@ -32,6 +32,12 @@
             <name>tokenization</name>
             <label>Enable tokenization</label>
             <label lang="de-DE">Tokenisierung aktivieren</label>
+            <helpText>
+                <![CDATA[Check out our <a href="https://docs.multisafepay.com/tools/tokenization/tokenization-api-level/" target="_blank" style="color:#fff">documentation center</a> to found more about tokenization.]]>
+            </helpText>
+            <helpText lang="de-DE">
+                <![CDATA[Weitere Informationen zur Tokenisierung finden Sie in unserem <a href="https://docs.multisafepay.com/tools/tokenization/tokenization-api-level/" target="_blank" style="color:#fff">Dokumentationscenter.</a>]]>
+            </helpText>
         </input-field>
 
     </card>
