@@ -5,16 +5,6 @@ const {Component, Mixin} = Shopware;
 const {Criteria} = Shopware.Data;
 
 
-/**
- * @status ready
- * @description The <u>sw-button</u> component replaces the standard html button or anchor element with a custom button
- * and a multitude of options.
- * @example-type dynamic
- * @component-example
- * <sw-button>
- *     Button
- * </sw-button>
- */
 Component.register('multisafepay-refund', {
     template,
     inject: [
@@ -38,10 +28,11 @@ Component.register('multisafepay-refund', {
             isLoading: null,
             versionContext: null,
             order: null,
-            maxAmount: 0,
+            maxRefundableAmount: 0,
             isRefundAllowed: true,
             refundedAmount: 0,
             showModal: false,
+            isRefundDisabled: false
         };
     },
     watch: {
@@ -99,12 +90,13 @@ Component.register('multisafepay-refund', {
                 this.order = response;
                 this.multiSafepayApiService.getRefundData(this.order.id).then((data) => {
                     this.isRefundAllowed = data.isAllowed;
-                    this.refundedAmount = data.refundedAmount
+                    this.refundedAmount = data.refundedAmount;
+                    this.maxRefundableAmount = this.order.amountTotal - this.refundedAmount;
+                    this.isRefundDisabled = (this.order.amountTotal - this.refundedAmount === 0);
                     this.isLoading = false;
                 }).catch(() => {
                     this.isRefundAllowed = false;
                 })
-                this.maxAmount = this.order.amountTotal;
                 return Promise.resolve();
             }).catch(() => {
                 return Promise.reject();
