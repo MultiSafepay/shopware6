@@ -15,10 +15,11 @@ Easily integrate MultiSafepay payment solutions into your Shopware 6 webshop wit
 ## What is Shopware 6?
 Shopware 6 is the sequel to Shopware 5, a popular open source ecommerce platform. For more information, make sure you check out [Shopware 6](https://www.shopware.com/en/products/shopware-6/).
 
-## Feedback
-We look forward to receiving your input.
-Have you seen an opportunity to change things for better? We invite you to create a pull request on GitHub.
+## A gift for your contribution
+We look forward to receiving your input. Have you seen an opportunity to change things for better? We would like to invite you to create a pull request on GitHub.
 Are you missing something and would like us to fix it? Suggest an improvement by sending us an [email](mailto:integration@multisafepay.com) or by creating an issue.
+
+What will you get in return? A brand new designed MultiSafepay t-shirt which will make you part of the team!
 
 ## Testing
 Would you like to try out a working version of a Shopware 6 webshop? Reach out to our Integration team at <integration@multisafepay.com> and one of our colleagues will assist you in opening a test account, where you can install the MultiSafepay's latest Shopware 6 plugin and its current functionality.
