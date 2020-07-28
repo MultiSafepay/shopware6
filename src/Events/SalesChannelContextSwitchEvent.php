@@ -53,12 +53,17 @@ class SalesChannelContextSwitchEvent implements EventSubscriberInterface
         \Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent $event
     ): void {
         $databag = $event->getRequestDataBag();
+        $paymentMethodId = $databag->get('paymentMethodId');
         $customer = $event->getSalesChannelContext()->getCustomer();
+
+        if ($customer === null || $paymentMethodId === null) {
+            return;
+        }
 
         if ($customer->getGuest()) {
             return;
         }
-        $activeInputField = $this->getActiveTokenField($databag->get('paymentMethodId'), $event->getContext());
+        $activeInputField = $this->getActiveTokenField($paymentMethodId, $event->getContext());
 
         $this->customerRepository->upsert(
             [[
