@@ -35,6 +35,18 @@
         "label": {
             "en-GB": "MultiSafepay module for Shopware 6",
             "de-DE": "MultiSafepay Module für Shopware 6"
+        },
+        "description": {
+            "de-DE": "MultiSafepay Online-Bezahlung (Gratis plugin mit +20 Bezahlmethoden)",
+            "en-GB": "MultiSafepay online payments for Shopware (iDEAL, Cards, Klarna, Alipay etc.)"
+        },
+        "manufacturerLink": {
+            "de-DE": "https://store.shopware.com/multisafepay.html",
+            "en-GB": "https://store.shopware.com/en/multisafepay.html"
+        },
+        "supportLink": {
+            "de-DE": "https://docs.multisafepay.com/integrations/plugins/shopware6/",
+            "en-GB": "https://docs.multisafepay.com/integrations/plugins/shopware6/"
         }
     },
     "require-dev": {
