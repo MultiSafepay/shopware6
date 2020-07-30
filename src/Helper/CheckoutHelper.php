@@ -178,7 +178,12 @@ class CheckoutHelper
     public function getShoppingCart(OrderEntity $order): array
     {
         $shoppingCart = [];
+        /** @var OrderLineItemEntity $item */
         foreach ($order->getLineItems() as $item) {
+            if ($item->getType() === 'customized-products') {
+                continue;
+            }
+
             $shoppingCart['items'][] = [
                 'name' => $item->getLabel(),
                 'description' => $item->getDescription(),

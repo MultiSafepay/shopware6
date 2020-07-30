@@ -3,9 +3,10 @@
              v-show="isRefundAllowed"
              :isLoading="isLoading"
              class="sw-order-detail-base__line-item-grid-card">
-        <sw-number-field type="number" label="Amount" v-model="amount" placeholder="0.00" numberType="float" step="0.01"
-                         :max="maxAmount"/>
-        <sw-button variant="primary" @click="showRefundModal()">Refund</sw-button>
+        <sw-number-field type="number" label="Amount" v-model="amount"
+                         placeholder="0.00" numberType="float" step="0.01"
+                         :max="maxRefundableAmount" :disabled="isRefundDisabled"/>
+        <sw-button variant="primary" @click="showRefundModal()" :disabled="isRefundDisabled">Refund</sw-button>
         <span class="float-right">
             <strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmount }}</strong>
         </span>

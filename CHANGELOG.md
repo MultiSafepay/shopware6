@@ -1,3 +1,19 @@
+## 1.5.0
+Release date: Jul 30th, 2020
+
+### Added
++ DAVAMS-275: Add CBC payment method
+
+### Fixed
++ Fix customized products being included twice in shopping cart
++ PLGSHPS6-154: Fix getActiveTokenField error on backend order
+
+### Changed
++ PLGSHPS6-144: Set max amount dynamically for refunds
++ PLGSHPS6-148: Add tooltips for tokenization
+
+***
+
 ## 1.4.0
 Release date: May 27th, 2020
 
