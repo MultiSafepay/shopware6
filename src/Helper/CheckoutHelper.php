@@ -299,6 +299,12 @@ class CheckoutHelper
     public function getTaxRate(CalculatedPrice $calculatedPrice) : float
     {
         $rates = [];
+
+        // Handle TAX_STATE_FREE
+        if ($calculatedPrice->getCalculatedTaxes()->count() === 0) {
+            return 0;
+        }
+
         foreach ($calculatedPrice->getCalculatedTaxes() as $tax) {
             $rates[] = $tax->getTaxRate();
         }
