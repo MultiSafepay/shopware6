@@ -55,7 +55,7 @@ trait Orders
                 10,
                 new CalculatedTaxCollection(),
                 new TaxRuleCollection(),
-                CartPrice::TAX_STATE_NET
+                CartPrice::TAX_STATE_GROSS
             ),
             'shippingCosts' => new CalculatedPrice(
                 10,
