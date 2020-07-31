@@ -1,3 +1,12 @@
+## 1.5.1
+Release date: Jul 31st, 2020
+
+### Fixed
++ Fix incorrect tax when tax free is used
++ PLGSHPS6-155: Fix incorrect tax if tax display is set to net
+
+***
+
 ## 1.5.0
 Release date: Jul 30th, 2020
 

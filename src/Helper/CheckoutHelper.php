@@ -178,6 +178,8 @@ class CheckoutHelper
     public function getShoppingCart(OrderEntity $order): array
     {
         $shoppingCart = [];
+        $hasNetPrices = $order->getPrice()->hasNetPrices();
+
         /** @var OrderLineItemEntity $item */
         foreach ($order->getLineItems() as $item) {
             if ($item->getType() === 'customized-products') {
@@ -187,7 +189,7 @@ class CheckoutHelper
             $shoppingCart['items'][] = [
                 'name' => $item->getLabel(),
                 'description' => $item->getDescription(),
-                'unit_price' => $this->getUnitPriceExclTax($item->getPrice()),
+                'unit_price' => $this->getUnitPriceExclTax($item->getPrice(), $hasNetPrices),
                 'quantity' => $item->getQuantity(),
                 'merchant_item_id' => $this->getMerchantItemId($item),
                 'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
@@ -198,7 +200,7 @@ class CheckoutHelper
         $shoppingCart['items'][] = [
             'name' => 'Shipping',
             'description' => 'Shipping',
-            'unit_price' => $this->getUnitPriceExclTax($order->getShippingCosts()),
+            'unit_price' => $this->getUnitPriceExclTax($order->getShippingCosts(), $hasNetPrices),
             'quantity' => $order->getShippingCosts()->getQuantity(),
             'merchant_item_id' => 'msp-shipping',
             'tax_table_selector' => (string) $this->getTaxRate($order->getShippingCosts()),
@@ -297,6 +299,12 @@ class CheckoutHelper
     public function getTaxRate(CalculatedPrice $calculatedPrice) : float
     {
         $rates = [];
+
+        // Handle TAX_STATE_FREE
+        if ($calculatedPrice->getCalculatedTaxes()->count() === 0) {
+            return 0;
+        }
+
         foreach ($calculatedPrice->getCalculatedTaxes() as $tax) {
             $rates[] = $tax->getTaxRate();
         }
@@ -306,13 +314,19 @@ class CheckoutHelper
 
     /**
      * @param CalculatedPrice $calculatedPrice
+     * @param bool $hasNetPrices
      * @return float
      */
-    public function getUnitPriceExclTax(CalculatedPrice $calculatedPrice) : float
+    public function getUnitPriceExclTax(CalculatedPrice $calculatedPrice, bool $hasNetPrices) : float
     {
         $unitPrice = $calculatedPrice->getUnitPrice();
-        $taxRate = $this->getTaxRate($calculatedPrice);
 
+        // Do not calculate excl TAX when price is already excl TAX
+        if ($hasNetPrices) {
+            return $unitPrice;
+        }
+
+        $taxRate = $this->getTaxRate($calculatedPrice);
         if ($unitPrice && $taxRate) {
             $unitPrice /= (1 + ($taxRate / 100));
         }
