@@ -93,7 +93,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             case MastercardPaymentHandler::class:
             case AmericanExpressPaymentHandler::class:
                 $activeName = $this->getRealTokenizationName(
-                    $event->getSalesChannelContext()->getPaymentMethod()->getName(),
+                    $event->getSalesChannelContext()->getPaymentMethod()->getTranslated()['name'],
                     $tokens,
                     $activeToken
                 );

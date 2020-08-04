@@ -1,5 +1,5 @@
 {% if shopware.config.MltisafeMultiSafepay.config.tokenization == true and page.extensions.multisafepay.is_guest == false and page.extensions.multisafepay.tokens|length > 0 %}
-    {% set formattedName = payment.name|lower %}
+    {% set formattedName = payment.translated.name|lower %}
     {% set formattedName = formattedName|replace({' ': '_'}) %}
 
     {% set haveTokens = false %}
