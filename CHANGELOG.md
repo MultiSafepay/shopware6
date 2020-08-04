@@ -1,3 +1,20 @@
+## 2.0.0
+Release date: Aug 4th, 2020
+
+### Added
++ Add support for Shopware 6.3
+
+### Fixed
++ PLGSHPS6-158: Fix creditcard checkout error with multilanguage store
+
+### Changed
++ PLGSHPS6-143: Use ACTION_PAID instead of deprecated ACTION_PAY
+
+### Removed
++ Drop support for Shopware 6.1
+
+***
+
 ## 1.5.1
 Release date: Jul 31st, 2020
 
