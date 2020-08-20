@@ -1,3 +1,14 @@
+## 2.1.0
+Release date: Aug 20th, 2020
+
+### Added
++ PLGSHPS6-162: Add API check button in backend
+
+### Changed
++ PLGSHPS6-164: Allow payment change after checkout enabled by default
+
+***
+
 ## 2.0.0
 Release date: Aug 4th, 2020
 
