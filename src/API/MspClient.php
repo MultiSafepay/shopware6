@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\API;
 
 use Exception;
+use MultiSafepay\Shopware6\API\Object\Gateways;
 use MultiSafepay\Shopware6\API\Object\Orders;
 use MultiSafepay\Shopware6\API\Object\Issuers;
 use MultiSafepay\Shopware6\API\Object\Tokens;
@@ -36,6 +37,7 @@ class MspClient
         $this->orders = new Orders($this);
         $this->issuers = new Issuers($this);
         $this->tokens = new Tokens($this);
+        $this->gateways = new Gateways($this);
     }
 
     /**

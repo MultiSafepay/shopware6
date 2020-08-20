@@ -1,0 +1,6 @@
+{
+    "multisafepay-verify-api-key": {
+        "success": "Die Verbindung wurde erfolgreich hergestellt",
+        "error": "Verbindung konnte nicht hergestellt werden. Bitte überprüfen Sie Ihre API-Anmeldeinformationen"
+    }
+}

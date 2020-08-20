@@ -1,0 +1,6 @@
+{
+    "multisafepay-verify-api-key": {
+        "success": "Connection was successfully established",
+        "error": "Connection could not be established. Please check your API credentials"
+    }
+}

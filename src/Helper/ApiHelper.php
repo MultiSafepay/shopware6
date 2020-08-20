@@ -33,12 +33,24 @@ class ApiHelper
      */
     public function initializeMultiSafepayClient(?string $salesChannelId): MspClient
     {
-        $environment = $this->settingsService->getSetting('environment', $salesChannelId);
+        return $this->setMultiSafepayApiCredentials(
+            $this->settingsService->getSetting('environment', $salesChannelId),
+            $this->settingsService->getSetting('apiKey', $salesChannelId)
+        );
+    }
+
+    /**
+     * @param string $environment
+     * @param string $apiKey
+     * @return MspClient
+     */
+    public function setMultiSafepayApiCredentials(string $environment, string $apiKey): MspClient
+    {
         $this->mspClient->setApiUrl(UrlHelper::TEST);
-        if ($environment === 'live') {
+        if (strtolower($environment) === 'live') {
             $this->mspClient->setApiUrl(UrlHelper::LIVE);
         }
-        $this->mspClient->setApiKey($this->settingsService->getSetting('apiKey', $salesChannelId));
+        $this->mspClient->setApiKey($apiKey);
 
         return $this->mspClient;
     }
