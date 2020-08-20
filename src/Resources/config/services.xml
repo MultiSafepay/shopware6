@@ -230,6 +230,9 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\GatewayHelper"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Storefront\Controller\ApiController" public="true">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Subscribers\CheckoutConfirmTemplateSubscriber" >
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>

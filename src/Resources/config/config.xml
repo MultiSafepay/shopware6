@@ -3,8 +3,8 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>Configuration</title>
-        <title lang="de-DE">Konfiguration</title>
+        <title>API credentials</title>
+        <title lang="de-DE">API credentials</title>
 
         <input-field type="single-select">
             <name>environment</name>
@@ -27,6 +27,16 @@
             <label>Api Key:</label>
             <label lang="de-DE">Api Schlüssel</label>
         </input-field>
+
+        <component name="multisafepay-verify-api-key">
+            <name>apiTest</name>
+            <label>Validate API credentials</label>
+            <label lang="de-DE">API Verbindung testen</label>
+        </component>
+    </card>
+    <card>
+        <title>Configuration</title>
+        <title lang="de-DE">Konfiguration</title>
 
         <input-field type="bool">
             <name>tokenization</name>

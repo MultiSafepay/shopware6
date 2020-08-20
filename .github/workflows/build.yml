@@ -3,6 +3,13 @@ on:
   schedule:
     - cron: '0 2 * * 0' # Weekly on Sundays at 02:00
   push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
 jobs:
   integration_tests:
     services:
@@ -50,18 +57,3 @@ jobs:
       - name: Send clover to codecov
         working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -R .
-  phpcs:
-    runs-on: ubuntu-latest
-    name: Code sniffer
-    steps:
-      - name: Install php dependencies
-        uses: shivammathur/setup-php@master
-        with:
-          php-version: '7.3'
-          extensions: intl
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: composer install
-      - name: Run Code sniffer
-        run: vendor/bin/phpcs --standard=phpcs.ruleset.xml .

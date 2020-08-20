@@ -188,7 +188,7 @@ class PaymentMethodsHandlerTest extends TestCase
 
         $apiHelperMock = $this->getMockBuilder(ApiHelper::class)
             ->setConstructorArgs([$settingsServiceMock, $mspClient])
-            ->setMethodsExcept(['initializeMultiSafepayClient'])
+            ->setMethodsExcept(['initializeMultiSafepayClient', 'setMultiSafepayApiCredentials'])
             ->getMock();
 
         return $apiHelperMock;

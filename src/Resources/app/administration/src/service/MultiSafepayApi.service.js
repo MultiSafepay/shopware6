@@ -42,4 +42,23 @@ export default class MultiSafepayApiService extends ApiService {
             return ApiService.handleResponse(response);
         });
     }
+
+    verifyApiKey(globalPluginConfig, actualPluginConfig)
+    {
+        const apiRoute = `${this.getApiBasePath()}/verify-api-key`;
+        const headers = this.getBasicHeaders()
+
+        return this.httpClient.post(
+            apiRoute,
+            {
+                globalPluginConfig: globalPluginConfig,
+                actualPluginConfig: actualPluginConfig
+            },
+            {
+                headers
+            }
+        ).then((response) => {
+            return ApiService.handleResponse(response);
+        });
+    }
 }
