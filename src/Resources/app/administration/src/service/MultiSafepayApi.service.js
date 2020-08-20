@@ -43,14 +43,17 @@ export default class MultiSafepayApiService extends ApiService {
         });
     }
 
-    verifyApiKey(pluginConfig)
+    verifyApiKey(globalPluginConfig, actualPluginConfig)
     {
         const apiRoute = `${this.getApiBasePath()}/verify-api-key`;
         const headers = this.getBasicHeaders()
 
         return this.httpClient.post(
             apiRoute,
-            pluginConfig,
+            {
+                globalPluginConfig: globalPluginConfig,
+                actualPluginConfig: actualPluginConfig
+            },
             {
                 headers
             }

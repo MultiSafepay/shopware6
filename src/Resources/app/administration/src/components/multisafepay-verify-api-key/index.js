@@ -18,15 +18,19 @@ Component.register('multisafepay-verify-api-key', {
         };
     },
     computed: {
-        pluginConfig() {
+        globalPluginConfig() {
             return this.$parent.$parent.$parent.actualConfigData.null;
+        },
+        actualPluginConfig() {
+            const currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
+            return this.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
         }
     },
     methods: {
         check() {
             this.isLoading = true;
 
-            this.multiSafepayApiService.verifyApiKey(this.pluginConfig).then((ApiResponse) => {
+            this.multiSafepayApiService.verifyApiKey(this.globalPluginConfig, this.actualPluginConfig).then((ApiResponse) => {
                 if (ApiResponse.success === false) {
                     this.createNotificationWarning({
                         title: 'MultiSafepay',
