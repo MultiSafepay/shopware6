@@ -24,8 +24,8 @@
 
         <input-field>
             <name>apiKey</name>
-            <label>Api Key:</label>
-            <label lang="de-DE">Api Schlüssel</label>
+            <label>API Key:</label>
+            <label lang="de-DE">API Schlüssel</label>
         </input-field>
 
         <component name="multisafepay-verify-api-key">
