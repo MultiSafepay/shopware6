@@ -13,6 +13,7 @@
         <service id="MultiSafepay\Shopware6\Helper\CheckoutHelper">
             <argument type="service" id="Symfony\Component\Routing\Generator\UrlGeneratorInterface"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="state_machine_state.repository" />
             <argument>%kernel.shopware_version%</argument>
