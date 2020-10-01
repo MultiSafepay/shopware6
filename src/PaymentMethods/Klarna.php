@@ -16,7 +16,7 @@ class Klarna implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Klarna';
+        return 'Klarna - Buy now, pay later';
     }
 
     /**
