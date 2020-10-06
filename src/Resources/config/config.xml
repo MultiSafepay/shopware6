@@ -78,6 +78,12 @@
             </options>
             <defaultValue>3</defaultValue>
         </input-field>
+    </card>
 
+    <card>
+        <title>Support</title>
+        <component name="multisafepay-support">
+            <name>support</name>
+        </component>
     </card>
 </config>
