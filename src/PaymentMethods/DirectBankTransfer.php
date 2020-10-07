@@ -16,7 +16,7 @@ class DirectBankTransfer implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'DirectBankTransfer';
+        return 'Request to Pay';
     }
 
     /**
