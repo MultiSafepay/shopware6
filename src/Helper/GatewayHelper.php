@@ -32,6 +32,7 @@ use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
 use MultiSafepay\Shopware6\PaymentMethods\Good4fun;
 use MultiSafepay\Shopware6\PaymentMethods\Goodcard;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\PaymentMethods\In3;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\Kbc;
 use MultiSafepay\Shopware6\PaymentMethods\Klarna;
@@ -101,6 +102,7 @@ class GatewayHelper
         Good4fun::class,
         Goodcard::class,
         Ideal::class,
+        In3::class,
         IngHomePay::class,
         Kbc::class,
         Klarna::class,
