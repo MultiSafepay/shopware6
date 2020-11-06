@@ -1,3 +1,18 @@
+## 2.2.0
+Release date: Nov 6th, 2020
+
+### Added
++ DAVAMS-241: Add in3
++ PLGSHPS6-172: Add Good4fun Giftcard
++ Add support tab
++ PLGSHPS6-166: Add seconds active support
+
+### Changed
++ DAVAMS-302: Rebrand Direct Bank Transfer to Request to Pay
++ DAVAMS-319: Rebrand Klarna to Klarna - buy now, pay later
+
+***
+
 ## 2.1.0
 Release date: Aug 20th, 2020
 

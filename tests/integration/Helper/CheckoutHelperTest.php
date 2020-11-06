@@ -23,6 +23,7 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ServerBag;
@@ -45,6 +46,8 @@ class CheckoutHelperTest extends TestCase
      * @var Context
      */
     private $context;
+    /** @var object|SystemConfigService|null  */
+    private $systemConfigService;
 
     /**
      * {@inheritDoc}
@@ -53,6 +56,7 @@ class CheckoutHelperTest extends TestCase
     {
         parent::setUp();
         $this->context = Context::createDefaultContext();
+        $this->systemConfigService = $this->getContainer()->get(SystemConfigService::class);
     }
 
     /**
@@ -462,5 +466,66 @@ class CheckoutHelperTest extends TestCase
         $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
         $result = $checkoutHelper->getGenderFromSalutation($customer);
         $this->assertNull($result);
+    }
+
+    /**
+     * Test seconds active with no settings set (default: 30 days).
+     */
+    public function testSecondsActiveWithDefaultSettings()
+    {
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActiveLabel', null);
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActive', "");
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $this->assertEquals(2592000, $checkoutHelper->getSecondsActive());
+    }
+
+    /**
+     * Test seconds active with no label (default: days) and use active time value.
+     */
+    public function testSecondsActiveWithLabelDefault()
+    {
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActiveLabel', null);
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActive', 20);
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $this->assertEquals(1728000, $checkoutHelper->getSecondsActive());
+    }
+
+    /**
+     * Test seconds active with no Time active value (default 30) and use minutes.
+     */
+    public function testSecondsActiveWithTimeNotationDefault()
+    {
+        $this->systemConfigService->set(
+            'MltisafeMultiSafepay.config.timeActiveLabel',
+            CheckoutHelper::TIME_ACTIVE_MINUTES
+        );
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActive', "");
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $this->assertEquals(1800, $checkoutHelper->getSecondsActive());
+    }
+
+    /**
+     * Test seconds active with custom settings and use a timeActive string to check if this value also can be used.
+     */
+    public function testSecondsActiveWithCustomSettings()
+    {
+        $this->systemConfigService->set(
+            'MltisafeMultiSafepay.config.timeActiveLabel',
+            CheckoutHelper::TIME_ACTIVE_HOURS
+        );
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActive', "1");
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $this->assertEquals(3600, $checkoutHelper->getSecondsActive());
+    }
+
+    /**
+     * Test seconds active with negative amount to check if we not send negative amount to our API
+     */
+    public function testSecondsActiveWithNegativeTimeActive()
+    {
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActiveLabel', null);
+        $this->systemConfigService->set('MltisafeMultiSafepay.config.timeActive', "-1");
+        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
+        $this->assertEquals(2592000, $checkoutHelper->getSecondsActive());
     }
 }

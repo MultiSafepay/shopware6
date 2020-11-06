@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2020 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
-use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\In3PaymentHandler;
 
-class Klarna implements PaymentMethodInterface
+class In3 implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -16,7 +16,7 @@ class Klarna implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Klarna - Buy now, pay later';
+        return 'in3';
     }
 
     /**
@@ -36,17 +36,17 @@ class Klarna implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return KlarnaPaymentHandler::class;
+        return In3PaymentHandler::class;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @return string|null
+     * @return string
      */
     public function getGatewayCode(): string
     {
-        return 'KLARNA';
+        return 'IN3';
     }
 
     /**
@@ -66,7 +66,7 @@ class Klarna implements PaymentMethodInterface
      */
     public function getMedia(): string
     {
-        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/klarna.png';
+        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/in3.png';
     }
 
     /**
@@ -79,7 +79,7 @@ class Klarna implements PaymentMethodInterface
         return [
             'de-DE' => [
                 'name'        => $this->getName(),
-                'description' => 'Bezahlen mit ' . $this->getName(),
+                'description' => 'Bezahlen mit '. $this->getName(),
             ],
             'en-GB' => [
                 'name'        => $this->getName(),

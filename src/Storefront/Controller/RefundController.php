@@ -3,6 +3,7 @@
 
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
+use MultiSafepay\Shopware6\Handlers\In3Handler;
 use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler;
 use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
@@ -69,7 +70,8 @@ class RefundController extends AbstractController
                 AfterPayPaymentHandler::class,
                 PayAfterDeliveryPaymentHandler::class,
                 KlarnaPaymentHandler::class,
-                EinvoicePaymentHandler::class
+                EinvoicePaymentHandler::class,
+                In3PaymentHandler::class
             ]
         )) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);

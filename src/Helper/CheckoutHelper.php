@@ -6,14 +6,15 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use MultiSafepay\Shopware6\Service\SettingsService;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -33,6 +34,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class CheckoutHelper
 {
+    const TIME_ACTIVE_DAY = 3;
+    const TIME_ACTIVE_HOURS = 2;
+    const TIME_ACTIVE_MINUTES = 1;
+
     /** @var UrlGeneratorInterface $router */
     private $router;
     /** @var OrderTransactionStateHandler $orderTransactionStateHandler*/
@@ -41,6 +46,8 @@ class CheckoutHelper
     private $transactionRepository;
     /** @var EntityRepository $stateMachineRepository */
     private $stateMachineRepository;
+    /** @var SettingsService */
+    private $settingsService;
 
     /**
      * @var string
@@ -56,6 +63,7 @@ class CheckoutHelper
      * CheckoutHelper constructor.
      * @param UrlGeneratorInterface $router
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param SettingsService $settingsService
      * @param EntityRepository $transactionRepository
      * @param EntityRepository $stateMachineRepository
      * @param string $shopwareVersion
@@ -64,12 +72,14 @@ class CheckoutHelper
     public function __construct(
         UrlGeneratorInterface $router,
         OrderTransactionStateHandler $orderTransactionStateHandler,
+        SettingsService $settingsService,
         EntityRepository $transactionRepository,
         EntityRepository $stateMachineRepository,
         string $shopwareVersion,
         PluginService $pluginService
     ) {
         $this->router = $router;
+        $this->settingsService = $settingsService;
         $this->transactionRepository = $transactionRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepository = $stateMachineRepository;
@@ -502,5 +512,23 @@ class CheckoutHelper
             'plugin_version' => $this->pluginService->getPluginByName('MltisafeMultiSafepay', $context)->getVersion(),
             'partner' => 'MultiSafepay',
         ];
+    }
+
+    /**
+     * @return int
+     */
+    public function getSecondsActive(): int
+    {
+        $timeActive = (int)$this->settingsService->getSetting('timeActive');
+        $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;
+        switch ($this->settingsService->getSetting('timeActiveLabel')) {
+            case self::TIME_ACTIVE_MINUTES:
+                return $timeActive * 60;
+            case self::TIME_ACTIVE_HOURS:
+                return $timeActive * 60 * 60;
+            case self::TIME_ACTIVE_DAY:
+            default:
+                return $timeActive * 24 * 60 * 60;
+        }
     }
 }
