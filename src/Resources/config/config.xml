@@ -79,6 +79,18 @@
             <defaultValue>3</defaultValue>
         </input-field>
     </card>
+    <card>
+        <title>Generic Gateway</title>
+        <title lang="de-DE">Generic Gateway</title>
+        <input-field>
+            <name>genericGatewayCode</name>
+            <label>Generic gateway code</label>
+            <label lang="de-DE">Generic gateway code</label>
+            <helpText>
+                <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
+            </helpText>
+        </input-field>
+    </card>
 
     <card>
         <title>Support</title>

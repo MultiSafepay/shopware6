@@ -1,3 +1,4 @@
+
 <p align="center">
   <img src="https://www.multisafepay.com/img/multisafepaylogo.svg" width="400px" position="center">
 </p>
@@ -14,6 +15,10 @@ Easily integrate MultiSafepay payment solutions into your Shopware 6 webshop wit
 
 ## What is Shopware 6?
 Shopware 6 is the sequel to Shopware 5, a popular open source ecommerce platform. For more information, make sure you check out [Shopware 6](https://www.shopware.com/en/products/shopware-6/).
+
+## Generic gateway
+We have created a gateway named 'Generic gateway'. You can use this gateway for example for branded gateways.
+In the MultiSafepay settings page in the Shopware backend you can fill in the gateway code that is provided by MultiSafepay
 
 ## A gift for your contribution
 We look forward to receiving your input. Have you seen an opportunity to change things for better? We would like to invite you to create a pull request on GitHub.

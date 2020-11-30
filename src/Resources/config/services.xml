@@ -112,6 +112,13 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
