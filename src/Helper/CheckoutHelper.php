@@ -507,7 +507,7 @@ class CheckoutHelper
     public function getPluginMetadata(Context $context): array
     {
         return [
-            'shop' => 'Shopware',
+            'shop' => 'Shopware6',
             'shop_version' => $this->shopwareVersion,
             'plugin_version' => $this->pluginService->getPluginByName('MltisafeMultiSafepay', $context)->getVersion(),
             'partner' => 'MultiSafepay',
