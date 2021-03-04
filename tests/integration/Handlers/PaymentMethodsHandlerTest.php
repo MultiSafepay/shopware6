@@ -283,11 +283,9 @@ class PaymentMethodsHandlerTest extends TestCase
     /**
      * @throws CustomerCanceledAsyncPaymentException
      * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
      * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException
      */
-    public function testFinalizeWithTransactionStateIdShouldBePaid()
+    public function testFinalizeWithTransactionStateIdShouldNotChange()
     {
         $paymentMethodId = $this->createPaymentMethod($this->context);
         $customerId = $this->createCustomer($this->context);
@@ -311,8 +309,7 @@ class PaymentMethodsHandlerTest extends TestCase
         $transaction = $this->getTransaction($transactionId, $this->context);
         $changedTransactionStateId = $transaction->getStateId();
 
-        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
-        $this->assertEquals('Paid', $transaction->getStateMachineState()->getName());
+        $this->assertEquals($originalTransactionStateId, $changedTransactionStateId);
     }
 
     /**
