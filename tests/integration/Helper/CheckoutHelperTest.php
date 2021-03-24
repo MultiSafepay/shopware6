@@ -113,6 +113,7 @@ class CheckoutHelperTest extends TestCase
                 'id' => 'D',
                 'quantity' => 1,
                 'type' => 'promotion',
+                'position' => 2,
                 'payload' => [
                     'discountId' => '54321'
                 ]

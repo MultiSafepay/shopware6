@@ -6,7 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Tests\Unit\Helper;
 
-use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use PHPUnit\Framework\TestCase;
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
@@ -31,6 +31,10 @@ class GatewayHelperTest extends TestCase
     public function testPaymentMethodsHavingCorrectTranslations()
     {
         foreach (GatewayHelper::GATEWAYS as $gateway) {
+            if ($gateway === Generic::class) {
+                // Skip tests for generic because generic doesn't have translations
+                continue;
+            }
             /** @var PaymentMethodInterface $paymentMethod */
             $paymentMethod = new $gateway();
             $this->assertArrayHasKey('en-GB', $paymentMethod->getTranslations());

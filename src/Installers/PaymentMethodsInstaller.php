@@ -5,6 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\Installers;
 
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
@@ -114,6 +115,10 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
+        if ($paymentMethodId !== null && $paymentMethod->getPaymentHandler() === GenericPaymentHandler::class) {
+            return;
+        }
+
         $paymentData = [
             'id' => $paymentMethodId,
             'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
@@ -128,6 +133,7 @@ class PaymentMethodsInstaller implements InstallerInterface
                 self::TEMPLATE => $paymentMethod->getTemplate()
             ]
         ];
+
 
         if ($isActive && $paymentMethodId === null) {
             $paymentData['active'] = true;

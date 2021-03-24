@@ -191,19 +191,16 @@ class CheckoutHelper
         $hasNetPrices = $order->getPrice()->hasNetPrices();
 
         /** @var OrderLineItemEntity $item */
-        foreach ($order->getLineItems() as $item) {
+        foreach ($order->getNestedLineItems() as $item) {
+            // Support SwagCustomizedProducts
             if ($item->getType() === 'customized-products') {
+                foreach ($item->getChildren() as $customItem) {
+                    $shoppingCart['items'][] = $this->getShoppingCartItem($customItem, $hasNetPrices);
+                }
                 continue;
             }
 
-            $shoppingCart['items'][] = [
-                'name' => $item->getLabel(),
-                'description' => $item->getDescription(),
-                'unit_price' => $this->getUnitPriceExclTax($item->getPrice(), $hasNetPrices),
-                'quantity' => $item->getQuantity(),
-                'merchant_item_id' => $this->getMerchantItemId($item),
-                'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
-            ];
+            $shoppingCart['items'][] = $this->getShoppingCartItem($item, $hasNetPrices);
         }
 
         // Add Shipping-cost
@@ -507,7 +504,7 @@ class CheckoutHelper
     public function getPluginMetadata(Context $context): array
     {
         return [
-            'shop' => 'Shopware',
+            'shop' => 'Shopware6',
             'shop_version' => $this->shopwareVersion,
             'plugin_version' => $this->pluginService->getPluginByName('MltisafeMultiSafepay', $context)->getVersion(),
             'partner' => 'MultiSafepay',
@@ -530,5 +527,22 @@ class CheckoutHelper
             default:
                 return $timeActive * 24 * 60 * 60;
         }
+    }
+
+    /**
+     * @param OrderLineItemEntity $item
+     * @param $hasNetPrices
+     * @return array
+     */
+    public function getShoppingCartItem(OrderLineItemEntity $item, $hasNetPrices): array
+    {
+        return [
+            'name' => $item->getLabel(),
+            'description' => $item->getDescription(),
+            'unit_price' => $this->getUnitPriceExclTax($item->getPrice(), $hasNetPrices),
+            'quantity' => $item->getQuantity(),
+            'merchant_item_id' => $this->getMerchantItemId($item),
+            'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
+        ];
     }
 }

@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Tests\Integration\Handlers;
 use MultiSafepay\Shopware6\API\MspClient;
 use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
 use MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
@@ -125,16 +126,31 @@ class PaymentMethodsHandlerTest extends TestCase
     {
         /** @var ApiHelper $apiHelper */
         $apiHelper = $this->setupApiHelperMock();
-        /** @var CheckoutHelper $checkoutHelper */
+        /** @var CheckoutHelper $checkoutHelper */        $settingsServiceMock = null;
+
+        if ($paymentMethod->getPaymentHandler() === GenericPaymentHandler::class) {
+            $settingsServiceMock = $this->getMockBuilder(SettingsService::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
         $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
         /** @var MspHelper $mspHelper */
         $mspHelper = $this->getContainer()->get(MspHelper::class);
+
+        $settingsServiceMock = null;
+
+        if ($paymentMethod->getPaymentHandler() === GenericPaymentHandler::class) {
+            $settingsServiceMock = $this->getMockBuilder(SettingsService::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
 
         $paymentMethodHandlerMock = $this->getMockBuilder($paymentMethod->getPaymentHandler())
             ->setConstructorArgs([
                 $apiHelper,
                 $checkoutHelper,
-                $mspHelper
+                $mspHelper,
+                $settingsServiceMock
             ])
             ->setMethodsExcept(['pay', 'finalize'])
             ->getMock();
@@ -267,11 +283,9 @@ class PaymentMethodsHandlerTest extends TestCase
     /**
      * @throws CustomerCanceledAsyncPaymentException
      * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
      * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException
      */
-    public function testFinalizeWithTransactionStateIdShouldBePaid()
+    public function testFinalizeWithTransactionStateIdShouldNotChange()
     {
         $paymentMethodId = $this->createPaymentMethod($this->context);
         $customerId = $this->createCustomer($this->context);
@@ -295,8 +309,7 @@ class PaymentMethodsHandlerTest extends TestCase
         $transaction = $this->getTransaction($transactionId, $this->context);
         $changedTransactionStateId = $transaction->getStateId();
 
-        $this->assertNotEquals($originalTransactionStateId, $changedTransactionStateId);
-        $this->assertEquals('Paid', $transaction->getStateMachineState()->getName());
+        $this->assertEquals($originalTransactionStateId, $changedTransactionStateId);
     }
 
     /**

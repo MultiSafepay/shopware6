@@ -15,12 +15,8 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandle
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineStateNotFoundException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use MultiSafepay\Shopware6\Helper\MspHelper;
@@ -140,18 +136,6 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 
         if ($request->query->getBoolean('cancel')) {
             throw new CustomerCanceledAsyncPaymentException($orderTransactionId, 'Canceled at payment page');
-        }
-
-        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
-
-        $details = $client->orders->get('orders', $transactionId);
-        $context = $salesChannelContext->getContext();
-
-        try {
-            $this->checkoutHelper->transitionPaymentState($details->status, $orderTransactionId, $context);
-        } catch (InconsistentCriteriaIdsException | IllegalTransitionException | StateMachineNotFoundException
-        | StateMachineStateNotFoundException $exception) {
-            throw new AsyncPaymentFinalizeException($orderTransactionId, $exception->getMessage());
         }
     }
 
