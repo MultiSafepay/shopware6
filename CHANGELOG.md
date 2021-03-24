@@ -1,3 +1,19 @@
+## 2.3.0
+Release date: Mar 24th, 2021
+
+### Added
++ Add support for generic gateway, see [Generic Gateway FAQ](https://docs.multisafepay.com/faq/general/generic-gateways/)
+
+### Fixed
++ PLGSHPS6-179: Fix API key validation on Shopware versions later than 6.3.4
++ PLGSHPS6-176: Prevent multiple paid notices by not performing status changes on success page
+
+### Changed
++ PLGSHPS6-181: Change how bundled items are added to the shopping cart
++ DAVAMS-350: Update Trustly payment method logo
+
+***
+
 ## 2.2.0
 Release date: Nov 6th, 2020
 
