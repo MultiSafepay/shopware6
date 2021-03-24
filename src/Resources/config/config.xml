@@ -30,8 +30,6 @@
 
         <component name="multisafepay-verify-api-key">
             <name>apiTest</name>
-            <label>Validate API credentials</label>
-            <label lang="de-DE">API Verbindung testen</label>
         </component>
     </card>
     <card>

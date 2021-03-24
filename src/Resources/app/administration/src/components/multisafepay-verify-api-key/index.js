@@ -1,11 +1,9 @@
 const {Component, Mixin} = Shopware;
-const {Criteria} = Shopware.Data;
 import template from './multisafepay-verify-api-key.html.twig';
 
 
 Component.register('multisafepay-verify-api-key', {
     template,
-    props: ['label'],
     inject: [
         'multiSafepayApiService'
     ],
@@ -19,11 +17,19 @@ Component.register('multisafepay-verify-api-key', {
     },
     computed: {
         globalPluginConfig() {
-            return this.$parent.$parent.$parent.actualConfigData.null;
+            let config = this.$parent.$parent.$parent.actualConfigData;
+            if (config) {
+                return config.null;
+            }
+            return this.$parent.$parent.$parent.$parent.actualConfigData.null;
         },
         actualPluginConfig() {
-            const currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
-            return this.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+            let currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
+            if (typeof currentSalesChannelId !== 'undefined') {
+                return this.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+            }
+            currentSalesChannelId = this.$parent.$parent.$parent.$parent.currentSalesChannelId;
+            return this.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
         }
     },
     methods: {
