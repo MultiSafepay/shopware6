@@ -6,7 +6,7 @@
     "license": "MIT",
     "minimum-stability": "RC",
     "require": {
-        "php": "^7.1",
+        "php": "^7.1 || ^8.0",
         "shopware/core": "^6.2",
         "shopware/storefront": "^6.2",
         "ext-curl": "*",
