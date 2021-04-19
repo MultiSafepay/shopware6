@@ -1,3 +1,15 @@
+## 2.3.1
+Release date: Apr 19th, 2021
+
+### Added
++ Add support for PHP 8
+
+### Fixed
++ PLGSHPS6-190: Fix support for custom line items
++ Fix ESLint errors when running watch-administration.sh, thanks to (Thanks to [JoshuaBehrens](https://github.com/JoshuaBehrens))
+
+***
+
 ## 2.3.0
 Release date: Mar 24th, 2021
 

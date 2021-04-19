@@ -293,10 +293,21 @@ class CheckoutHelper
      */
     private function getMerchantItemId(OrderLineItemEntity $item)
     {
-        if ($item->getType() === 'promotion') {
-            return $item->getPayload()['discountId'];
+        $payload = $item->getPayload();
+
+        if ($payload === null) {
+            return $item->getIdentifier();
         }
-        return $item->getPayload()['productNumber'];
+
+        if (array_key_exists('productNumber', $payload)) {
+            return $payload['productNumber'];
+        }
+
+        if (array_key_exists('discountId', $payload) && $item->getType() === 'promotion') {
+            return $payload['discountId'];
+        }
+
+        return $item->getIdentifier();
     }
 
     /**

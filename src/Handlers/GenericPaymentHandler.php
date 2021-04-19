@@ -28,8 +28,12 @@ class GenericPaymentHandler extends AsyncPaymentHandler
      * @param MspHelper $mspHelper
      * @param SettingsService $settingsService
      */
-    public function __construct(ApiHelper $apiHelper, CheckoutHelper $checkoutHelper, MspHelper $mspHelper, SettingsService $settingsService)
-    {
+    public function __construct(
+        ApiHelper $apiHelper,
+        CheckoutHelper $checkoutHelper,
+        MspHelper $mspHelper,
+        SettingsService $settingsService
+    ) {
         $this->settingsService = $settingsService;
         parent::__construct($apiHelper, $checkoutHelper, $mspHelper);
     }
