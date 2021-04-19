@@ -6,7 +6,7 @@ Release date: Apr 19th, 2021
 
 ### Fixed
 + PLGSHPS6-190: Fix support for custom line items
-+ Fix ESLint errors when running watch-administration.sh, thanks to (Thanks to [JoshuaBehrens](https://github.com/JoshuaBehrens))
++ Fix ESLint errors when running watch-administration.sh, thanks to [JoshuaBehrens](https://github.com/JoshuaBehrens)
 
 ***
 
