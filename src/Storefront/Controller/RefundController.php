@@ -3,7 +3,7 @@
 
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
-use MultiSafepay\Shopware6\Handlers\In3Handler;
+use MultiSafepay\Shopware6\Handlers\In3PaymentHandler;
 use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler;
 use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
