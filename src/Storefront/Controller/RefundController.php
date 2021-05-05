@@ -10,7 +10,6 @@ use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\GatewayHelper;
-use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -50,8 +49,11 @@ class RefundController extends AbstractController
     }
 
     /**
-     * @Route("/api/v{version}/multisafepay/get-refund-data",
+     * @Route("/api/multisafepay/get-refund-data",
      *      name="api.action.multisafepay.get-refund-data",
+     *      methods={"POST"})
+     * @Route("/api/v{version}/multisafepay/get-refund-data",
+     *      name="api.action.multisafepay.get-refund-data-old",
      *      methods={"POST"})
      */
     public function getRefundData(Request $request, Context $context): JsonResponse
@@ -89,7 +91,8 @@ class RefundController extends AbstractController
     }
 
     /**
-     * @Route("/api/v{version}/multisafepay/refund", name="api.action.multisafepay.refund", methods={"POST"})
+     * @Route("/api/multisafepay/refund", name="api.action.multisafepay.refund", methods={"POST"})
+     * @Route("/api/v{version}/multisafepay/refund", name="api.action.multisafepay.refund-old", methods={"POST"})
      */
     public function refund(Request $request, Context $context): JsonResponse
     {

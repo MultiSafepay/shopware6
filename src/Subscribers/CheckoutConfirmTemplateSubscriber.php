@@ -7,7 +7,7 @@ use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\Helper\MspHelper;
+use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Framework\Context;
@@ -21,23 +21,27 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
     /** @var ApiHelper */
     private $apiHelper;
-    private $mspHelper;
     private $customerRepository;
+    private $shopwareVersion;
+    private $settingsService;
 
     /**
      * CheckoutConfirmTemplateSubscriber constructor.
      * @param ApiHelper $apiHelper
-     * @param MspHelper $mspHelper
      * @param EntityRepositoryInterface $customerRepository
+     * @param SettingsService $settingsService
+     * @param string $shopwareVersion
      */
     public function __construct(
         ApiHelper $apiHelper,
-        MspHelper $mspHelper,
-        EntityRepositoryInterface $customerRepository
+        EntityRepositoryInterface $customerRepository,
+        SettingsService $settingsService,
+        string $shopwareVersion
     ) {
         $this->apiHelper = $apiHelper;
-        $this->mspHelper = $mspHelper;
         $this->customerRepository = $customerRepository;
+        $this->shopwareVersion = $shopwareVersion;
+        $this->settingsService = $settingsService;
     }
 
     /**
@@ -57,22 +61,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      */
     public function addMultiSafepayExtension(CheckoutConfirmPageLoadedEvent $event): void
     {
-        $request = $this->mspHelper->getGlobals();
-
         $salesChannelContext = $event->getSalesChannelContext();
         $customer = $salesChannelContext->getCustomer();
-
-        $issuer = $request->get('issuer');
-        if ($issuer) {
-            $this->customerRepository->upsert(
-                [[
-                    'id' => $customer->getId(),
-                    'customFields' => ['last_used_issuer' => $issuer]
-                ]],
-                $event->getContext()
-            );
-            $customer = $this->getCustomer($customer->getId(), $event->getContext());
-        }
 
         $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
         $struct = new MultiSafepayStruct();
@@ -99,14 +89,17 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 );
         }
 
-
         $struct->assign([
+            'tokenization_enabled' => $this->settingsService->getSetting('tokenization'),
             'tokens' => (array) $tokens,
             'active_token' => $activeToken,
             'issuers' => $issuers,
             'last_used_issuer' => $lastUsedIssuer,
+            'shopware_compare' => version_compare($this->shopwareVersion, '6.4.0.0-RC1', '<'),
             'payment_method_name' => $activeName ?? null,
-            'is_guest' => $customer->getGuest()
+            'tokenization_checked' => $customer->getCustomFields()['tokenization_checked'] ?? null,
+            'is_guest' => $customer->getGuest(),
+            'current_payment_method_id' => $event->getSalesChannelContext()->getPaymentMethod()->getId()
         ]);
 
         $event->getPage()->addExtension(

@@ -1,5 +1,7 @@
 {% if page.extensions.multisafepay.issuers|length > 0 %}
-    <select form="confirmPaymentForm" name="redirectParameters[issuer]" class="custom-select" style="margin-top: -2rem; margin-bottom: 1rem;max-width: 300px;margin-left: 1.5rem;">
+
+    <select {% if page.extensions.multisafepay.shopware_compare %} form="confirmPaymentForm" {% endif %}
+            name="issuer" class="custom-select" style="margin-top: -2rem; margin-bottom: 1rem;max-width: 300px;margin-left: 1.5rem;">
         <option value="">{{ "msp-ideal.selectBankIssuer"|trans }}</option>
         {% for issuer in page.extensions.multisafepay.issuers %}
             <option {% if page.extensions.multisafepay.last_used_issuer == issuer.code %} selected="selected" {% endif %} value="{{ issuer.code }}">{{ issuer.description }}</option>
