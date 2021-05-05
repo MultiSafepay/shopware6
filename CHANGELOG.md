@@ -1,3 +1,14 @@
+## 2.4.0
+Release date: May 5th, 2021
+
+### Added
++ Add support for Shopware 6.4
+
+### Fixed
++ Fix import for in3 for refunds
+
+***
+
 ## 2.3.1
 Release date: Apr 19th, 2021
 
