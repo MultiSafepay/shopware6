@@ -29,7 +29,8 @@ class ApiController extends AbstractController
 
     /**
      * phpcs:ignore Generic.Files.LineLength.TooLong
-     * @Route("/api/v{version}/multisafepay/verify-api-key", name="api.action.multisafepay.verify-api-key", methods={"POST"})
+     * @Route("/api/multisafepay/verify-api-key", name="api.action.multisafepay.verify-api-key", methods={"POST"})
+     * @Route("/api/v{version}/multisafepay/verify-api-key", name="api.action.multisafepay.verify-api-key-old", methods={"POST"})
      */
     public function verifyApiKey(RequestDataBag $requestDataBag): JsonResponse
     {

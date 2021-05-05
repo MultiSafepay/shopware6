@@ -56,6 +56,17 @@ class SalesChannelContextSwitchEvent implements EventSubscriberInterface
         $paymentMethodId = $databag->get('paymentMethodId');
         $customer = $event->getSalesChannelContext()->getCustomer();
 
+        $issuer = $databag->get('issuer');
+        if ($issuer) {
+            $this->customerRepository->upsert(
+                [[
+                    'id' => $customer->getId(),
+                    'customFields' => ['last_used_issuer' => $issuer]
+                ]],
+                $event->getContext()
+            );
+        }
+
         if ($customer === null || $paymentMethodId === null) {
             return;
         }
@@ -68,7 +79,7 @@ class SalesChannelContextSwitchEvent implements EventSubscriberInterface
         $this->customerRepository->upsert(
             [[
                 'id' => $customer->getId(),
-                'customFields' => ['active_token' => $databag->get($activeInputField)]
+                'customFields' => ['active_token' => $databag->get($activeInputField), 'tokenization_checked' => $databag->getBoolean('saveTokenChange', false)]
             ]],
             $event->getContext()
         );

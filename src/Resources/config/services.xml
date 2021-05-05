@@ -243,14 +243,21 @@
             <argument type="service" id="order.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\GatewayHelper"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
         </service>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\ApiController" public="true">
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
         </service>
         <service id="MultiSafepay\Shopware6\Subscribers\CheckoutConfirmTemplateSubscriber" >
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
             <argument type="service" id="customer.repository"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <argument>%kernel.shopware_version%</argument>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Resources\snippet\de_DE\GermanTranslations" public="true">
