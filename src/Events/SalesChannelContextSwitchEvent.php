@@ -75,11 +75,12 @@ class SalesChannelContextSwitchEvent implements EventSubscriberInterface
             return;
         }
         $activeInputField = $this->getActiveTokenField($paymentMethodId, $event->getContext());
+        $activeToken = $activeInputField ? $databag->get($activeInputField) : null;
 
         $this->customerRepository->upsert(
             [[
                 'id' => $customer->getId(),
-                'customFields' => ['active_token' => $databag->get($activeInputField), 'tokenization_checked' => $databag->getBoolean('saveTokenChange', false)]
+                'customFields' => ['active_token' => $activeToken, 'tokenization_checked' => $databag->getBoolean('saveTokenChange', false)]
             ]],
             $event->getContext()
         );
