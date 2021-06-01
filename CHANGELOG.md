@@ -1,3 +1,11 @@
+## 2.4.1
+Release date: Jun 1st, 2021
+
+### Fixed
++ Fix missing null check with tokenization and logged-in user
+
+***
+
 ## 2.4.0
 Release date: May 5th, 2021
 
