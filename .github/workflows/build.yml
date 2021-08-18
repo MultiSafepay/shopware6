@@ -25,13 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['7.4', '7.2']
-        shopware_version: ['v6.2.3','v6.3.5.0', 'v6.4.0.0']
-        exclude:
-          - php-version: '7.2'
-            shopware_version: 'v6.3.5.0'
-          - php-version: '7.2'
-            shopware_version: 'v6.4.0.0'
+        php-version: ['7.4']
+        shopware_version: ['v6.3.5.0', 'v6.4.0.0']
     name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
     steps:
       - name: Install php
@@ -58,6 +53,7 @@ jobs:
         working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: |
           composer dump-autoload
+          touch vendor/composer/InstalledVersions.php
           ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
       - name: Send clover to codecov
         working-directory: ./custom/plugins/MltisafeMultiSafepay
