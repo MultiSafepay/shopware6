@@ -4,9 +4,9 @@
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Tests\Integration\Events;
+namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 
-use MultiSafepay\Shopware6\Events\OrderDeliveryStateChangeEvent;
+use MultiSafepay\Shopware6\Subscriber\OrderDeliveryStateChangeEvent;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;

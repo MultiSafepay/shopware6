@@ -1,11 +1,12 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Events;
+namespace MultiSafepay\Shopware6\Subscriber;
 
+use Exception;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
@@ -19,15 +20,24 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
 {
-    /** @var EntityRepositoryInterface */
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $orderRepository;
-    /** @var EntityRepositoryInterface */
+
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $orderDeliveryRepository;
-    /** @var ApiHelper */
+
+    /**
+     * @var ApiHelper
+     */
     private $apiHelper;
 
     /**
      * OrderDeliveryStateChangeEventTest constructor.
+     *
      * @param EntityRepositoryInterface $orderRepository
      * @param EntityRepositoryInterface $orderDeliveryRepository
      * @param ApiHelper $apiHelper
@@ -54,34 +64,32 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
 
     /**
      * @param StateMachineStateChangeEvent $event
-     * @throws \Exception
+     * @throws Exception
      */
     public function onOrderDeliveryStateChanged(StateMachineStateChangeEvent $event): void
     {
-        if ($event->getTransitionSide() !== StateMachineStateChangeEvent::STATE_MACHINE_TRANSITION_SIDE_ENTER) {
-            return;
-        }
-
-        if ($event->getStateName() !== OrderDeliveryStates::STATE_SHIPPED) {
+        if ($event->getTransitionSide() !== StateMachineStateChangeEvent::STATE_MACHINE_TRANSITION_SIDE_ENTER
+            || $event->getStateName() !== OrderDeliveryStates::STATE_SHIPPED
+        ) {
             return;
         }
 
         $order = $this->getOrder($event);
+
         if (!$this->isMultiSafepayPaymentMethod($order)) {
             return;
         }
 
         $orderDelivery = $this->getOrderDeliveryData($event);
         $trackAndTraceCode = $orderDelivery->getTrackingCodes();
-
         $salesChannelId = $order->getSalesChannelId();
         $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelId);
         $client->orders->patch(
             [
-            'tracktrace_code' => reset($trackAndTraceCode),
-            'carrier' => '',
-            'ship_date' => date('Y-m-d H:i:s'),
-            'reason' => 'Shipped'
+                'tracktrace_code' => reset($trackAndTraceCode),
+                'carrier' => '',
+                'ship_date' => date('Y-m-d H:i:s'),
+                'reason' => 'Shipped',
             ],
             'orders/' . $order->getOrderNumber()
         );
@@ -96,6 +104,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
     private function isMultiSafepayPaymentMethod(OrderEntity $order): bool
     {
         $transaction = $order->getTransactions()->first();
+
         if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
             return false;
         }
@@ -137,6 +146,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
         $orderCriteria = $this->getOrderCriteria($orderDelivery->getOrderId());
         /** @var OrderEntity $order */
         $order = $this->orderRepository->search($orderCriteria, $event->getContext())->first();
+
         return $order;
     }
 
@@ -153,6 +163,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
             new Criteria([$event->getTransition()->getEntityId()]),
             $event->getContext()
         )->first();
+
         return $orderDelivery;
     }
 }

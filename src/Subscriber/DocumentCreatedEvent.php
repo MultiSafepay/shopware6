@@ -4,8 +4,9 @@
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Events;
+namespace MultiSafepay\Shopware6\Subscriber;
 
+use Exception;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -17,11 +18,19 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class DocumentCreatedEvent implements EventSubscriberInterface
 {
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $orderRepository;
+
+    /**
+     * @var ApiHelper
+     */
     private $apiHelper;
 
     /**
      * OrderDeliveryStateChangeEventTest constructor.
+     *
      * @param EntityRepositoryInterface $orderRepository
      * @param ApiHelper $apiHelper
      */
@@ -55,6 +64,7 @@ class DocumentCreatedEvent implements EventSubscriberInterface
 
             foreach ($event->getWriteResults() as $writeResult) {
                 $payload = $writeResult->getPayload();
+
                 if (empty($payload)) {
                     continue;
                 }
@@ -90,7 +100,7 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                     break 2;
                 }
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return;
         }
     }
@@ -106,7 +116,9 @@ class DocumentCreatedEvent implements EventSubscriberInterface
         if ($order->getTransactions() === null) {
             return false;
         }
+
         $transaction = $order->getTransactions()->first();
+
         if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
             return false;
         }
