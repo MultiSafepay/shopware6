@@ -22,12 +22,9 @@
     }],
     "autoload": {
         "psr-4": {
-            "MultiSafepay\\Shopware6\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
+            "MultiSafepay\\Shopware6\\": "src/",
             "MultiSafepay\\Shopware6\\Tests\\": "tests/"
+
         }
     },
     "extra": {

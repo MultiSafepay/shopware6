@@ -100,9 +100,17 @@ class CheckoutHelperTest extends TestCase
         $orderId = $this->createOrder($customerId, $this->context);
         $order = $this->getOrder($orderId, $this->context);
 
+
+        $shopwareVersion = $this->getContainer()
+            ->get('kernel')
+            ->getContainer()
+            ->getParameter('kernel.shopware_version');
+
+        $filter = version_compare($shopwareVersion, '6.4.0.0-RC1', '<') ? -2 : null;
+
         $order->getLineItems()->add(
             (new OrderLineItemEntity())->assign([
-                'priceDefinition' => new PercentagePriceDefinition(-10, 2),
+                'priceDefinition' => new PercentagePriceDefinition(-10, $filter),
                 'price' => new CalculatedPrice(
                     -5,
                     -5,

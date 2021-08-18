@@ -10,9 +10,9 @@ use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 
 class SalesChannelContextSwitchEvent implements EventSubscriberInterface
 {
@@ -80,7 +80,10 @@ class SalesChannelContextSwitchEvent implements EventSubscriberInterface
         $this->customerRepository->upsert(
             [[
                 'id' => $customer->getId(),
-                'customFields' => ['active_token' => $activeToken, 'tokenization_checked' => $databag->getBoolean('saveTokenChange', false)]
+                'customFields' => [
+                    'active_token' => $activeToken,
+                    'tokenization_checked' => $databag->getBoolean('saveTokenChange', false)
+                ]
             ]],
             $event->getContext()
         );

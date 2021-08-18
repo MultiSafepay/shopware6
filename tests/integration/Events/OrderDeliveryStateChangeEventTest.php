@@ -10,8 +10,6 @@ use MultiSafepay\Shopware6\Events\OrderDeliveryStateChangeEvent;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
-use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
-use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
@@ -24,12 +22,13 @@ use Shopware\Core\System\StateMachine\Transition;
 
 class OrderDeliveryStateChangeEventTest extends TestCase
 {
-    use IntegrationTestBehaviour, Orders, Customers {
-        IntegrationTestBehaviour::getContainer insteadof Customers;
-        IntegrationTestBehaviour::getContainer insteadof Orders;
-        IntegrationTestBehaviour::getKernel insteadof Customers;
-        IntegrationTestBehaviour::getKernel insteadof Orders;
-    }
+//    use IntegrationTestBehaviour, Orders, Customers {
+//        IntegrationTestBehaviour::getContainer insteadof Customers;
+//        IntegrationTestBehaviour::getContainer insteadof Orders;
+//        IntegrationTestBehaviour::getKernel insteadof Customers;
+//        IntegrationTestBehaviour::getKernel insteadof Orders;
+//    }
+    use IntegrationTestBehaviour, Orders, Customers;
 
     /**
      * @throws \Exception
