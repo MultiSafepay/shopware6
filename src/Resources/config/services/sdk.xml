@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="MultiSafepay\Shopware6\Factory\SdkFactory">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <argument type="service" id="Http\Adapter\Guzzle6\Client"/>
+            <argument type="service" id="Http\Factory\Guzzle\RequestFactory"/>
+            <argument type="service" id="Http\Factory\Guzzle\StreamFactory"/>
+        </service>
+        <service id="MultiSafepay\Sdk">
+            <factory service="MultiSafepay\Shopware6\Factory\SdkFactory" method="create"/>
+        </service>
+    </services>
+</container>

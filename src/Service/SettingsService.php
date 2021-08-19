@@ -7,9 +7,13 @@
 namespace MultiSafepay\Shopware6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
 
 class SettingsService
 {
+    public const API_ENVIRONMENT_CONFIG_NAME = 'environment';
+    public const API_KEY_CONFIG_NAME = 'apiKey';
+
     /**
      * @var SystemConfigService
      */
@@ -17,6 +21,7 @@ class SettingsService
 
     /**
      * SettingsService constructor.
+     *
      * @param SystemConfigService $systemConfigService
      */
     public function __construct(SystemConfigService $systemConfigService)
@@ -32,5 +37,25 @@ class SettingsService
     public function getSetting(string $setting, ?string $salesChannelId = null)
     {
         return $this->systemConfigService->get('MltisafeMultiSafepay.config.' . $setting, $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string
+     */
+    public function getApiKey(?string $salesChannelId = null): string
+    {
+        return (string)$this->getSetting(self::API_KEY_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function isLiveMode(?string $salesChannelId = null): bool
+    {
+        return ((string)$this->getSetting(self::API_ENVIRONMENT_CONFIG_NAME, $salesChannelId)
+                === EnvironmentSource::LIVE_ENVIRONMENT
+        );
     }
 }

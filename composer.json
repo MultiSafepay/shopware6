@@ -9,6 +9,7 @@
         "php": "^7.1 || ^8.0",
         "shopware/core": "^6.2",
         "shopware/storefront": "^6.2",
+        "multisafepay/php-sdk": "^5.1",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-pcre": "*",
@@ -23,7 +24,8 @@
     "autoload": {
         "psr-4": {
             "MultiSafepay\\Shopware6\\": "src/",
-            "MultiSafepay\\Shopware6\\Tests\\": "tests/"
+            "MultiSafepay\\Shopware6\\Tests\\": "tests/",
+            "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/"
 
         }
     },
