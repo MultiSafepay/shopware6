@@ -1,0 +1,42 @@
+version: '3.3'
+services:
+  app:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "3306:3306"
+      - "22:22"
+      - "8888:8888"
+      - "9999:9999"
+    volumes:
+      - "db_volume:/var/lib/mysql"
+      - "shop_volume:/var/www/html"
+      - "./:/var/www/html/custom/plugins/MltisafeMultiSafepay/"
+    networks:
+      - web
+    environment:
+      # default = 0, recommended to be OFF for frontend devs
+      - XDEBUG_ENABLED=1
+      # default = latest PHP, optional = specific version
+      - PHP_VERSION=7.4
+  expose:
+    networks:
+      - web
+    depends_on:
+      - app
+    build: https://github.com/beyondcode/expose.git
+    entrypoint: ["/bin/sh", "-c" , "/src/expose token ${EXPOSE_TOKEN} && sed -i -E \"s/'dns'\\s?=>\\s?'.*'/'dns' => true/g\" /root/.expose/config.php  && /src/expose share app --server-host=${EXPOSE_HOST} --subdomain=${APP_SUBDOMAIN}"]
+    ports:
+      - 4040:4040
+
+volumes:
+  db_volume:
+    driver: local
+  shop_volume:
+    driver: local
+
+networks:
+  web:
+    external: false
