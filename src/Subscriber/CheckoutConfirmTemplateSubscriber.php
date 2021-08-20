@@ -19,6 +19,8 @@ use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Exception\ApiException;
 
 class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
@@ -94,13 +96,15 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         $salesChannelContext = $event->getSalesChannelContext();
         $customer = $salesChannelContext->getCustomer();
         $this->sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
-        $transactionManager = $this->sdk->getTransactionManager();
-        $transaction = $transactionManager->get('10000');
-        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
         $struct = new MultiSafepayStruct();
-        $issuers = $client->issuers->get();
+        $issuers = $this->sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
         $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
-        $tokens = $client->tokens->get('recurring', $customer->getId());
+
+        try {
+            $tokens = $this->sdk->getTokenManager()->getList($customer->getId());
+        } catch (ApiException $apiException) {
+            $tokens = [];
+        }
 
         if (isset($tokens->tokens)) {
             $tokens = $tokens->tokens;
