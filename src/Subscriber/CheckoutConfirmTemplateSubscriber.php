@@ -17,6 +17,8 @@ use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use MultiSafepay\Sdk;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 
 class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
@@ -24,6 +26,16 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * @var ApiHelper
      */
     private $apiHelper;
+
+    /**
+     * @var Sdk
+     */
+    private $sdk;
+
+    /**
+     * @var SdkFactory
+     */
+    private $sdkFactory;
 
     /**
      * @var EntityRepositoryInterface
@@ -44,17 +56,20 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * CheckoutConfirmTemplateSubscriber constructor.
      *
      * @param ApiHelper $apiHelper
+     * @param SdkFactory $sdkFactory
      * @param EntityRepositoryInterface $customerRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
      */
     public function __construct(
         ApiHelper $apiHelper,
+        SdkFactory $sdkFactory,
         EntityRepositoryInterface $customerRepository,
         SettingsService $settingsService,
         string $shopwareVersion
     ) {
         $this->apiHelper = $apiHelper;
+        $this->sdkFactory = $sdkFactory;
         $this->customerRepository = $customerRepository;
         $this->shopwareVersion = $shopwareVersion;
         $this->settingsService = $settingsService;
@@ -78,6 +93,9 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $customer = $salesChannelContext->getCustomer();
+        $this->sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+        $transactionManager = $this->sdk->getTransactionManager();
+        $transaction = $transactionManager->get('10000');
         $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
         $struct = new MultiSafepayStruct();
         $issuers = $client->issuers->get();

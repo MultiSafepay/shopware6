@@ -6,9 +6,6 @@
     <services>
         <service id="MultiSafepay\Shopware6\Factory\SdkFactory">
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
-            <argument type="service" id="Http\Adapter\Guzzle6\Client"/>
-            <argument type="service" id="Http\Factory\Guzzle\RequestFactory"/>
-            <argument type="service" id="Http\Factory\Guzzle\StreamFactory"/>
         </service>
         <service id="MultiSafepay\Sdk">
             <factory service="MultiSafepay\Shopware6\Factory\SdkFactory" method="create"/>

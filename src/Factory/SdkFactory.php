@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *
  * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
@@ -8,9 +9,8 @@
 
 namespace MultiSafepay\Shopware6\Factory;
 
-use Http\Adapter\Guzzle6\Client;
-use Http\Factory\Guzzle\RequestFactory;
-use Http\Factory\Guzzle\StreamFactory;
+use GuzzleHttp\Client;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Sdk;
 
@@ -22,38 +22,14 @@ class SdkFactory
     private $config;
 
     /**
-     * @var Client
-     */
-    private $psrClient;
-
-    /**
-     * @var StreamFactory
-     */
-    private $streamFactory;
-
-    /**
-     * @var RequestFactory
-     */
-    private $requestFactory;
-
-    /**
      * SdkFactory constructor.
      *
      * @param SettingsService $config
-     * @param Client $psrClient
-     * @param RequestFactory $requestFactory
-     * @param StreamFactory $streamFactory
      */
     public function __construct(
-        SettingsService $config,
-        Client $psrClient,
-        RequestFactory $requestFactory,
-        StreamFactory $streamFactory
+        SettingsService $config
     ) {
         $this->config = $config;
-        $this->psrClient = $psrClient;
-        $this->requestFactory = $requestFactory;
-        $this->streamFactory = $streamFactory;
     }
 
     /**
@@ -74,9 +50,9 @@ class SdkFactory
         return new Sdk(
             $this->config->getApiKey($salesChannelId),
             $this->config->isLiveMode($salesChannelId),
-            $this->psrClient,
-            $this->requestFactory,
-            $this->streamFactory
+            new Client(),
+            new Psr17Factory(),
+            new Psr17Factory()
         );
     }
 }

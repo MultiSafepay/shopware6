@@ -10,6 +10,7 @@
         "shopware/core": "^6.2",
         "shopware/storefront": "^6.2",
         "multisafepay/php-sdk": "^5.1",
+        "nyholm/psr7": "^1.1",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-pcre": "*",
@@ -21,6 +22,9 @@
         "homepage": "https://www.multisafepay.com",
         "role": "Developer"
     }],
+    "config": {
+      "optimize-autoloader": true
+    },
     "autoload": {
         "psr-4": {
             "MultiSafepay\\Shopware6\\": "src/",
