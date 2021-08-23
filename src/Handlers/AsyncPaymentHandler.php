@@ -113,7 +113,9 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         ];
 
         try {
-            $requestData = $this->orderRequestBuilder->build();
+            $requestData = $this->orderRequestBuilder->build(
+                $transaction, $dataBag, $salesChannelContext, $gateway, $type, $gatewayInfo
+            );
             $sdk->getTransactionManager()->create($requestData);
             $mspClient->orders->post($requestData);
 

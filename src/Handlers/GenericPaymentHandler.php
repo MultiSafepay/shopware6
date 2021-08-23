@@ -1,11 +1,13 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
 namespace MultiSafepay\Shopware6\Handlers;
 
+use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\MspHelper;
@@ -23,19 +25,24 @@ class GenericPaymentHandler extends AsyncPaymentHandler
 
     /**
      * GenericPaymentHandler constructor.
+     *
      * @param ApiHelper $apiHelper
      * @param CheckoutHelper $checkoutHelper
      * @param MspHelper $mspHelper
+     * @param SdkFactory $sdkFactory
+     * @param OrderRequestBuilder $orderRequestBuilder
      * @param SettingsService $settingsService
      */
     public function __construct(
         ApiHelper $apiHelper,
         CheckoutHelper $checkoutHelper,
         MspHelper $mspHelper,
+        SdkFactory $sdkFactory,
+        OrderRequestBuilder $orderRequestBuilder,
         SettingsService $settingsService
     ) {
         $this->settingsService = $settingsService;
-        parent::__construct($apiHelper, $checkoutHelper, $mspHelper);
+        parent::__construct($apiHelper, $checkoutHelper, $mspHelper, $sdkFactory, $orderRequestBuilder);
     }
 
     /**

@@ -21,7 +21,6 @@
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscriber\CheckoutConfirmTemplateSubscriber" >
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="customer.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>

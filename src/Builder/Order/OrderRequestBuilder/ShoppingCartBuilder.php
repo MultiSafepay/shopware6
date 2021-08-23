@@ -127,7 +127,7 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
         if ($unitPrice && $taxRate) {
             $unitPrice /= (1 + ($taxRate / 100));
         }
-        return (float) $unitPrice;
+        return (float)$unitPrice;
     }
 
     /**
@@ -147,6 +147,6 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
             $rates[] = $tax->getTaxRate();
         }
         // return highest taxRate
-        return (float) max($rates);
+        return (float)max($rates);
     }
 }
