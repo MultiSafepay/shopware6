@@ -13,6 +13,8 @@ class SettingsService
 {
     public const API_ENVIRONMENT_CONFIG_NAME = 'environment';
     public const API_KEY_CONFIG_NAME = 'apiKey';
+    public const TIME_ACTIVE_CONFIG_NAME = 'timeActive';
+    public const TIME_ACTIVE_LABEL_CONFIG_NAME = 'timeActiveLabel';
 
     /**
      * @var SystemConfigService
@@ -57,5 +59,23 @@ class SettingsService
         return ((string)$this->getSetting(self::API_ENVIRONMENT_CONFIG_NAME, $salesChannelId)
                 === EnvironmentSource::LIVE_ENVIRONMENT
         );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return int
+     */
+    public function getTimeActive(?string $salesChannelId = null): int
+    {
+        return (int)$this->getSetting(self::TIME_ACTIVE_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string
+     */
+    public function getTimeActiveLabel(?string $salesChannelId = null): string
+    {
+        return (string)$this->getSetting(self::TIME_ACTIVE_LABEL_CONFIG_NAME, $salesChannelId);
     }
 }

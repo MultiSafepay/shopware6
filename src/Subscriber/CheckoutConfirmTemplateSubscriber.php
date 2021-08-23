@@ -7,33 +7,21 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
+use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use MultiSafepay\Sdk;
-use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\PaymentMethods\Ideal;
-use MultiSafepay\Exception\ApiException;
 
 class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var ApiHelper
-     */
-    private $apiHelper;
-
-    /**
-     * @var Sdk
-     */
-    private $sdk;
-
     /**
      * @var SdkFactory
      */
@@ -57,20 +45,17 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     /**
      * CheckoutConfirmTemplateSubscriber constructor.
      *
-     * @param ApiHelper $apiHelper
      * @param SdkFactory $sdkFactory
      * @param EntityRepositoryInterface $customerRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
      */
     public function __construct(
-        ApiHelper $apiHelper,
         SdkFactory $sdkFactory,
         EntityRepositoryInterface $customerRepository,
         SettingsService $settingsService,
         string $shopwareVersion
     ) {
-        $this->apiHelper = $apiHelper;
         $this->sdkFactory = $sdkFactory;
         $this->customerRepository = $customerRepository;
         $this->shopwareVersion = $shopwareVersion;
@@ -95,19 +80,15 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $customer = $salesChannelContext->getCustomer();
-        $this->sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+        $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
         $struct = new MultiSafepayStruct();
-        $issuers = $this->sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
+        $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
         $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
 
         try {
-            $tokens = $this->sdk->getTokenManager()->getList($customer->getId());
+            $tokens = $sdk->getTokenManager()->getList($customer->getId());
         } catch (ApiException $apiException) {
             $tokens = [];
-        }
-
-        if (isset($tokens->tokens)) {
-            $tokens = $tokens->tokens;
         }
 
         $activeToken = $customer->getCustomFields()['active_token'] ?? null;
@@ -153,15 +134,15 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      */
     private function getRealIdealName(array $issuers, ?string $lastUsedIssuer): string
     {
+        $result = 'iDEAL';
+
         foreach ($issuers as $issuer) {
             if ($issuer->code === $lastUsedIssuer) {
-                $issuerName = $issuer->description;
-
-                return 'iDEAL (' . $issuerName . ')';
+                return $result . ' (' . $issuer->description . ')';
             }
         }
 
-        return 'iDEAL';
+        return $result;
     }
 
     /**

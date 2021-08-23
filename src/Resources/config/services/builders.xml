@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder">
+            <argument type="service" id="Symfony\Component\Routing\Generator\UrlGeneratorInterface"/>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder">
+            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService"/>
+            <argument>%kernel.shopware_version%</argument>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool">
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder"/>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
+        </service>
+    </services>
+</container>

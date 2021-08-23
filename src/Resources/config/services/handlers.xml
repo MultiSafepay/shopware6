@@ -8,6 +8,8 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <tag name="shopware.payment.method.async" />
         </service>
     </services>

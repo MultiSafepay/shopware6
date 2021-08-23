@@ -14,6 +14,7 @@
         <import resource="services/handlers.xml"/>
         <import resource="services/services.xml"/>
         <import resource="services/sdk.xml"/>
+        <import resource="services/builders.xml"/>
     </imports>
 
     <services>
