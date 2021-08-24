@@ -9,12 +9,5 @@
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="state_machine_state.repository" />
         </service>
-        <service id="MultiSafepay\Shopware6\Helper\ApiHelper">
-            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
-            <argument type="service" id="MultiSafepay\Shopware6\API\MspClient"/>
-        </service>
-        <service id="MultiSafepay\Shopware6\Helper\GatewayHelper">
-            <argument type="service" id="order.repository"/>
-        </service>
     </services>
 </container>

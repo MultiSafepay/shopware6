@@ -17,8 +17,4 @@
         <import resource="services/services.xml"/>
         <import resource="services/sdk.xml"/>
     </imports>
-
-    <services>
-        <service id="MultiSafepay\Shopware6\API\MspClient" />
-    </services>
 </container>

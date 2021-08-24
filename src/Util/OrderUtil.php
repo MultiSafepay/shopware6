@@ -52,6 +52,9 @@ class OrderUtil
     public function getOrder(string $orderId, Context $context): OrderEntity
     {
         $criteria= (new Criteria([$orderId]))->addAssociation('currency')
+            ->addAssociation('orderCustomer.salutation')
+            ->addAssociation('stateMachineState')
+            ->addAssociation('documents')
             ->addAssociation('transactions')
             ->addAssociation('transactions.paymentMethod')
             ->addAssociation('transactions.paymentMethod.plugin')
