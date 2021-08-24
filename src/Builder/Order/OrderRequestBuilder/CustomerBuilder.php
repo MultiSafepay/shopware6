@@ -19,7 +19,7 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\CustomerDetails;
-use MultiSafepay\Shopware6\Helper\MspHelper;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\Customer\Address;
 use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
@@ -32,19 +32,19 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 class CustomerBuilder implements OrderRequestBuilderInterface
 {
     /**
-     * @var MspHelper
+     * @var RequestUtil
      */
-    private $mspHelper;
+    private $requestUtil;
 
     /**
      * CustomerBuilder constructor.
      *
-     * @param MspHelper $mspHelper
+     * @param RequestUtil $requestUtil
      */
     public function __construct(
-        MspHelper $mspHelper
+        RequestUtil $requestUtil
     ) {
-        $this->mspHelper = $mspHelper;
+        $this->requestUtil = $requestUtil;
     }
 
     /**
@@ -59,7 +59,7 @@ class CustomerBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $request = $this->mspHelper->getGlobals();
+        $request = $this->requestUtil->getGlobals();
         $customer = $salesChannelContext->getCustomer();
         $defaultBillingAddress = $customer->getDefaultBillingAddress();
         [$billingStreet, $billingHouseNumber] =

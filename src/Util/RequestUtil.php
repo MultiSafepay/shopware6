@@ -4,11 +4,11 @@
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Helper;
+namespace MultiSafepay\Shopware6\Util;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class MspHelper
+class RequestUtil
 {
     /**
      * Retrieve super globals (replaces Request::createFromGlobals)

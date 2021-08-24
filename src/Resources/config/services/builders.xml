@@ -13,7 +13,7 @@
         </service>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder">
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
         </service>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder">

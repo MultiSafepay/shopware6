@@ -8,6 +8,15 @@
             <argument type="service" id="MultiSafepay\Shopware6\Util\TaxUtil"/>
         </service>
 
+        <service id="MultiSafepay\Shopware6\Util\PaymentUtil">
+            <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+        </service>
+
+        <service id="MultiSafepay\Shopware6\Util\OrderUtil">
+            <argument type="service" id="order.repository"/>
+        </service>
+
         <service id="MultiSafepay\Shopware6\Util\TaxUtil"/>
+        <service id="MultiSafepay\Shopware6\Util\RequestUtil"/>
     </services>
 </container>
