@@ -121,6 +121,8 @@ class OrderRequestBuilderPool
             'customer' => $this->customerBuilder,
             'delivery' => $this->deliveryBuilder,
             'seconds_active' => $this->secondsActiveBuilder,
+            'plugin_data' => $this->pluginDataBuilder,
+            'second_chance' => $this->secondChanceBuilder,
         ];
     }
 

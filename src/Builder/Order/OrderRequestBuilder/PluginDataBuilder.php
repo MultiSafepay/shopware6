@@ -62,16 +62,15 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $pluginDetails = new PluginDetails();
-        $context = $salesChannelContext->getContext();
-
         $orderRequest->addPluginDetails(
-            $pluginDetails->addApplicationName(
+            (new PluginDetails())->addApplicationName(
                 'Shopware6 ' . $this->shopwareVersion
             )
                 ->addApplicationVersion('MultiSafepay')
                 ->addPluginVersion(
-                    $this->pluginService->getPluginByName('MltisafeMultiSafepay', $context)->getVersion()
+                    $this->pluginService->getPluginByName(
+                        'MltisafeMultiSafepay', $salesChannelContext->getContext()
+                    )->getVersion()
                 )
         );
     }

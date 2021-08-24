@@ -24,7 +24,6 @@ use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
-use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -43,35 +42,29 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $orderRequestAddress = new Address();
         $customer = $salesChannelContext->getCustomer();
-        $deliveryDetails = new CustomerDetails();
-        $addressParser = new AddressParser();
+        $defaultShippingAddress = $customer->getDefaultShippingAddress();
         [$shippingStreet, $shippingHouseNumber] =
-            $addressParser->parse($customer->getDefaultShippingAddress()->getStreet());
+            $addressParser = (new AddressParser())->parse($defaultShippingAddress->getStreet());
 
-        $orderRequestAddress->addCity($customer->getDefaultShippingAddress()->getCity())
-            ->addCountry(new Country($this->getCountryIso($customer->getDefaultShippingAddress())))
+        $orderRequestAddress = (new Address())->addCity($defaultShippingAddress->getCity())
+            ->addCountry(new Country(
+                $defaultShippingAddress->getCountry() ? $defaultShippingAddress->getCountry()->getIso() : ''
+            ))
             ->addHouseNumber($shippingHouseNumber)
             ->addStreetName($shippingStreet)
-            ->addZipCode(trim($customer->getDefaultShippingAddress()->getZipcode()))
-            ->addState($customer->getDefaultShippingAddress()->getCountryState()->getName());
+            ->addZipCode(trim($defaultShippingAddress->getZipcode()));
 
-        $deliveryDetails->addFirstName($customer->getDefaultShippingAddress()->getFirstName())
-            ->addLastName($customer->getDefaultShippingAddress()->getLastName())
+        if ($defaultShippingAddress->getCountryState()) {
+            $orderRequestAddress->addState($defaultShippingAddress->getCountryState()->getName());
+        }
+
+        $deliveryDetails = (new CustomerDetails())->addFirstName($defaultShippingAddress->getFirstName())
+            ->addLastName($defaultShippingAddress->getLastName())
             ->addAddress($orderRequestAddress)
-            ->addPhoneNumber(new PhoneNumber($customer->getDefaultShippingAddress()->getPhoneNumber()))
+            ->addPhoneNumber(new PhoneNumber($defaultShippingAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()));
 
         $orderRequest->addDelivery($deliveryDetails);
-    }
-
-    /**
-     * @param CustomerAddressEntity $customerAddress
-     * @return string|null
-     */
-    private function getCountryIso(CustomerAddressEntity $customerAddress): ?string
-    {
-        return $customerAddress->getCountry() ? $customerAddress->getCountry()->getIso() : null;
     }
 }

@@ -25,7 +25,6 @@ use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
-use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -60,39 +59,35 @@ class CustomerBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $orderRequestAddress = new Address();
         $request = $this->mspHelper->getGlobals();
         $customer = $salesChannelContext->getCustomer();
-        $customerDetails = new CustomerDetails();
-        $addressParser = new AddressParser();
+        $defaultBillingAddress = $customer->getDefaultBillingAddress();
         [$billingStreet, $billingHouseNumber] =
-            $addressParser->parse($customer->getDefaultBillingAddress()->getStreet());
+            (new AddressParser())->parse($defaultBillingAddress->getStreet());
 
-        $orderRequestAddress->addCity($customer->getDefaultBillingAddress()->getCity())
-            ->addCountry(new Country($this->getCountryIso($customer->getDefaultBillingAddress())))
+        $orderRequestAddress = (new Address())->addCity($defaultBillingAddress->getCity())
+            ->addCountry(new Country(
+                $defaultBillingAddress->getCountry() ? $defaultBillingAddress->getCountry()->getIso() : ''
+            ))
             ->addHouseNumber($billingHouseNumber)
             ->addStreetName($billingStreet)
-            ->addZipCode(trim($customer->getDefaultBillingAddress()->getZipcode()))
-            ->addState($customer->getDefaultBillingAddress()->getCountryState()->getName());
+            ->addZipCode(trim($defaultBillingAddress->getZipcode()));
 
-        $customerDetails->addLocale($this->getTranslatedLocale($request->getLocale()))
-            ->addFirstName($customer->getDefaultBillingAddress()->getFirstName())
-            ->addLastName($customer->getDefaultBillingAddress()->getLastName())
+        if ($defaultBillingAddress->getCountryState() !== null) {
+            $orderRequestAddress->addState($defaultBillingAddress->getCountryState()->getName());
+        }
+
+        $customerDetails = (new CustomerDetails())->addLocale($this->getTranslatedLocale($request->getLocale()))
+            ->addFirstName($defaultBillingAddress->getFirstName())
+            ->addLastName($defaultBillingAddress->getLastName())
             ->addAddress($orderRequestAddress)
-            ->addPhoneNumber(new PhoneNumber($customer->getDefaultBillingAddress()->getPhoneNumber()))
+            ->addPhoneNumber(new PhoneNumber($defaultBillingAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()))
             ->addUserAgent($request->headers->get('User-Agent'))
             ->addReferrer($request->server->get('HTTP_REFERER'))
             ->addReference($customer->getGuest() ? null : $customer->getId());
-    }
 
-    /**
-     * @param CustomerAddressEntity $customerAddress
-     * @return string|null
-     */
-    private function getCountryIso(CustomerAddressEntity $customerAddress): ?string
-    {
-        return $customerAddress->getCountry() ? $customerAddress->getCountry()->getIso() : null;
+        $orderRequest->addCustomer($customerDetails);
     }
 
     /**

@@ -21,7 +21,11 @@
             <argument>%kernel.shopware_version%</argument>
         </service>
 
-        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder"/>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Util\PriceUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\TaxUtil"/>
+        </service>
+
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder"/>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder"/>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder"/>

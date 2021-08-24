@@ -39,10 +39,13 @@ class RecurringBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $orderRequest->addRecurringId($dataBag->get('active_token') === "" ? null : $dataBag->get('active_token'));
-        $orderRequest->addRecurringModel(
-            $this->canSaveToken($dataBag, $salesChannelContext->getCustomer()) ? self::RECURRING_MODEL_TYPE : null
-        );
+        if ($activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token')) {
+            $orderRequest->addRecurringId((string)$activeToken);
+        }
+
+        if ($activeToken || $this->canSaveToken($dataBag, $salesChannelContext->getCustomer())) {
+            $orderRequest->addRecurringModel(self::RECURRING_MODEL_TYPE);
+        }
     }
 
     /**

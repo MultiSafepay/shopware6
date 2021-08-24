@@ -53,10 +53,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $paymentOptions = new PaymentOptions();
-
         $orderRequest->addPaymentOptions(
-            $paymentOptions->addNotificationUrl(
+            (new PaymentOptions())->addNotificationUrl(
                 $this->router->generate(
                     'frontend.multisafepay.notification',
                     [],

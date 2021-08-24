@@ -37,10 +37,8 @@ class DescriptionBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $description = new Description();
-
         $orderRequest->addDescription(
-            $description->addDescription(
+            (new Description())->addDescription(
                 'Payment for order #' . $transaction->getOrder()->getOrderNumber()
             )
         );

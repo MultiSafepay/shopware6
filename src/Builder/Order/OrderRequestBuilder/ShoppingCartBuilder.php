@@ -19,14 +19,44 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
+use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as TransactionItem;
+use MultiSafepay\Shopware6\Util\PriceUtil;
+use MultiSafepay\Shopware6\Util\TaxUtil;
 
 class ShoppingCartBuilder implements OrderRequestBuilderInterface
 {
+    public const SHIPPING_ITEM_MERCHANT_ITEM_ID = 'msp-shipping';
+
+    /**
+     * @var TaxUtil
+     */
+    private $taxUtil;
+
+    /**
+     * @var PriceUtil
+     */
+    private $priceUtil;
+
+    /**
+     * ShoppingCartBuilder constructor.
+     *
+     * @param PriceUtil $priceUtil
+     * @param TaxUtil $taxUtil
+     */
+    public function __construct(
+        PriceUtil $priceUtil,
+        TaxUtil $taxUtil
+    ) {
+        $this->priceUtil = $priceUtil;
+        $this->taxUtil = $taxUtil;
+    }
+
     /**
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
@@ -39,6 +69,7 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $items = [];
         $order = $transaction->getOrder();
         $hasNetPrices = $order->getPrice()->hasNetPrices();
@@ -48,42 +79,54 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
             // Support SwagCustomizedProducts
             if ($item->getType() === 'customized-products') {
                 foreach ($item->getChildren() as $customItem) {
-                    $items[] = $this->getShoppingCartItem($customItem, $hasNetPrices);
+                    $items[] = $this->getShoppingCartItem($customItem, $hasNetPrices, $currency);
                 }
+
                 continue;
             }
 
-            $items[] = $this->getShoppingCartItem($item, $hasNetPrices);
+            $items[] = $this->getShoppingCartItem($item, $hasNetPrices, $currency);
         }
 
-        // Add Shipping-cost
-        $items[] = [
-            'name' => 'Shipping',
-            'description' => 'Shipping',
-            'unit_price' => $this->getUnitPriceExclTax($order->getShippingCosts(), $hasNetPrices),
-            'quantity' => $order->getShippingCosts()->getQuantity(),
-            'merchant_item_id' => 'msp-shipping',
-            'tax_table_selector' => (string) $this->getTaxRate($order->getShippingCosts()),
-        ];
+        $shippingTaxRate = $this->taxUtil->getTaxRate($order->getShippingCosts());
+        $items[] = (new TransactionItem())
+            ->addName('Shipping')
+            ->addUnitPrice(new Money(round(
+                $this->priceUtil->getUnitPriceExclTax($order->getShippingCosts(), $hasNetPrices) * 100, 10
+            ), $currency))
+            ->addQuantity($order->getShippingCosts()->getQuantity())
+            ->addDescription('Shipping')
+            ->addMerchantItemId(self::SHIPPING_ITEM_MERCHANT_ITEM_ID)
+            ->addTaxRate($shippingTaxRate)
+            ->addTaxTableSelector((string)$shippingTaxRate);
 
         $orderRequest->addShoppingCart(new ShoppingCart($items));
     }
 
     /**
      * @param OrderLineItemEntity $item
-     * @param $hasNetPrices
-     * @return array
+     * @param bool $hasNetPrices
+     * @param string $currency
+     * @return TransactionItem
      */
-    public function getShoppingCartItem(OrderLineItemEntity $item, $hasNetPrices): array
-    {
-        return [
-            'name' => $item->getLabel(),
-            'description' => $item->getDescription(),
-            'unit_price' => $this->getUnitPriceExclTax($item->getPrice(), $hasNetPrices),
-            'quantity' => $item->getQuantity(),
-            'merchant_item_id' => $this->getMerchantItemId($item),
-            'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
-        ];
+    public function getShoppingCartItem(
+        OrderLineItemEntity $item,
+        bool $hasNetPrices,
+        string $currency
+    ): TransactionItem {
+        $taxRate = $this->taxUtil->getTaxRate($item->getPrice());
+
+        return (new TransactionItem())
+            ->addName($item->getLabel())
+            ->addUnitPrice(new Money(round(
+                $this->priceUtil->getUnitPriceExclTax($item->getPrice(), $hasNetPrices) * 100, 10
+            ), $currency))
+            ->addQuantity((float)$item->getQuantity())
+            ->addDescription($item->getDescription() ?? '')
+            ->addMerchantItemId($this->getMerchantItemId($item))
+            ->addTaxRate($taxRate)
+            ->addTaxTableSelector((string)$taxRate);
+
     }
 
     /**
@@ -107,46 +150,5 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
         }
 
         return $item->getIdentifier();
-    }
-
-    /**
-     * @param CalculatedPrice $calculatedPrice
-     * @param bool $hasNetPrices
-     * @return float
-     */
-    public function getUnitPriceExclTax(CalculatedPrice $calculatedPrice, bool $hasNetPrices) : float
-    {
-        $unitPrice = $calculatedPrice->getUnitPrice();
-
-        // Do not calculate excl TAX when price is already excl TAX
-        if ($hasNetPrices) {
-            return $unitPrice;
-        }
-
-        $taxRate = $this->getTaxRate($calculatedPrice);
-        if ($unitPrice && $taxRate) {
-            $unitPrice /= (1 + ($taxRate / 100));
-        }
-        return (float)$unitPrice;
-    }
-
-    /**
-     * @param CalculatedPrice $calculatedPrice
-     * @return float
-     */
-    public function getTaxRate(CalculatedPrice $calculatedPrice) : float
-    {
-        $rates = [];
-
-        // Handle TAX_STATE_FREE
-        if ($calculatedPrice->getCalculatedTaxes()->count() === 0) {
-            return 0;
-        }
-
-        foreach ($calculatedPrice->getCalculatedTaxes() as $tax) {
-            $rates[] = $tax->getTaxRate();
-        }
-        // return highest taxRate
-        return (float)max($rates);
     }
 }
