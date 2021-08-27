@@ -4,21 +4,21 @@
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Tests\Unit\Helper;
+namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use PHPUnit\Framework\TestCase;
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 
-class GatewayHelperTest extends TestCase
+class PaymentUtilTest extends TestCase
 {
     /**
      * @return void
      */
     public function testPaymentMethodsHavingCorrectInterface(): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             /** @var PaymentMethodInterface $paymentMethod */
             $paymentMethod = new $gateway();
             $this->assertInstanceOf(PaymentMethodInterface::class, $paymentMethod);
@@ -30,7 +30,7 @@ class GatewayHelperTest extends TestCase
      */
     public function testPaymentMethodsHavingCorrectTranslations()
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             if ($gateway === Generic::class) {
                 // Skip tests for generic because generic doesn't have translations
                 continue;
@@ -47,7 +47,7 @@ class GatewayHelperTest extends TestCase
      */
     public function testPaymentMethodsHavingATemplateStringOrNull()
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             /** @var PaymentMethodInterface $paymentMethod */
             $paymentMethod = new $gateway();
             //Don't test iDEAL because ideal has a template.
@@ -67,7 +67,7 @@ class GatewayHelperTest extends TestCase
      */
     public function testPaymentMethodsHavingCorrectPaymentHandler()
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $paymentMethod = new $gateway();
             $gatewayClassName = (new \ReflectionClass($paymentMethod))->getShortName();
             $classToFind = '\MultiSafepay\Shopware6\Handlers\\' . $gatewayClassName . 'PaymentHandler';
