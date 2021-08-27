@@ -24,6 +24,12 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use stdClass;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\RequestUtil;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Sdk;
+use MultiSafepay\Api\TransactionManager;
+use MultiSafepay\Api\Transactions\TransactionResponse;
 
 class NotificationControllerTest extends TestCase
 {
@@ -55,7 +61,6 @@ class NotificationControllerTest extends TestCase
         $this->context = Context::createDefaultContext();
     }
 
-
     /**
      * @param string $orderId
      * @param string $status
@@ -64,39 +69,51 @@ class NotificationControllerTest extends TestCase
      */
     public function generateNotificationMock(string $orderId, string $status = 'completed'): MockObject
     {
-        $orderRepository = $this->getContainer()->get('order.repository');
-        $checkoutHelper = $this->getContainer()->get(CheckoutHelper::class);
-        $apiHelper = $this->getMockBuilder(ApiHelper::class)
+        $sdkFactory = $this->getMockBuilder(SdkFactory::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mockResponse = new stdClass();
-        $mockResponse->status = $status;
-
-        $mspClient = $this->getMockBuilder(MspClient::class)
+        $mockResponse = $this->getMockBuilder(TransactionResponse::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mspOrder = $this->getMockBuilder(MspOrders::class)
+        $mockResponse->expects($this->once())
+            ->method('getStatus')
+            ->willReturn($status);
+
+        $orderUtil = $this->getMockBuilder(OrderUtil::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mspOrder->expects($this->once())
+        $orderUtil->expects($this->once())
+            ->method('getOrderFromNumber')
+            ->with($this->equalTo(self::ORDER_NUMBER))
+            ->willReturn($this->getOrder($orderId, $this->context));
+
+        $requestUtil = $this->getMockBuilder(RequestUtil::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $sdk = $this->getMockBuilder(Sdk::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $transactionManager = $this->getMockBuilder(TransactionManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $transactionManager->expects($this->once())
             ->method('get')
-            ->with($this->equalTo('orders'), $this->equalTo(self::ORDER_NUMBER))
+            ->with($this->equalTo(self::ORDER_NUMBER))
             ->willReturn($mockResponse);
 
-        $mspOrder->success = true;
+        $sdk->expects($this->once())
+            ->method('getTransactionManager')
+            ->willReturn($transactionManager);
 
-        $mspClient->orders = $mspOrder;
-
-        $apiHelper->expects($this->once())
-            ->method('initializeMultiSafepayClient')
-            ->willReturn($mspClient);
-
-        $mspHelper = $this->getMockBuilder(MspHelper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sdkFactory->expects($this->once())
+            ->method('create')
+            ->willReturn($sdk);
 
         $request = $this->getMockBuilder(Request::class)
             ->disableOriginalConstructor()
@@ -113,25 +130,19 @@ class NotificationControllerTest extends TestCase
 
         $request->query = $parameterBagMock;
 
-        $mspHelper->expects($this->once())
+        $requestUtil->expects($this->once())
             ->method('getGlobals')
             ->willReturn($request);
 
-
         $notificationController = $this->getMockBuilder(NotificationController::class)
             ->setConstructorArgs([
-                $orderRepository,
-                $checkoutHelper,
-                $apiHelper,
-                $mspHelper
+                $this->getContainer()->get(CheckoutHelper::class),
+                $sdkFactory,
+                $requestUtil,
+                $orderUtil,
             ])
             ->setMethodsExcept(['notification'])
             ->getMock();
-
-        $notificationController->expects($this->once())
-            ->method('getOrderFromNumber')
-            ->with($this->equalTo(self::ORDER_NUMBER))
-            ->willReturn($this->getOrder($orderId, $this->context));
 
         return $notificationController;
     }
