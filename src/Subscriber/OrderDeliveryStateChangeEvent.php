@@ -94,7 +94,8 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
         $order = $this->orderUtil->getOrder($orderId, $context);
         $this->sdkFactory->create($order->getSalesChannelId())
             ->getTransactionManager()
-            ->update($order->getOrderNumber(),
+            ->update(
+                $order->getOrderNumber(),
                 (new UpdateRequest())->addData([
                     [
                         'tracktrace_code' => reset($trackAndTraceCode),

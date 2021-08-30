@@ -41,8 +41,7 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
      */
     public function __construct(
         SettingsService $settingsService
-    )
-    {
+    ) {
         $this->settingsService = $settingsService;
     }
 
@@ -70,7 +69,7 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
                 break;
             case self::TIME_ACTIVE_DAY:
             default:
-                $secondsActive =  $timeActive * 24 * 60 * 60;
+                $secondsActive = $timeActive * 24 * 60 * 60;
                 break;
         }
 

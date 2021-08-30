@@ -1,6 +1,5 @@
 <?php
 
-
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
 use Exception;
@@ -47,6 +46,14 @@ class RefundController extends AbstractController
      */
     private $orderRepository;
 
+    /**
+     * RefundController constructor.
+     *
+     * @param EntityRepositoryInterface $orderRepository
+     * @param SdkFactory $sdkFactory
+     * @param PaymentUtil $paymentUtil
+     * @param OrderUtil $orderUtil
+     */
     public function __construct(
         EntityRepositoryInterface $orderRepository,
         SdkFactory $sdkFactory,
@@ -84,7 +91,7 @@ class RefundController extends AbstractController
                 PayAfterDeliveryPaymentHandler::class,
                 KlarnaPaymentHandler::class,
                 EinvoicePaymentHandler::class,
-                In3PaymentHandler::class
+                In3PaymentHandler::class,
             ]
         )) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);
@@ -127,7 +134,7 @@ class RefundController extends AbstractController
         } catch (Exception $exception) {
             return new JsonResponse([
                 'status' => false,
-                'message' => $exception->getMessage()
+                'message' => $exception->getMessage(),
             ]);
         }
     }

@@ -15,13 +15,13 @@
 
 namespace MultiSafepay\Shopware6\Builder\Order;
 
+use MultiSafepay\Api\Transactions\OrderRequest;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
+use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
+use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use MultiSafepay\Api\Transactions\OrderRequest;
-use MultiSafepay\ValueObject\Money;
-use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
-use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
 
 class OrderRequestBuilder
 {
@@ -30,6 +30,11 @@ class OrderRequestBuilder
      */
     private $orderRequestBuilderPool;
 
+    /**
+     * OrderRequestBuilder constructor.
+     *
+     * @param OrderRequestBuilderPool $orderRequestBuilderPool
+     */
     public function __construct(
         OrderRequestBuilderPool $orderRequestBuilderPool
     ) {
@@ -57,11 +62,13 @@ class OrderRequestBuilder
         $order = $transaction->getOrder();
         $meta = new Meta();
         $orderRequest->addOrderId($order->getOrderNumber())
-            ->addMoney(new Money(
+            ->addMoney(
+                new Money(
                     $order->getAmountTotal() * 100,
                     $salesChannelContext->getCurrency()->getIsoCode()
                 )
-            )->addGatewayCode($gateway)->addGatewayInfo($meta->addData($gatewayInfo)
+            )->addGatewayCode($gateway)->addGatewayInfo(
+                $meta->addData($gatewayInfo)
             )->addType(
                 !$dataBag->get('active_token') ? $type : TransactionTypeSource::TRANSACTION_TYPE_DIRECT_VALUE
             );

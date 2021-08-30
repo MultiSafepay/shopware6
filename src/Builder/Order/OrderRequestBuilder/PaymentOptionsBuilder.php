@@ -46,6 +46,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function build(
         OrderRequest $orderRequest,
@@ -59,8 +61,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
                     'frontend.multisafepay.notification',
                     [],
                     UrlGeneratorInterface::ABSOLUTE_URL
-                ))
-                ->addRedirectUrl($transaction->getReturnUrl())
+                )
+            )->addRedirectUrl($transaction->getReturnUrl())
                 ->addCancelUrl(sprintf('%s&cancel=1', $transaction->getReturnUrl()))
                 ->addCloseWindow(false)
                 ->addNotificationMethod()

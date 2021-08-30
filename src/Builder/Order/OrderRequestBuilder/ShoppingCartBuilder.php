@@ -19,15 +19,14 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as TransactionItem;
+use MultiSafepay\Shopware6\Util\PriceUtil;
+use MultiSafepay\Shopware6\Util\TaxUtil;
 use MultiSafepay\ValueObject\Money;
-use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as TransactionItem;
-use MultiSafepay\Shopware6\Util\PriceUtil;
-use MultiSafepay\Shopware6\Util\TaxUtil;
 
 class ShoppingCartBuilder implements OrderRequestBuilderInterface
 {
@@ -62,6 +61,8 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function build(
         OrderRequest $orderRequest,
@@ -92,7 +93,8 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
         $items[] = (new TransactionItem())
             ->addName('Shipping')
             ->addUnitPrice(new Money(round(
-                $this->priceUtil->getUnitPriceExclTax($order->getShippingCosts(), $hasNetPrices) * 100, 10
+                $this->priceUtil->getUnitPriceExclTax($order->getShippingCosts(), $hasNetPrices) * 100,
+                10
             ), $currency))
             ->addQuantity($order->getShippingCosts()->getQuantity())
             ->addDescription('Shipping')
@@ -119,14 +121,14 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
         return (new TransactionItem())
             ->addName($item->getLabel())
             ->addUnitPrice(new Money(round(
-                $this->priceUtil->getUnitPriceExclTax($item->getPrice(), $hasNetPrices) * 100, 10
+                $this->priceUtil->getUnitPriceExclTax($item->getPrice(), $hasNetPrices) * 100,
+                10
             ), $currency))
             ->addQuantity((float)$item->getQuantity())
             ->addDescription($item->getDescription() ?? '')
             ->addMerchantItemId($this->getMerchantItemId($item))
             ->addTaxRate($taxRate)
             ->addTaxTableSelector((string)$taxRate);
-
     }
 
     /**

@@ -55,6 +55,8 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function build(
         OrderRequest $orderRequest,
@@ -69,7 +71,8 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
                 ->addApplicationVersion('MultiSafepay')
                 ->addPluginVersion(
                     $this->pluginService->getPluginByName(
-                        'MltisafeMultiSafepay', $salesChannelContext->getContext()
+                        'MltisafeMultiSafepay',
+                        $salesChannelContext->getContext()
                     )->getVersion()
                 )
         );

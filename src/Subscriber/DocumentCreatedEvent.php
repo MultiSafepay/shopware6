@@ -85,7 +85,8 @@ class DocumentCreatedEvent implements EventSubscriberInterface
 
                     $this->sdkFactory->create($order->getSalesChannelId())
                         ->getTransactionManager()
-                        ->update($order->getOrderNumber(),
+                        ->update(
+                            $order->getOrderNumber(),
                             (new UpdateRequest())->addData([
                                 'invoice_id' => $order->getDocuments()->first()->getConfig()['custom']['invoiceNumber'],
                             ])
