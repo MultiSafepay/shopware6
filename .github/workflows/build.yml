@@ -47,7 +47,7 @@ jobs:
         run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Install composer deps
         run: |
-         composer require multisafepay/php-sdk
+         composer require multisafepay/php-sdk --ignore-platform-reqs
       - name: Install Multisafepay Plugin
         run: php bin/console plugin:install -c --activate MltisafeMultiSafepay
       - name: prepare unit test database
