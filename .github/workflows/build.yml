@@ -46,6 +46,7 @@ jobs:
       - name: Install Shopware
         run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Install composer deps
+        working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: |
          composer install
       - name: Install Multisafepay Plugin
