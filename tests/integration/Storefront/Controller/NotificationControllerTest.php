@@ -134,7 +134,7 @@ class NotificationControllerTest extends TestCase
             ->method('getGlobals')
             ->willReturn($request);
 
-        $notificationController = $this->getMockBuilder(NotificationController::class)
+        return $this->getMockBuilder(NotificationController::class)
             ->setConstructorArgs([
                 $this->getContainer()->get(CheckoutHelper::class),
                 $sdkFactory,
@@ -143,8 +143,6 @@ class NotificationControllerTest extends TestCase
             ])
             ->setMethodsExcept(['notification'])
             ->getMock();
-
-        return $notificationController;
     }
 
     /**
