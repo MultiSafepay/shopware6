@@ -6,7 +6,7 @@
     "license": "MIT",
     "minimum-stability": "RC",
     "require": {
-        "php": "^7.1 || ^8.0",
+        "php": "^7.2 || ^8.0",
         "shopware/core": "^6.2",
         "shopware/storefront": "^6.2",
         "multisafepay/php-sdk": "^5.1",
