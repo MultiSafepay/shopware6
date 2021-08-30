@@ -11,6 +11,8 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 
 class KlarnaPaymentHandler extends AsyncPaymentHandler
 {
@@ -19,10 +21,9 @@ class KlarnaPaymentHandler extends AsyncPaymentHandler
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @param string|null $gateway
-     * @param string $type
+     * @param string|null $type
      * @param array $gatewayInfo
      * @return RedirectResponse
-     * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -33,13 +34,30 @@ class KlarnaPaymentHandler extends AsyncPaymentHandler
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new Klarna();
+
         return parent::pay(
             $transaction,
             $dataBag,
             $salesChannelContext,
             $paymentMethod->getGatewayCode(),
             $paymentMethod->getType(),
-            ['gender' => $this->checkoutHelper->getGenderFromSalutation($salesChannelContext->getCustomer())]
+            ['gender' => $this->getGenderFromSalutation($salesChannelContext->getCustomer())]
         );
+    }
+
+    /**
+     * @param CustomerEntity $customer
+     * @return string|null
+     */
+    public function getGenderFromSalutation(CustomerEntity $customer): ?string
+    {
+        switch ($customer->getSalutation()->getSalutationKey()) {
+            case 'mr':
+                return 'male';
+            case 'mrs':
+                return 'female';
+        }
+
+        return null;
     }
 }

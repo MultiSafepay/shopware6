@@ -1,12 +1,11 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
 namespace MultiSafepay\Shopware6\Helper;
 
-use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -191,21 +190,5 @@ class CheckoutHelper
         $string = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 
         return lcfirst($string);
-    }
-
-    /**
-     * @param CustomerEntity $customer
-     * @return string|null
-     */
-    public function getGenderFromSalutation(CustomerEntity $customer): ?string
-    {
-        switch ($customer->getSalutation()->getSalutationKey()) {
-            case 'mr':
-                return 'male';
-            case 'mrs':
-                return 'female';
-        }
-
-        return null;
     }
 }

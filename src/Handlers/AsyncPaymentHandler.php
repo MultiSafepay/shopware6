@@ -8,6 +8,9 @@ namespace MultiSafepay\Shopware6\Handlers;
 
 use Exception;
 use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -17,9 +20,6 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
-use Psr\Http\Client\ClientExceptionInterface;
 
 class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
@@ -67,7 +67,12 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         try {
             $response = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
                 ->getTransactionManager()->create($this->orderRequestBuilder->build(
-                    $transaction, $dataBag, $salesChannelContext, $gateway, $type, $gatewayInfo
+                    $transaction,
+                    $dataBag,
+                    $salesChannelContext,
+                    (string)$gateway,
+                    $type,
+                    $gatewayInfo
                 ));
         } catch (ApiException $apiException) {
             /**
