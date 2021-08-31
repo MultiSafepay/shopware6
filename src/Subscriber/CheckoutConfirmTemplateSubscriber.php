@@ -8,6 +8,7 @@ namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
 use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
@@ -78,15 +79,19 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      */
     public function addMultiSafepayExtension(CheckoutConfirmPageLoadedEvent $event): void
     {
-        $salesChannelContext = $event->getSalesChannelContext();
-        $customer = $salesChannelContext->getCustomer();
-        $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
-        $struct = new MultiSafepayStruct();
-        $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
-        $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
-
         try {
+            $salesChannelContext = $event->getSalesChannelContext();
+            $customer = $salesChannelContext->getCustomer();
+            $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+            $struct = new MultiSafepayStruct();
+            $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
+            $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
             $tokens = $sdk->getTokenManager()->getList($customer->getId());
+        } catch (InvalidApiKeyException $invalidApiKeyException) {
+            /***
+             * @TODO add better logging system
+             */
+            return;
         } catch (ApiException $apiException) {
             $tokens = [];
         }

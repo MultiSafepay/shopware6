@@ -8,6 +8,8 @@ namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
 use MultiSafepay\Api\Transactions\UpdateRequest;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
@@ -76,23 +78,29 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                     continue;
                 }
 
-                $order = $this->orderUtil->getOrder($payload['id'], $context);
+                try {
+                    $order = $this->orderUtil->getOrder($payload['id'], $context);
 
-                foreach ($order->getDocuments() as $document) {
-                    if ($document->getConfig()['name'] !== 'invoice') {
-                        continue 2;
+                    foreach ($order->getDocuments() as $document) {
+                        if ($document->getConfig()['name'] !== 'invoice') {
+                            continue 2;
+                        }
+
+                        $this->sdkFactory->create($order->getSalesChannelId())
+                            ->getTransactionManager()
+                            ->update(
+                                $order->getOrderNumber(),
+                                (new UpdateRequest())->addData([
+                                    'invoice_id' => $order->getDocuments()->first()->getConfig()['custom']['invoiceNumber'],
+                                ])
+                            );
+
+                        break 2;
                     }
-
-                    $this->sdkFactory->create($order->getSalesChannelId())
-                        ->getTransactionManager()
-                        ->update(
-                            $order->getOrderNumber(),
-                            (new UpdateRequest())->addData([
-                                'invoice_id' => $order->getDocuments()->first()->getConfig()['custom']['invoiceNumber'],
-                            ])
-                        );
-
-                    break 2;
+                } catch (InvalidApiKeyException $invalidApiKeyException) {
+                    return;
+                } catch (ApiException $apiException) {
+                    return;
                 }
             }
         } catch (Exception $exception) {

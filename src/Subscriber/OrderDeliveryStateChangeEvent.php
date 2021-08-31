@@ -8,6 +8,8 @@ namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
 use MultiSafepay\Api\Transactions\UpdateRequest;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
@@ -91,20 +93,26 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
             return;
         }
 
-        $order = $this->orderUtil->getOrder($orderId, $context);
-        $this->sdkFactory->create($order->getSalesChannelId())
-            ->getTransactionManager()
-            ->update(
-                $order->getOrderNumber(),
-                (new UpdateRequest())->addData([
-                    [
-                        'tracktrace_code' => reset($trackAndTraceCode),
-                        'carrier' => '',
-                        'ship_date' => date('Y-m-d H:i:s'),
-                        'reason' => 'Shipped',
-                    ],
-                ])
-            );
+        try {
+            $order = $this->orderUtil->getOrder($orderId, $context);
+            $this->sdkFactory->create($order->getSalesChannelId())
+                ->getTransactionManager()
+                ->update(
+                    $order->getOrderNumber(),
+                    (new UpdateRequest())->addData([
+                        [
+                            'tracktrace_code' => reset($trackAndTraceCode),
+                            'carrier' => '',
+                            'ship_date' => date('Y-m-d H:i:s'),
+                            'reason' => 'Shipped',
+                        ],
+                    ])
+                );
+        } catch (InvalidApiKeyException $invalidApiKeyException) {
+            return;
+        } catch (ApiException $apiException) {
+            return;
+        }
     }
 
     /**
