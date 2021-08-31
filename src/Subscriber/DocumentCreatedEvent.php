@@ -91,7 +91,9 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                             ->update(
                                 $order->getOrderNumber(),
                                 (new UpdateRequest())->addData([
-                                    'invoice_id' => $order->getDocuments()->first()->getConfig()['custom']['invoiceNumber'],
+                                    'invoice_id' => $order->getDocuments()
+                                                        ->first()
+                                                        ->getConfig()['custom']['invoiceNumber'],
                                 ])
                             );
 
