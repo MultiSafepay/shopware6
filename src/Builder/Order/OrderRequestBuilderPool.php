@@ -109,7 +109,7 @@ class OrderRequestBuilderPool
     }
 
     /**
-     * @return OrderRequestBuilderInterface[]
+     * @return array
      */
     public function getOrderRequestBuilders(): array
     {
