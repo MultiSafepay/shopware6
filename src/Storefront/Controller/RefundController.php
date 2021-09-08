@@ -104,7 +104,10 @@ class RefundController extends AbstractController
             return new JsonResponse(['isAllowed' => true, 'refundedAmount' => 0]);
         }
 
-        return new JsonResponse(['isAllowed' => true, 'refundedAmount' => $result->getAmountRefunded() / 100]);
+        return new JsonResponse([
+            'isAllowed' => true,
+            'refundedAmount' => $result->getAmountRefunded() ? $result->getAmountRefunded() / 100 : 0
+        ]);
     }
 
     /**
