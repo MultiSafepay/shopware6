@@ -133,22 +133,20 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
 
     /**
      * @param OrderLineItemEntity $item
-     * @return mixed
+     * @return string
      */
-    private function getMerchantItemId(OrderLineItemEntity $item)
+    private function getMerchantItemId(OrderLineItemEntity $item): string
     {
-        $payload = $item->getPayload();
-
-        if ($payload === null) {
+        if (!($payload = $item->getPayload())) {
             return $item->getIdentifier();
         }
 
         if (array_key_exists('productNumber', $payload)) {
-            return $payload['productNumber'];
+            return (string)$payload['productNumber'];
         }
 
         if (array_key_exists('discountId', $payload) && $item->getType() === 'promotion') {
-            return $payload['discountId'];
+            return (string)$payload['discountId'];
         }
 
         return $item->getIdentifier();
