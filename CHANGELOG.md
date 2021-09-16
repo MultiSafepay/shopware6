@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.4.2] - 2021-09-16
+### Fixed
++ PLGSHPS6-198: Send invoice id to MultiSafepay when an invoice has been created
+
+***
+
 ## [2.4.1] - 2021-06-01
 ### Fixed
 + Fixed missing null check with tokenization and logged-in user
