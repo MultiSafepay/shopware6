@@ -6,14 +6,16 @@
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\MediaEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
@@ -21,9 +23,6 @@ use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Context;
 
 class PaymentMethodsInstaller implements InstallerInterface
 {
@@ -55,7 +54,7 @@ class PaymentMethodsInstaller implements InstallerInterface
     {
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->addPaymentMethod(new $gateway(), $context->getContext(), false);
         }
     }
@@ -67,7 +66,7 @@ class PaymentMethodsInstaller implements InstallerInterface
     {
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->addPaymentMethod(new $gateway(), $context->getContext(), $context->getPlugin()->isActive());
         }
     }
@@ -77,7 +76,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     public function uninstall(UninstallContext $context): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->setPaymentMethodActive(false, new $gateway(), $context->getContext());
         }
     }
@@ -87,7 +86,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     public function activate(ActivateContext $context): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->setPaymentMethodActive(true, new $gateway(), $context->getContext());
         }
     }
@@ -97,7 +96,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     public function deactivate(DeactivateContext $context): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->setPaymentMethodActive(false, new $gateway(), $context->getContext());
         }
     }

@@ -7,11 +7,14 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
+use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -21,9 +24,9 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var ApiHelper
+     * @var SdkFactory
      */
-    private $apiHelper;
+    private $sdkFactory;
 
     /**
      * @var EntityRepositoryInterface
@@ -43,18 +46,18 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     /**
      * CheckoutConfirmTemplateSubscriber constructor.
      *
-     * @param ApiHelper $apiHelper
+     * @param SdkFactory $sdkFactory
      * @param EntityRepositoryInterface $customerRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
      */
     public function __construct(
-        ApiHelper $apiHelper,
+        SdkFactory $sdkFactory,
         EntityRepositoryInterface $customerRepository,
         SettingsService $settingsService,
         string $shopwareVersion
     ) {
-        $this->apiHelper = $apiHelper;
+        $this->sdkFactory = $sdkFactory;
         $this->customerRepository = $customerRepository;
         $this->shopwareVersion = $shopwareVersion;
         $this->settingsService = $settingsService;
@@ -76,16 +79,21 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      */
     public function addMultiSafepayExtension(CheckoutConfirmPageLoadedEvent $event): void
     {
-        $salesChannelContext = $event->getSalesChannelContext();
-        $customer = $salesChannelContext->getCustomer();
-        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
-        $struct = new MultiSafepayStruct();
-        $issuers = $client->issuers->get();
-        $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
-        $tokens = $client->tokens->get('recurring', $customer->getId());
-
-        if (isset($tokens->tokens)) {
-            $tokens = $tokens->tokens;
+        try {
+            $salesChannelContext = $event->getSalesChannelContext();
+            $customer = $salesChannelContext->getCustomer();
+            $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+            $struct = new MultiSafepayStruct();
+            $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
+            $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
+            $tokens = $sdk->getTokenManager()->getList($customer->getId());
+        } catch (InvalidApiKeyException $invalidApiKeyException) {
+            /***
+             * @TODO add better logging system
+             */
+            return;
+        } catch (ApiException $apiException) {
+            $tokens = [];
         }
 
         $activeToken = $customer->getCustomFields()['active_token'] ?? null;
@@ -131,15 +139,15 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      */
     private function getRealIdealName(array $issuers, ?string $lastUsedIssuer): string
     {
+        $result = 'iDEAL';
+
         foreach ($issuers as $issuer) {
             if ($issuer->code === $lastUsedIssuer) {
-                $issuerName = $issuer->description;
-
-                return 'iDEAL (' . $issuerName . ')';
+                return $result . ' (' . $issuer->description . ')';
             }
         }
 
-        return 'iDEAL';
+        return $result;
     }
 
     /**

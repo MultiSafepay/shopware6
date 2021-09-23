@@ -6,9 +6,9 @@
 
 namespace MultiSafepay\Shopware6\Installers;
 
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\File\FileSaver;
 use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaEntity;
@@ -46,7 +46,7 @@ class MediaInstaller implements InstallerInterface
      */
     public function install(InstallContext $context): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->addMedia(new $gateway(), $context->getContext());
         }
     }
@@ -56,7 +56,7 @@ class MediaInstaller implements InstallerInterface
      */
     public function update(UpdateContext $context): void
     {
-        foreach (GatewayHelper::GATEWAYS as $gateway) {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->addMedia(new $gateway(), $context->getContext());
         }
     }

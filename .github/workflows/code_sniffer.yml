@@ -12,7 +12,7 @@ jobs:
       - name: Install php dependencies
         uses: shivammathur/setup-php@master
         with:
-          php-version: '7.3'
+          php-version: '7.4'
           extensions: intl
       - name: Checkout code
         uses: actions/checkout@v2

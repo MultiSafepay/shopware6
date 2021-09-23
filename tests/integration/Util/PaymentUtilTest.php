@@ -1,40 +1,49 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Tests\Integration\Helper;
+namespace MultiSafepay\Shopware6\Tests\Integration\Util;
 
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
+use Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException;
 
-class GatewayHelperTest extends TestCase
+class PaymentUtilTest extends TestCase
 {
     use IntegrationTestBehaviour, Orders, Transactions, Customers, PaymentMethods {
         IntegrationTestBehaviour::getContainer insteadof Transactions;
         IntegrationTestBehaviour::getContainer insteadof Customers;
         IntegrationTestBehaviour::getContainer insteadof PaymentMethods;
         IntegrationTestBehaviour::getContainer insteadof Orders;
-
         IntegrationTestBehaviour::getKernel insteadof Transactions;
         IntegrationTestBehaviour::getKernel insteadof Customers;
         IntegrationTestBehaviour::getKernel insteadof PaymentMethods;
         IntegrationTestBehaviour::getKernel insteadof Orders;
     }
 
+    /**
+     * @var object|null
+     */
     private $orderRepository;
+
+    /**
+     * @var Context
+     */
     private $context;
-    /** @var GatewayHelper  */
-    private $gatewayHelper;
+
+    /** @var PaymentUtil */
+    private $paymentUtil;
 
     /**
      * Initialize test
@@ -42,24 +51,27 @@ class GatewayHelperTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         /** @var EntityRepositoryInterface $orderRepository */
         $this->orderRepository = $this->getContainer()->get('order.repository');
         $this->context = Context::createDefaultContext();
-        $this->gatewayHelper = $this->getContainer()->get(GatewayHelper::class);
+        $this->paymentUtil = $this->getContainer()->get(PaymentUtil::class);
     }
 
     /**
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException
+     * @throws InconsistentCriteriaIdsException
+     * @throws StateMachineNotFoundException
+     * @throws StateMachineWithoutInitialStateException
      */
     public function testIsMultisafepayPaymentMethod()
     {
-        $paymentMethodId = $this->createPaymentMethod($this->context);
-        $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($customerId, $this->context);
-        $this->createTransaction($orderId, $paymentMethodId, $this->context);
+        $orderId = $this->createOrder($this->createCustomer($this->context), $this->context);
+        $this->createTransaction(
+            $orderId,
+            $this->createPaymentMethod($this->context),
+            $this->context
+        );
 
-        $this->assertFalse($this->gatewayHelper->isMultisafepayPaymentMethod($orderId, $this->context));
+        $this->assertFalse($this->paymentUtil->isMultisafepayPaymentMethod($orderId, $this->context));
     }
 }

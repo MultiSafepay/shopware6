@@ -4,10 +4,11 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler">
-            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+        <service id="MultiSafepay\Shopware6\Factory\SdkFactory">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+        </service>
+        <service id="MultiSafepay\Sdk">
+            <factory service="MultiSafepay\Shopware6\Factory\SdkFactory" method="create"/>
         </service>
     </services>
 </container>

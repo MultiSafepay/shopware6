@@ -1,51 +1,69 @@
 <?php
 
-
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
-use MultiSafepay\Shopware6\Handlers\In3PaymentHandler;
+use Exception;
+use MultiSafepay\Api\Transactions\RefundRequest;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler;
+use MultiSafepay\Shopware6\Handlers\In3PaymentHandler;
 use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\Helper\GatewayHelper;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
+use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * @RouteScope(scopes={"api"})
  */
 class RefundController extends AbstractController
 {
-    /** @var ApiHelper */
-    private $apiHelper;
-    /** @var GatewayHelper */
-    private $gatewayHelper;
-    /** @var EntityRepositoryInterface */
+    /**
+     * @var SdkFactory
+     */
+    private $sdkFactory;
+
+    /**
+     * @var OrderUtil
+     */
+    private $orderUtil;
+
+    /**
+     * @var PaymentUtil
+     */
+    private $paymentUtil;
+
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $orderRepository;
 
     /**
      * RefundController constructor.
+     *
      * @param EntityRepositoryInterface $orderRepository
-     * @param ApiHelper $apiHelper
+     * @param SdkFactory $sdkFactory
+     * @param PaymentUtil $paymentUtil
+     * @param OrderUtil $orderUtil
      */
     public function __construct(
         EntityRepositoryInterface $orderRepository,
-        ApiHelper $apiHelper,
-        GatewayHelper $gatewayHelper
+        SdkFactory $sdkFactory,
+        PaymentUtil $paymentUtil,
+        OrderUtil $orderUtil
     ) {
         $this->orderRepository = $orderRepository;
-        $this->apiHelper = $apiHelper;
-        $this->gatewayHelper = $gatewayHelper;
+        $this->sdkFactory = $sdkFactory;
+        $this->paymentUtil = $paymentUtil;
+        $this->orderUtil = $orderUtil;
     }
 
     /**
@@ -58,10 +76,10 @@ class RefundController extends AbstractController
      */
     public function getRefundData(Request $request, Context $context): JsonResponse
     {
-        $order = $this->getOrder($request->get('orderId'), $context);
+        $order = $this->orderUtil->getOrder($request->get('orderId'), $context);
         $paymentHandler = $order->getTransactions()->first()->getPaymentMethod()->getHandlerIdentifier();
 
-        if (!$this->gatewayHelper->isMultisafepayPaymentMethod($request->get('orderId'), $context)) {
+        if (!$this->paymentUtil->isMultisafepayPaymentMethod($request->get('orderId'), $context)) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);
         }
 
@@ -73,21 +91,23 @@ class RefundController extends AbstractController
                 PayAfterDeliveryPaymentHandler::class,
                 KlarnaPaymentHandler::class,
                 EinvoicePaymentHandler::class,
-                In3PaymentHandler::class
+                In3PaymentHandler::class,
             ]
         )) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);
         }
 
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient($order->getSalesChannelId());
-
         try {
-            $result = $mspClient->orders->get('orders', $order->getOrderNumber());
-        } catch (\Exception $e) {
+            $result = $this->sdkFactory->create($order->getSalesChannelId())
+                ->getTransactionManager()->get($order->getOrderNumber());
+        } catch (Exception $e) {
             return new JsonResponse(['isAllowed' => true, 'refundedAmount' => 0]);
         }
 
-        return new JsonResponse(['isAllowed' => true, 'refundedAmount' => $result->amount_refunded / 100]);
+        return new JsonResponse([
+            'isAllowed' => true,
+            'refundedAmount' => $result->getAmountRefunded() ? $result->getAmountRefunded() / 100 : 0
+        ]);
     }
 
     /**
@@ -96,47 +116,29 @@ class RefundController extends AbstractController
      */
     public function refund(Request $request, Context $context): JsonResponse
     {
-        $order = $this->getOrder($request->get('orderId'), $context);
-        $orderNumber = $order->getOrderNumber();
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient($order->getSalesChannelId());
+        $order = $this->orderUtil->getOrder($request->get('orderId'), $context);
+        $transactionManager = $this->sdkFactory->create($order->getSalesChannelId())->getTransactionManager();
+        $transactionData = $transactionManager->get($order->getOrderNumber());
 
-        $body = [
-            'amount' => $request->get('amount'),
-            'currency' => $order->getCurrency()->getIsoCode()
-        ];
+        /**
+         * @TODO move this to separate Refund Request Builder, as we did it for Order Request Builder
+         */
+        $refundRequest = (new RefundRequest())->addMoney(
+            new Money(
+                $request->get('amount'),
+                $order->getCurrency()->getIsoCode()
+            )
+        );
+
         try {
-            $mspClient->orders->post($body, 'orders/' . $orderNumber . '/refunds');
+            $transactionManager->refund($transactionData, $refundRequest);
 
-            if (!$mspClient->orders->success) {
-                $result = $mspClient->orders->getResult();
-                throw new \Exception($result->error_info, $result->error_code);
-            }
             return new JsonResponse(['status' => true]);
-        } catch (\Exception $e) {
+        } catch (Exception $exception) {
             return new JsonResponse([
                 'status' => false,
-                'message' => $e->getMessage()
+                'message' => $exception->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * @param string $orderId
-     * @param Context $context
-     * @return OrderEntity
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getOrder(string $orderId, Context $context): OrderEntity
-    {
-        $orderRepo = $this->orderRepository;
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('currency');
-        $criteria->addAssociation('transactions.paymentMethod');
-        $criteria->addAssociation('transactions.paymentMethod.plugin');
-
-        /** @var OrderEntity $order */
-        $order = $orderRepo->search($criteria, $context)->get($orderId);
-
-        return $order;
     }
 }

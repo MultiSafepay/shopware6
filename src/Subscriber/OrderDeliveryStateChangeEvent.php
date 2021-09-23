@@ -7,11 +7,14 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\MltisafeMultiSafepay;
+use MultiSafepay\Api\Transactions\UpdateRequest;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
-use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -23,33 +26,41 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
     /**
      * @var EntityRepositoryInterface
      */
-    private $orderRepository;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
     private $orderDeliveryRepository;
 
     /**
-     * @var ApiHelper
+     * @var SdkFactory
      */
-    private $apiHelper;
+    private $sdkFactory;
 
     /**
-     * OrderDeliveryStateChangeEventTest constructor.
+     * @var PaymentUtil
+     */
+    private $paymentUtil;
+
+    /**
+     * @var OrderUtil
+     */
+    private $orderUtil;
+
+    /**
+     * OrderDeliveryStateChangeEvent constructor.
      *
-     * @param EntityRepositoryInterface $orderRepository
      * @param EntityRepositoryInterface $orderDeliveryRepository
-     * @param ApiHelper $apiHelper
+     * @param SdkFactory $sdkFactory
+     * @param PaymentUtil $paymentUtil
+     * @param OrderUtil $orderUtil
      */
     public function __construct(
-        EntityRepositoryInterface $orderRepository,
         EntityRepositoryInterface $orderDeliveryRepository,
-        ApiHelper $apiHelper
+        SdkFactory $sdkFactory,
+        PaymentUtil $paymentUtil,
+        OrderUtil $orderUtil
     ) {
-        $this->orderRepository = $orderRepository;
         $this->orderDeliveryRepository = $orderDeliveryRepository;
-        $this->apiHelper = $apiHelper;
+        $this->sdkFactory = $sdkFactory;
+        $this->paymentUtil = $paymentUtil;
+        $this->orderUtil = $orderUtil;
     }
 
     /**
@@ -74,80 +85,34 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
             return;
         }
 
-        $order = $this->getOrder($event);
+        $context = $event->getContext();
+        $orderDelivery = $this->getOrderDeliveryData($event);
+        $orderId = $orderDelivery->getOrderId();
 
-        if (!$this->isMultiSafepayPaymentMethod($order)) {
+        if (!$this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context)) {
             return;
         }
 
-        $orderDelivery = $this->getOrderDeliveryData($event);
-        $trackAndTraceCode = $orderDelivery->getTrackingCodes();
-        $salesChannelId = $order->getSalesChannelId();
-        $client = $this->apiHelper->initializeMultiSafepayClient($salesChannelId);
-        $client->orders->patch(
-            [
-                'tracktrace_code' => reset($trackAndTraceCode),
-                'carrier' => '',
-                'ship_date' => date('Y-m-d H:i:s'),
-                'reason' => 'Shipped',
-            ],
-            'orders/' . $order->getOrderNumber()
-        );
-    }
-
-    /**
-     * Check if this event is triggered using a MultiSafepay Payment Method
-     *
-     * @param OrderEntity $order
-     * @return bool
-     */
-    private function isMultiSafepayPaymentMethod(OrderEntity $order): bool
-    {
-        $transaction = $order->getTransactions()->first();
-
-        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
-            return false;
+        try {
+            $order = $this->orderUtil->getOrder($orderId, $context);
+            $this->sdkFactory->create($order->getSalesChannelId())
+                ->getTransactionManager()
+                ->update(
+                    $order->getOrderNumber(),
+                    (new UpdateRequest())->addData([
+                        [
+                            'tracktrace_code' => reset($trackAndTraceCode),
+                            'carrier' => '',
+                            'ship_date' => date('Y-m-d H:i:s'),
+                            'reason' => 'Shipped',
+                        ],
+                    ])
+                );
+        } catch (InvalidApiKeyException $invalidApiKeyException) {
+            return;
+        } catch (ApiException $apiException) {
+            return;
         }
-
-        $plugin = $transaction->getPaymentMethod()->getPlugin();
-
-        return $plugin->getBaseClass() === MltisafeMultiSafepay::class;
-    }
-
-    /**
-     * Get the data we need from the order
-     *
-     * @param string $orderId
-     * @return Criteria
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getOrderCriteria(string $orderId): Criteria
-    {
-        $orderCriteria = new Criteria([$orderId]);
-        $orderCriteria->addAssociation('orderCustomer.salutation');
-        $orderCriteria->addAssociation('stateMachineState');
-        $orderCriteria->addAssociation('transactions');
-        $orderCriteria->addAssociation('transactions.paymentMethod');
-        $orderCriteria->addAssociation('transactions.paymentMethod.plugin');
-        $orderCriteria->addAssociation('salesChannel');
-
-        return $orderCriteria;
-    }
-
-    /**
-     * @param StateMachineStateChangeEvent $event
-     * @return OrderEntity
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function getOrder(StateMachineStateChangeEvent $event): OrderEntity
-    {
-        /** @var OrderDeliveryEntity $orderDelivery */
-        $orderDelivery = $this->getOrderDeliveryData($event);
-        $orderCriteria = $this->getOrderCriteria($orderDelivery->getOrderId());
-        /** @var OrderEntity $order */
-        $order = $this->orderRepository->search($orderCriteria, $event->getContext())->first();
-
-        return $order;
     }
 
     /**
