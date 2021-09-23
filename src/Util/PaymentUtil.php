@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Helper;
+namespace MultiSafepay\Shopware6\Util;
 
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
@@ -18,13 +18,13 @@ use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\Boekenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Cbc;
-use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\DirectBankTransfer;
+use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
 use MultiSafepay\Shopware6\PaymentMethods\Einvoice;
 use MultiSafepay\Shopware6\PaymentMethods\Eps;
-use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\FashionGiftcard;
+use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\Fietsenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\Gezondheidsbon;
@@ -50,8 +50,8 @@ use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
 use MultiSafepay\Shopware6\PaymentMethods\PodiumCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\SofortBanking;
 use MultiSafepay\Shopware6\PaymentMethods\SportEnFitCadeau;
-use MultiSafepay\Shopware6\PaymentMethods\Trustly;
 use MultiSafepay\Shopware6\PaymentMethods\TrustPay;
+use MultiSafepay\Shopware6\PaymentMethods\Trustly;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
 use MultiSafepay\Shopware6\PaymentMethods\VvvCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\WebshopGiftcard;
@@ -60,23 +60,9 @@ use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
-class GatewayHelper
+class PaymentUtil
 {
-    /** @var EntityRepositoryInterface */
-    private $orderRepository;
-
-    /**
-     * GatewayHelper constructor.
-     * @param EntityRepositoryInterface $orderRepository
-     */
-    public function __construct(EntityRepositoryInterface $orderRepository)
-    {
-        $this->orderRepository = $orderRepository;
-    }
-
     public const GATEWAYS = [
         AfterPay::class,
         Alipay::class,
@@ -133,37 +119,35 @@ class GatewayHelper
     ];
 
     /**
-     * @param string $orderId
-     * @param Context $context
-     * @return bool
+     * @var OrderUtil
      */
-    public function isMultisafepayPaymentMethod(string $orderId, Context $context)
-    {
-        $order = $this->getOrderData($orderId, $context);
-        $transaction = $order->getTransactions()->first();
-        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
-            return false;
-        }
+    private $orderUtil;
 
-        $plugin = $transaction->getPaymentMethod()->getPlugin();
-
-        return $plugin->getBaseClass() === MltisafeMultiSafepay::class;
+    /**
+     * PaymentUtil constructor.
+     *
+     * @param OrderUtil $orderUtil
+     */
+    public function __construct(
+        OrderUtil $orderUtil
+    ) {
+        $this->orderUtil = $orderUtil;
     }
 
     /**
      * @param string $orderId
      * @param Context $context
-     * @return mixed|null
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @return bool
      */
-    private function getOrderData(string $orderId, Context $context)
+    public function isMultisafepayPaymentMethod(string $orderId, Context $context): bool
     {
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('transactions');
-        $criteria->addAssociation('transactions.paymentMethod');
-        $criteria->addAssociation('transactions.paymentMethod.plugin');
-        $criteria->addAssociation('salesChannel');
+        $order = $this->orderUtil->getOrder($orderId, $context);
+        $transaction = $order->getTransactions()->first();
 
-        return $this->orderRepository->search($criteria, $context)->get($orderId);
+        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
+            return false;
+        }
+
+        return $transaction->getPaymentMethod()->getPlugin()->getBaseClass() === MltisafeMultiSafepay::class;
     }
 }

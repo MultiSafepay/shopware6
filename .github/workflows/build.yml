@@ -46,14 +46,15 @@ jobs:
       - name: Install Shopware
         run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Install Multisafepay Plugin
-        run: php bin/console plugin:install -c --activate MltisafeMultiSafepay
+        working-directory: ./custom/plugins/MltisafeMultiSafepay
+        run: |
+          make composer-production -B
+          make activate-plugin -B
       - name: prepare unit test database
         run: ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Run PHPUnit
         working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: |
-          composer dump-autoload
-          touch vendor/composer/InstalledVersions.php
           ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
       - name: Send clover to codecov
         working-directory: ./custom/plugins/MltisafeMultiSafepay

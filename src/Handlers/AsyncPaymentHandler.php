@@ -7,9 +7,10 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use Exception;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\Helper\CheckoutHelper;
-use Shopware\Core\Checkout\Customer\CustomerEntity;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -19,31 +20,31 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use MultiSafepay\Shopware6\Helper\MspHelper;
 
 class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
-    /** @var ApiHelper $apiHelper */
-    public $apiHelper;
-    /** @var CheckoutHelper $checkoutHelper */
-    public $checkoutHelper;
-    /** @var MspHelper $mspHelper */
-    public $mspHelper;
+    /**
+     * @var SdkFactory
+     */
+    private $sdkFactory;
 
     /**
-     * MultiSafepay constructor.
-     * @param ApiHelper $apiHelper
-     * @param CheckoutHelper $checkoutHelper
-     * @param MspHelper $mspHelper
+     * @var OrderRequestBuilder
+     */
+    private $orderRequestBuilder;
+
+    /**
+     * AsyncPaymentHandler constructor.
+     *
+     * @param SdkFactory $sdkFactory
+     * @param OrderRequestBuilder $orderRequestBuilder
      */
     public function __construct(
-        ApiHelper $apiHelper,
-        CheckoutHelper $checkoutHelper,
-        MspHelper $mspHelper
+        SdkFactory $sdkFactory,
+        OrderRequestBuilder $orderRequestBuilder
     ) {
-        $this->apiHelper = $apiHelper;
-        $this->checkoutHelper = $checkoutHelper;
-        $this->mspHelper = $mspHelper;
+        $this->sdkFactory = $sdkFactory;
+        $this->orderRequestBuilder = $orderRequestBuilder;
     }
 
     /**
@@ -54,7 +55,6 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @param string $type
      * @param array $gatewayInfo
      * @return RedirectResponse
-     * @throws AsyncPaymentProcessException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -64,41 +64,32 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
-        $mspClient = $this->apiHelper->initializeMultiSafepayClient($salesChannelContext->getSalesChannel()->getId());
-
-        $order = $transaction->getOrder();
-        $customer = $salesChannelContext->getCustomer();
-        $request = $this->mspHelper->getGlobals();
-
-        $activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token');
-
-        $requestData = [
-            'type' => $activeToken === null ? $type : 'direct',
-            'recurring_id' => $activeToken,
-            'gateway' => $gateway,
-            'order_id' => $order->getOrderNumber(),
-            'currency' => $salesChannelContext->getCurrency()->getIsoCode(),
-            'amount' => $order->getAmountTotal() * 100,
-            'recurring_model' => $this->canSaveToken($dataBag, $salesChannelContext->getCustomer()) ?
-                'cardOnFile' : null,
-            'description' => 'Payment for order #' . $order->getOrderNumber(),
-            'payment_options' => $this->checkoutHelper->getPaymentOptions($transaction),
-            'customer' => $this->checkoutHelper->getCustomerData($request, $customer),
-            'delivery' => $this->checkoutHelper->getDeliveryData($customer),
-            'shopping_cart' => $this->checkoutHelper->getShoppingCart($order),
-            'checkout_options' => $this->checkoutHelper->getCheckoutOptions($order),
-            'gateway_info' => $gatewayInfo,
-            'seconds_active' => $this->checkoutHelper->getSecondsActive(),
-            'plugin' => $this->checkoutHelper->getPluginMetadata($salesChannelContext->getContext())
-        ];
-
         try {
-            $mspClient->orders->post($requestData);
-
-            if (!$mspClient->orders->success) {
-                $result = $mspClient->orders->getResult();
-                throw new Exception($result->error_code . ' - ' . $result->error_info);
-            }
+            $response = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
+                ->getTransactionManager()->create($this->orderRequestBuilder->build(
+                    $transaction,
+                    $dataBag,
+                    $salesChannelContext,
+                    (string)$gateway,
+                    $type,
+                    $gatewayInfo
+                ));
+        } catch (ApiException $apiException) {
+            /**
+             * @Todo improve log handling for better debugging
+             */
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                $apiException->getMessage()
+            );
+        } catch (ClientExceptionInterface $clientException) {
+            /**
+             * @Todo improve log handling for better debugging
+             */
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                $clientException->getMessage()
+            );
         } catch (Exception $exception) {
             throw new AsyncPaymentProcessException(
                 $transaction->getOrderTransaction()->getId(),
@@ -106,7 +97,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             );
         }
 
-        return new RedirectResponse($mspClient->orders->getPaymentLink());
+        return new RedirectResponse($response->getPaymentUrl());
     }
 
     /**
@@ -137,18 +128,5 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         if ($request->query->getBoolean('cancel')) {
             throw new CustomerCanceledAsyncPaymentException($orderTransactionId, 'Canceled at payment page');
         }
-    }
-
-    /**
-     * @param RequestDataBag $dataBag
-     * @param CustomerEntity $customer
-     * @return bool
-     */
-    private function canSaveToken(RequestDataBag $dataBag, CustomerEntity $customer): bool
-    {
-        if ($customer->getGuest()) {
-            return false;
-        }
-        return $dataBag->getBoolean('saveToken', false);
     }
 }

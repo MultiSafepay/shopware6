@@ -7,39 +7,48 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
-use MultiSafepay\Shopware6\MltisafeMultiSafepay;
-use Shopware\Core\Checkout\Order\OrderEntity;
+use MultiSafepay\Api\Transactions\UpdateRequest;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Checkout\Order\OrderEvents;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class DocumentCreatedEvent implements EventSubscriberInterface
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var SdkFactory
      */
-    private $orderRepository;
+    private $sdkFactory;
 
     /**
-     * @var ApiHelper
+     * @var PaymentUtil
      */
-    private $apiHelper;
+    private $paymentUtil;
 
     /**
-     * OrderDeliveryStateChangeEventTest constructor.
+     * @var OrderUtil
+     */
+    private $orderUtil;
+
+    /**
+     * DocumentCreatedEvent constructor.
      *
      * @param EntityRepositoryInterface $orderRepository
-     * @param ApiHelper $apiHelper
+     * @param SdkFactory $sdkFactory
      */
     public function __construct(
-        EntityRepositoryInterface $orderRepository,
-        ApiHelper $apiHelper
+        SdkFactory $sdkFactory,
+        PaymentUtil $paymentUtil,
+        OrderUtil $orderUtil
     ) {
-        $this->orderRepository = $orderRepository;
-        $this->apiHelper = $apiHelper;
+        $this->sdkFactory = $sdkFactory;
+        $this->paymentUtil = $paymentUtil;
+        $this->orderUtil = $orderUtil;
     }
 
     /**
@@ -65,66 +74,39 @@ class DocumentCreatedEvent implements EventSubscriberInterface
             foreach ($event->getWriteResults() as $writeResult) {
                 $payload = $writeResult->getPayload();
 
-                if (empty($payload)) {
+                if (empty($payload) || !$this->paymentUtil->isMultiSafepayPaymentMethod($payload['id'], $context)) {
                     continue;
                 }
 
-                $orderResult = $this->orderRepository->search(
-                    (new Criteria([$payload['id']]))
-                        ->addAssociation('documents')
-                        ->addAssociation('transactions')
-                        ->addAssociation('transactions.paymentMethod')
-                        ->addAssociation('transactions.paymentMethod.plugin'),
-                    $context
-                );
-                /** @var OrderEntity|null $order */
-                $order = $orderResult->first();
+                try {
+                    $order = $this->orderUtil->getOrder($payload['id'], $context);
 
-                if (!$this->isMultiSafepayPaymentMethod($order)) {
-                    continue;
-                }
+                    foreach ($order->getDocuments() as $document) {
+                        if ($document->getConfig()['name'] !== 'invoice') {
+                            continue 2;
+                        }
 
-                foreach ($order->getDocuments() as $document) {
-                    if ($document->getConfig()['name'] !== 'invoice') {
-                        continue 2;
+                        $this->sdkFactory->create($order->getSalesChannelId())
+                            ->getTransactionManager()
+                            ->update(
+                                $order->getOrderNumber(),
+                                (new UpdateRequest())->addData([
+                                    'invoice_id' => $order->getDocuments()
+                                                        ->first()
+                                                        ->getConfig()['custom']['invoiceNumber'],
+                                ])
+                            );
+
+                        break 2;
                     }
-                    $client = $this->apiHelper->initializeMultiSafepayClient($order->getSalesChannelId());
-
-                    $client->orders->patch(
-                        [
-                            'invoice_id' => $order->getDocuments()->first()->getConfig()['custom']['invoiceNumber'],
-                        ],
-                        'orders/' . $order->getOrderNumber()
-                    );
-
-                    break 2;
+                } catch (InvalidApiKeyException $invalidApiKeyException) {
+                    return;
+                } catch (ApiException $apiException) {
+                    return;
                 }
             }
         } catch (Exception $exception) {
             return;
         }
-    }
-
-    /**
-     * Check if this event is triggered using a MultiSafepay Payment Method
-     *
-     * @param OrderEntity $order
-     * @return bool
-     */
-    private function isMultiSafepayPaymentMethod(OrderEntity $order): bool
-    {
-        if ($order->getTransactions() === null) {
-            return false;
-        }
-
-        $transaction = $order->getTransactions()->first();
-
-        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
-            return false;
-        }
-
-        $plugin = $transaction->getPaymentMethod()->getPlugin();
-
-        return $plugin->getBaseClass() === MltisafeMultiSafepay::class;
     }
 }

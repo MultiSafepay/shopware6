@@ -11,11 +11,10 @@
         <import resource="services/snippets.xml"/>
         <import resource="services/controllers.xml"/>
         <import resource="services/helpers.xml"/>
+        <import resource="services/utils.xml"/>
+        <import resource="services/builders.xml"/>
         <import resource="services/handlers.xml"/>
         <import resource="services/services.xml"/>
+        <import resource="services/sdk.xml"/>
     </imports>
-
-    <services>
-        <service id="MultiSafepay\Shopware6\API\MspClient" />
-    </services>
 </container>

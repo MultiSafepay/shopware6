@@ -1,13 +1,12 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 
 use MultiSafepay\Shopware6\Subscriber\OrderDeliveryStateChangeEvent;
-use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use PHPUnit\Framework\TestCase;
@@ -19,15 +18,18 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
 use Shopware\Core\System\StateMachine\Transition;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
+use \MultiSafepay\Shopware6\Util\OrderUtil;
 
 class OrderDeliveryStateChangeEventTest extends TestCase
 {
-//    use IntegrationTestBehaviour, Orders, Customers {
-//        IntegrationTestBehaviour::getContainer insteadof Customers;
-//        IntegrationTestBehaviour::getContainer insteadof Orders;
-//        IntegrationTestBehaviour::getKernel insteadof Customers;
-//        IntegrationTestBehaviour::getKernel insteadof Orders;
-//    }
+    //    use IntegrationTestBehaviour, Orders, Customers {
+    //        IntegrationTestBehaviour::getContainer insteadof Customers;
+    //        IntegrationTestBehaviour::getContainer insteadof Orders;
+    //        IntegrationTestBehaviour::getKernel insteadof Customers;
+    //        IntegrationTestBehaviour::getKernel insteadof Orders;
+    //    }
     use IntegrationTestBehaviour, Orders, Customers;
 
     /**
@@ -115,9 +117,10 @@ class OrderDeliveryStateChangeEventTest extends TestCase
         /** @var OrderDeliveryStateChangeEvent $orderDeliveryStateChangeEvent */
         $orderDeliveryStateChangeEvent = $this->getMockBuilder(OrderDeliveryStateChangeEvent::class)
             ->setConstructorArgs([
-                $this->getContainer()->get('order.repository'),
                 $this->getContainer()->get('order_delivery.repository'),
-                $this->getContainer()->get(ApiHelper::class)
+                $this->getContainer()->get(SdkFactory::class),
+                $this->getContainer()->get(PaymentUtil::class),
+                $this->getContainer()->get(OrderUtil::class),
             ])
             ->setMethodsExcept(['onOrderDeliveryStateChanged'])
             ->getMock();

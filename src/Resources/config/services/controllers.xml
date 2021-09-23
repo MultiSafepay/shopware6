@@ -5,24 +5,25 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\NotificationController" public="true">
-            <argument type="service" id="order.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\MspHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
         </service>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\RefundController" public="true">
             <argument type="service" id="order.repository"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\GatewayHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
         </service>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\ApiController" public="true">
-            <argument type="service" id="MultiSafepay\Shopware6\Helper\ApiHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

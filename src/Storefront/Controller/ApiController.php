@@ -1,30 +1,33 @@
 <?php
 
-
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
-use MultiSafepay\Shopware6\Helper\ApiHelper;
+use Exception;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * @RouteScope(scopes={"api"})
  */
 class ApiController extends AbstractController
 {
-    /** @var ApiHelper */
-    private $apiHelper;
+    /**
+     * @var SdkFactory
+     */
+    private $sdkFactory;
 
     /**
      * ApiController constructor.
-     * @param ApiHelper $apiHelper
+     *
+     * @param SdkFactory $sdkFactory
      */
-    public function __construct(ApiHelper $apiHelper)
+    public function __construct(SdkFactory $sdkFactory)
     {
-        $this->apiHelper = $apiHelper;
+        $this->sdkFactory = $sdkFactory;
     }
 
     /**
@@ -45,17 +48,15 @@ class ApiController extends AbstractController
         $globalApiKey = $globalPluginConfig->get('MltisafeMultiSafepay.config.apiKey');
         $globalEnv = $globalPluginConfig->get('MltisafeMultiSafepay.config.environment');
 
-        $mspClient = $this->apiHelper->setMultiSafepayApiCredentials(
-            $channelEnv ?? $globalEnv,
-            empty($channelApiKey) ? $globalApiKey : $channelApiKey
-        );
-
         try {
-            $mspClient->gateways->get();
-        } catch (\Exception $exception) {
+            $response = $this->sdkFactory->createWithData(
+                $channelApiKey ?? $globalApiKey,
+                $channelEnv ?? $globalEnv
+            )->getGatewayManager()->getGateways(false);
+        } catch (Exception $exception) {
             return new JsonResponse(['success' => false]);
         }
 
-        return new JsonResponse(['success' => $mspClient->gateways->success]);
+        return new JsonResponse(['success' => $response]);
     }
 }
