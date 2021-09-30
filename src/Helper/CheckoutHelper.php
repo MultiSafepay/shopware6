@@ -10,6 +10,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -194,9 +195,7 @@ class CheckoutHelper
         foreach ($order->getNestedLineItems() as $item) {
             // Support SwagCustomizedProducts
             if ($item->getType() === 'customized-products') {
-                foreach ($item->getChildren() as $customItem) {
-                    $shoppingCart['items'][] = $this->getShoppingCartItem($customItem, $hasNetPrices);
-                }
+                $this->processCustomizedProducts($item, $shoppingCart, $hasNetPrices);
                 continue;
             }
 
@@ -556,4 +555,67 @@ class CheckoutHelper
             'tax_table_selector' => (string) $this->getTaxRate($item->getPrice()),
         ];
     }
+
+    /**
+     * @param OrderLineItemEntity $item
+     * @param array $shoppingCart
+     * @param bool $hasNetPrices
+     */
+    public function processCustomizedProducts(
+        OrderLineItemEntity $item,
+        array &$shoppingCart,
+        bool $hasNetPrices
+    ): void {
+        $shoppingCart['items'][] = $this->getShoppingCartItem(
+            $item->getChildren()->filterByType('product')->first(),
+            $hasNetPrices
+        );
+
+        $this->calculateOptions(
+            $item->getChildren()->filterByType('customized-products-option'),
+            $shoppingCart,
+            $hasNetPrices
+        );
+    }
+
+    /**
+     * @param OrderLineItemCollection $orderLineItems
+     * @param array $shoppingCart
+     * @param array $shoppingItem
+     * @param bool $hasNetPrices
+     */
+    public function calculateOptions(
+        OrderLineItemCollection $orderLineItems,
+        array &$shoppingCart,
+        bool $hasNetPrices = false,
+        array &$shoppingItem = []
+    ): void {
+        foreach ($orderLineItems as $customLineItem) {
+            $this->concatShoppingItemValues($shoppingItem, $this->getShoppingCartItem($customLineItem, $hasNetPrices));
+            if ($customLineItem->getChildren() && $customLineItem->getChildren()->count()) {
+                $this->calculateOptions($customLineItem->getChildren(), $shoppingCart, $hasNetPrices, $shoppingItem);
+            } else {
+                $shoppingCart['items'][] = $shoppingItem;
+                $shoppingItem = [];
+            }
+        }
+    }
+
+    /**
+     * @param array $shoppingItem
+     * @param array $optionItem
+     */
+    public function concatShoppingItemValues(array &$shoppingItem, array $optionItem): void
+    {
+        if (count($shoppingItem) > 0) {
+            $shoppingItem['name'] .= ': ' . $optionItem['name'];
+            $shoppingItem['description'] .= ': ' . $optionItem['description'];
+            $shoppingItem['merchant_item_id'] .= ':' . $optionItem['merchant_item_id'];
+            $shoppingItem['unit_price'] += $optionItem['unit_price'];
+            $shoppingItem['tax_table_selector'] = max($shoppingItem['tax_table_selector'], $optionItem['tax_table_selector']);
+        } else {
+            $shoppingItem = $optionItem;
+        }
+    }
+
 }
