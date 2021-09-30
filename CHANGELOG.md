@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.4.3] - 2021-09-30
+### Fixed
++ PLGSHPS6-227: Fix support for custom products with sub options
+
+***
+
 ## [2.4.2] - 2021-09-16
 ### Fixed
 + PLGSHPS6-198: Send invoice id to MultiSafepay when an invoice has been created
