@@ -14,6 +14,7 @@
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
+            <argument type="service" id="language.repository"/>
         </service>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder">

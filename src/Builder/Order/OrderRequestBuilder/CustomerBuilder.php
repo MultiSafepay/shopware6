@@ -22,12 +22,14 @@ use MultiSafepay\Api\Transactions\OrderRequest\Arguments\CustomerDetails;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\Customer\Address;
 use MultiSafepay\ValueObject\Customer\AddressParser;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 
 class CustomerBuilder implements OrderRequestBuilderInterface
 {
@@ -36,15 +38,19 @@ class CustomerBuilder implements OrderRequestBuilderInterface
      */
     private $requestUtil;
 
+    private $languageRepository;
+
     /**
      * CustomerBuilder constructor.
      *
      * @param RequestUtil $requestUtil
      */
     public function __construct(
-        RequestUtil $requestUtil
+        RequestUtil $requestUtil,
+        EntityRepositoryInterface $languageRepository
     ) {
         $this->requestUtil = $requestUtil;
+        $this->languageRepository = $languageRepository;
     }
 
     /**
@@ -77,7 +83,9 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             $orderRequestAddress->addState($defaultBillingAddress->getCountryState()->getName());
         }
 
-        $customerDetails = (new CustomerDetails())->addLocale($this->getTranslatedLocale($request->getLocale()))
+
+        $customerDetails = (new CustomerDetails())
+            ->addLocale($this->getLocale($salesChannelContext))
             ->addFirstName($defaultBillingAddress->getFirstName())
             ->addLastName($defaultBillingAddress->getLastName())
             ->addAddress($orderRequestAddress)
@@ -91,23 +99,18 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     }
 
     /**
-     * @param $locale
-     * @return string
+     * @param SalesChannelContext $salesChannelContext
+     * @return array|string|string[]
      */
-    public function getTranslatedLocale(?string $locale): string
+    private function getLocale(SalesChannelContext $salesChannelContext)
     {
-        switch ($locale) {
-            case 'nl':
-                $translatedLocale = 'nl_NL';
-                break;
-            case 'de':
-                $translatedLocale = 'de_DE';
-                break;
-            default:
-                $translatedLocale = 'en_GB';
-                break;
-        }
+        $criteria = new Criteria([$salesChannelContext->getContext()->getLanguageId()]);
+        $criteria->addAssociation('locale');
+        $language = $this->languageRepository->search($criteria, $salesChannelContext->getContext())->first();
 
-        return $translatedLocale;
+        if ($language === null || $language->getLocale() === null) {
+            return 'en_GB';
+        }
+        return str_replace('-', '_', $language->getLocale()->getCode());
     }
 }
