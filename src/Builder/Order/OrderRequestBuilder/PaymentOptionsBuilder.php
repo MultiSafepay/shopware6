@@ -69,6 +69,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
+        $returnUrl = $this->getReturnUrl($transaction);
         $orderRequest->addPaymentOptions(
             (new PaymentOptions())->addNotificationUrl(
                 $this->router->generate(
@@ -76,8 +77,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
                     [],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            )->addRedirectUrl($this->getReturnUrl($transaction))
-                ->addCancelUrl(sprintf('%s&cancel=1', $transaction->getReturnUrl()))
+            )->addRedirectUrl($returnUrl)
+                ->addCancelUrl(sprintf('%s&cancel=1', $returnUrl))
                 ->addCloseWindow(false)
                 ->addNotificationMethod()
         );
