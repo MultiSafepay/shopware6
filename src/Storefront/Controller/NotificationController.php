@@ -7,10 +7,13 @@
 namespace MultiSafepay\Shopware6\Storefront\Controller;
 
 use Exception;
+use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\RequestUtil;
+use MultiSafepay\Util\Notification;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -47,6 +50,11 @@ class NotificationController extends StorefrontController
     private $orderUtil;
 
     /**
+     * @var SettingsService
+     */
+    private $config;
+
+    /**
      * NotificationController constructor.
      *
      * @param CheckoutHelper $checkoutHelper
@@ -58,13 +66,15 @@ class NotificationController extends StorefrontController
         CheckoutHelper $checkoutHelper,
         SdkFactory $sdkFactory,
         RequestUtil $requestUtil,
-        OrderUtil $orderUtil
+        OrderUtil $orderUtil,
+        SettingsService $settingsService
     ) {
         $this->checkoutHelper = $checkoutHelper;
         $this->request = $requestUtil->getGlobals();
         $this->sdkFactory = $sdkFactory;
         $this->orderUtil = $orderUtil;
         $this->context = Context::createDefaultContext();
+        $this->config = $settingsService;
     }
 
     /**
@@ -97,6 +107,45 @@ class NotificationController extends StorefrontController
         }
 
         $this->checkoutHelper->transitionPaymentState($result->getStatus(), $transactionId, $this->context);
+
+        return $response->setContent('OK');
+    }
+
+
+    /**
+     * @RouteScope(scopes={"storefront"})
+     * @Route("/multisafepay/notification",
+     *      name="frontend.multisafepay.postnotification",
+     *      options={"seo"="false"},
+     *      defaults={"csrf_protected"=false},
+     *      methods={"POST"}
+     *     )
+     * @return Response
+     */
+    public function postNotification(): Response
+    {
+        $response = new Response();
+        $orderNumber = $this->request->query->get('transactionid');
+
+        try {
+            $order = $this->orderUtil->getOrderFromNumber($orderNumber);
+        } catch (InconsistentCriteriaIdsException $exception) {
+            return $response->setContent('NG');
+        }
+
+        $body = file_get_contents('php://input');
+
+        if (!Notification::verifyNotification(
+            $body,
+            $_SERVER['HTTP_AUTH'],
+            $this->config->getApiKey($order->getSalesChannelId())
+        )) {
+            return $response->setContent('NG');
+        }
+        $transactionId = $order->getTransactions()->first()->getId();
+        $transaction = new TransactionResponse(json_decode($body, true), $body);
+
+        $this->checkoutHelper->transitionPaymentState($transaction->getStatus(), $transactionId, $this->context);
 
         return $response->setContent('OK');
     }
