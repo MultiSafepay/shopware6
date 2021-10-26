@@ -60,6 +60,9 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
         $orderRequest->addSecondsActive($this->getSecondsActive());
     }
 
+    /**
+     * @return int
+     */
     public function getSecondsActive(): int
     {
         $timeActive = (int)$this->settingsService->getTimeActive();

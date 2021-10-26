@@ -4,6 +4,9 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+
+        <defaults autowire="true"/>
+
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
         </service>
@@ -24,9 +27,16 @@
             <argument>%kernel.shopware_version%</argument>
         </service>
 
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\OrderItemBuilder"/>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\CustomizedProductsBuilder"/>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\ShippingItemBuilder"/>
+
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder">
-            <argument type="service" id="MultiSafepay\Shopware6\Util\PriceUtil"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Util\TaxUtil"/>
+            <argument type="collection">
+                <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\OrderItemBuilder"/>
+                <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\CustomizedProductsBuilder"/>
+                <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\ShippingItemBuilder"/>
+            </argument>
         </service>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder"/>
@@ -34,17 +44,7 @@
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder"/>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder"/>
 
-        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool">
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder"/>
-            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder"/>
-        </service>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
