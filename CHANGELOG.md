@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2021-10-27
+### Fixed
++ PLGSHPS6-230: Fix get correct locale for payment page
++ PLGSHPS6-236: Use global Shopware object directly in javascript
+
+### Changed
++ PLGSHPS6-229: Increase payment token lifetime according to second chance lifetime
++ DAVAMS-414: Use post notifications
+
+***
+
+## [2.4.3] - 2021-09-30
+### Fixed
++ PLGSHPS6-227: Fix support for custom products with sub options
+
+***
+
 ## [2.4.2] - 2021-09-16
 ### Fixed
 + PLGSHPS6-198: Send invoice id to MultiSafepay when an invoice has been created
