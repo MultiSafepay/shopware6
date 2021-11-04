@@ -18,6 +18,8 @@
             <argument type="service" id="state_machine_state.repository" />
             <argument>%kernel.shopware_version%</argument>
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService" />
+            <argument type="service" id="locale.repository" />
+            <argument type="service" id="order_address.repository" />
         </service>
         <service id="MultiSafepay\Shopware6\Helper\MspHelper" />
         <service id="MultiSafepay\Shopware6\Helper\ApiHelper">

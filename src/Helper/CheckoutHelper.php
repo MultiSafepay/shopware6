@@ -8,8 +8,9 @@ namespace MultiSafepay\Shopware6\Helper;
 
 use MultiSafepay\Shopware6\Service\SettingsService;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
-use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -17,11 +18,16 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\TermsAggregation;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\Bucket;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\TermsResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\PluginService;
+use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
@@ -42,9 +48,9 @@ class CheckoutHelper
     private $router;
     /** @var OrderTransactionStateHandler $orderTransactionStateHandler*/
     private $orderTransactionStateHandler;
-    /** @var EntityRepository $transactionRepository */
+    /** @var EntityRepositoryInterface $transactionRepository */
     private $transactionRepository;
-    /** @var EntityRepository $stateMachineRepository */
+    /** @var EntityRepositoryInterface $stateMachineRepository */
     private $stateMachineRepository;
     /** @var SettingsService */
     private $settingsService;
@@ -60,23 +66,37 @@ class CheckoutHelper
     private $pluginService;
 
     /**
+     * @var EntityRepositoryInterface $localeRepository
+     */
+    private $localeRepository;
+
+    /**
+     * @var EntityRepositoryInterface $orderAddressRepository
+     */
+    private $orderAddressRepository;
+
+    /**
      * CheckoutHelper constructor.
      * @param UrlGeneratorInterface $router
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param SettingsService $settingsService
-     * @param EntityRepository $transactionRepository
-     * @param EntityRepository $stateMachineRepository
+     * @param EntityRepositoryInterface $transactionRepository
+     * @param EntityRepositoryInterface $stateMachineRepository
      * @param string $shopwareVersion
      * @param PluginService $pluginService
+     * @param EntityRepositoryInterface $localeRepository
+     * @param EntityRepositoryInterface $orderAddressRepository
      */
     public function __construct(
         UrlGeneratorInterface $router,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         SettingsService $settingsService,
-        EntityRepository $transactionRepository,
-        EntityRepository $stateMachineRepository,
+        EntityRepositoryInterface $transactionRepository,
+        EntityRepositoryInterface $stateMachineRepository,
         string $shopwareVersion,
-        PluginService $pluginService
+        PluginService $pluginService,
+        EntityRepositoryInterface $localeRepository,
+        EntityRepositoryInterface $orderAddressRepository
     ) {
         $this->router = $router;
         $this->settingsService = $settingsService;
@@ -85,6 +105,35 @@ class CheckoutHelper
         $this->stateMachineRepository = $stateMachineRepository;
         $this->shopwareVersion = $shopwareVersion;
         $this->pluginService = $pluginService;
+        $this->localeRepository = $localeRepository;
+        $this->orderAddressRepository = $orderAddressRepository;
+    }
+
+    public function getFirstDeliveryAddress(string $orderId, Context $context): ?string
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('orderDeliveries.orderId', $orderId));
+        $criteria->setLimit(1);
+
+        return $this->orderAddressRepository->searchIds($criteria, $context)->firstId();
+    }
+
+    public function getOrderAddresses(array $ids, Context $context): OrderAddressCollection
+    {
+        $ids = \array_filter($ids, static fn (?string $id): bool => Uuid::isValid($id ?? ''));
+
+        if ($ids === []) {
+            return new OrderAddressCollection();
+        }
+
+        $criteria = new Criteria($ids);
+        $criteria->addAssociations([
+            'country',
+            'countryState',
+            'salutation',
+        ]);
+
+        return new OrderAddressCollection($this->orderAddressRepository->search($criteria, $context)->getEntities());
     }
 
     /**
@@ -113,24 +162,30 @@ class CheckoutHelper
     /**
      * @param Request $request
      * @param CustomerEntity $customer
+     * @param OrderAddressEntity $billingAddress
+     * @param Context $context
      * @return array
      */
-    public function getCustomerData(Request $request, CustomerEntity $customer): array
-    {
-        [$billingStreet, $billingHouseNumber] = $this->parseAddress($customer->getDefaultBillingAddress()->getStreet());
+    public function getCustomerData(
+        Request            $request,
+        CustomerEntity     $customer,
+        OrderAddressEntity $billingAddress,
+        Context            $context
+    ): array {
+        [$billingStreet, $billingHouseNumber] = $this->parseAddress($billingAddress->getStreet());
 
         return [
-            'locale' => $this->getTranslatedLocale($request->getLocale()),
+            'locale' => $this->getTranslatedLocale($context),
             'ip_address' => $request->getClientIp(),
-            'first_name' => $customer->getDefaultBillingAddress()->getFirstName(),
-            'last_name' => $customer->getDefaultBillingAddress()->getLastName(),
+            'first_name' => $billingAddress->getFirstName(),
+            'last_name' => $billingAddress->getLastName(),
             'address1' => $billingStreet,
             'house_number' => $billingHouseNumber,
-            'zip_code' => $customer->getDefaultBillingAddress()->getZipcode(),
-            'state' => $customer->getDefaultBillingAddress()->getCountryState(),
-            'city' => $customer->getDefaultBillingAddress()->getCity(),
-            'country' => $this->getCountryIso($customer->getDefaultBillingAddress()),
-            'phone' => $customer->getDefaultBillingAddress()->getPhoneNumber(),
+            'zip_code' => $billingAddress->getZipcode(),
+            'state' => $billingAddress->getCountryState(),
+            'city' => $billingAddress->getCity(),
+            'country' => $this->getCountryIso($billingAddress),
+            'phone' => $billingAddress->getPhoneNumber(),
             'email' => $customer->getEmail(),
             'referrer' => $request->server->get('HTTP_REFERER'),
             'user_agent' => $request->headers->get('User-Agent'),
@@ -140,25 +195,26 @@ class CheckoutHelper
 
     /**
      * @param CustomerEntity $customer
+     * @param OrderAddressEntity $shippingAddress
      * @return array
      */
-    public function getDeliveryData(CustomerEntity $customer): array
+    public function getDeliveryData(CustomerEntity $customer, OrderAddressEntity $shippingAddress): array
     {
         [
             $shippingStreet,
             $shippingHouseNumber
-        ] = $this->parseAddress($customer->getDefaultShippingAddress()->getStreet());
+        ] = $this->parseAddress($shippingAddress->getStreet());
 
         return [
-            'first_name' => $customer->getDefaultShippingAddress()->getFirstName(),
-            'last_name' => $customer->getDefaultShippingAddress()->getLastName(),
+            'first_name' => $shippingAddress->getFirstName(),
+            'last_name' => $shippingAddress->getLastName(),
             'address1' => $shippingStreet,
             'house_number' => $shippingHouseNumber,
-            'zip_code' => $customer->getDefaultShippingAddress()->getZipcode(),
-            'state' => $customer->getDefaultShippingAddress()->getCountryState(),
-            'city' => $customer->getDefaultShippingAddress()->getCity(),
-            'country' => $this->getCountryIso($customer->getDefaultShippingAddress()),
-            'phone' => $customer->getDefaultShippingAddress()->getPhoneNumber(),
+            'zip_code' => $shippingAddress->getZipcode(),
+            'state' => $shippingAddress->getCountryState(),
+            'city' => $shippingAddress->getCity(),
+            'country' => $this->getCountryIso($shippingAddress),
+            'phone' => $shippingAddress->getPhoneNumber(),
             'email' => $customer->getEmail()
         ];
     }
@@ -255,32 +311,36 @@ class CheckoutHelper
 
 
     /**
-     * @param $locale
+     * @param Context $context
      * @return string
      */
-    public function getTranslatedLocale(?string $locale): string
+    public function getTranslatedLocale(Context $context): string
     {
-        switch ($locale) {
-            case 'nl':
-                $translatedLocale = 'nl_NL';
-                break;
-            case 'de':
-                $translatedLocale = 'de_DE';
-                break;
-            default:
-                $translatedLocale = 'en_GB';
-                break;
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('languages.id', $context->getLanguageId()));
+        $criteria->addAggregation(new TermsAggregation('code', 'code'));
+        $localeAggregation = $this->localeRepository->aggregate($criteria, $context)->get('code');
+
+        if (!$localeAggregation instanceof TermsResult) {
+            return 'en_GB';
         }
-        return $translatedLocale;
+
+        $firstBucket = \current($localeAggregation->getBuckets());
+
+        if (!$firstBucket instanceof Bucket) {
+            return 'en_GB';
+        }
+
+        return \str_replace('-', '_', $firstBucket->getKey());
     }
 
     /**
-     * @param CustomerAddressEntity $customerAddress
+     * @param OrderAddressEntity $orderAddress
      * @return string|null
      */
-    private function getCountryIso(CustomerAddressEntity $customerAddress): ?string
+    private function getCountryIso(OrderAddressEntity $orderAddress): ?string
     {
-        $country = $customerAddress->getCountry();
+        $country = $orderAddress->getCountry();
         if (!$country) {
             return null;
         }

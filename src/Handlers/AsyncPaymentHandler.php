@@ -71,6 +71,13 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         $request = $this->mspHelper->getGlobals();
 
         $activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token');
+        $shippingAddressId = $this->checkoutHelper->getFirstDeliveryAddress($order->getId(), $salesChannelContext->getContext());
+        $addresses = $this->checkoutHelper->getOrderAddresses([
+            $order->getBillingAddressId(),
+            $shippingAddressId
+        ], $salesChannelContext->getContext());
+        $billingAddress = $addresses->get($order->getBillingAddressId());
+        $shippingAddress = $shippingAddressId === null ? null : $addresses->get($shippingAddressId);
 
         $requestData = [
             'type' => $activeToken === null ? $type : 'direct',
@@ -83,8 +90,8 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 'cardOnFile' : null,
             'description' => 'Payment for order #' . $order->getOrderNumber(),
             'payment_options' => $this->checkoutHelper->getPaymentOptions($transaction),
-            'customer' => $this->checkoutHelper->getCustomerData($request, $customer),
-            'delivery' => $this->checkoutHelper->getDeliveryData($customer),
+            'customer' => $this->checkoutHelper->getCustomerData($request, $customer, $billingAddress, $salesChannelContext->getContext()),
+            'delivery' => $shippingAddress === null ? [] : $this->checkoutHelper->getDeliveryData($customer, $shippingAddress),
             'shopping_cart' => $this->checkoutHelper->getShoppingCart($order),
             'checkout_options' => $this->checkoutHelper->getCheckoutOptions($order),
             'gateway_info' => $gatewayInfo,
@@ -93,6 +100,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         ];
 
         try {
+
             $mspClient->orders->post($requestData);
 
             if (!$mspClient->orders->success) {
