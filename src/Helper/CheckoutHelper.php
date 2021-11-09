@@ -173,9 +173,15 @@ class CheckoutHelper
         Context            $context
     ): array {
         [$billingStreet, $billingHouseNumber] = $this->parseAddress($billingAddress->getStreet());
+        $contextLocale = $this->getTranslatedLocale($context);
+        $localeSeparatorIndex = \mb_strpos($contextLocale, '_');
+
+        if ($localeSeparatorIndex !== false) {
+            $contextLocale = \mb_substr($contextLocale, 0, $localeSeparatorIndex) . '_' . $this->getCountryIso($billingAddress);
+        }
 
         return [
-            'locale' => $this->getTranslatedLocale($context),
+            'locale' => $contextLocale,
             'ip_address' => $request->getClientIp(),
             'first_name' => $billingAddress->getFirstName(),
             'last_name' => $billingAddress->getLastName(),
