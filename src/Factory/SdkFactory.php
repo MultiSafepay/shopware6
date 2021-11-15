@@ -14,6 +14,8 @@ use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
+use Psr\Http\Client\ClientInterface;
+use Http\Adapter\Guzzle6\Client as GuzzleAdapter;
 
 class SdkFactory
 {
@@ -52,7 +54,7 @@ class SdkFactory
         return new Sdk(
             $apiKey,
             $environment === EnvironmentSource::LIVE_ENVIRONMENT,
-            new Client(),
+            $this->getClient(),
             new Psr17Factory(),
             new Psr17Factory()
         );
@@ -67,9 +69,23 @@ class SdkFactory
         return new Sdk(
             $this->config->getApiKey($salesChannelId),
             $this->config->isLiveMode($salesChannelId),
-            new Client(),
+            $this->getClient(),
             new Psr17Factory(),
             new Psr17Factory()
         );
+    }
+
+    /**
+     * Added in 2.5.1 because Shopware 6.4 uses Guzzle7 (with PSR18) and in <6.4 it is using 6.5.2 without PSR18
+     *
+     * @return ClientInterface
+     */
+    private function getClient(): ClientInterface
+    {
+        $client = new Client();
+        if (!$client instanceof ClientInterface) {
+            $client = new GuzzleAdapter();
+        }
+        return $client;
     }
 }
