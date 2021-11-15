@@ -133,7 +133,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param array $issuers
+     * @param Issuer[] $issuers
      * @param string|null $lastUsedIssuer
      * @return string
      */
@@ -142,8 +142,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         $result = 'iDEAL';
 
         foreach ($issuers as $issuer) {
-            if ($issuer->code === $lastUsedIssuer) {
-                return $result . ' (' . $issuer->description . ')';
+            if ($issuer->getCode() === $lastUsedIssuer) {
+                return $result . ' (' . $issuer->getDescription() . ')';
             }
         }
 
