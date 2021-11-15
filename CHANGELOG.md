@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.1] - 2021-11-15
+### Fixed
++ Fix iDEAL issuer dropdown not working on checkout page
+
+***
+
 ## [2.5.0] - 2021-10-27
 ### Fixed
 + PLGSHPS6-230: Fix get correct locale for payment page
