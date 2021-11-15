@@ -87,6 +87,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
 
         $context = $event->getContext();
         $orderDelivery = $this->getOrderDeliveryData($event);
+        $trackAndTraceCode = $orderDelivery->getTrackingCodes();
         $orderId = $orderDelivery->getOrderId();
 
         if (!$this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context)) {
