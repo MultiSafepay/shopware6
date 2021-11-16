@@ -12,6 +12,14 @@ update-host:
 install:
 	docker-compose exec app php bin/console plugin:refresh
 	docker-compose exec app php bin/console plugin:install --clearCache --activate MltisafeMultiSafepay
+
+.PHONY: phpunit
+phpunit:
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app  ../../../vendor/bin/phpunit
+
+.PHONY: administration-build
+administration-build:
+	docker-compose exec app  php psh.phar administration:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
 # ------------------------------------------------------------------------------------------------------------
 
 .PHONY: composer-production
