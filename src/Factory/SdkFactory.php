@@ -15,7 +15,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
 use Psr\Http\Client\ClientInterface;
-use Http\Adapter\Guzzle6\Client as GuzzleAdapter;
+use Buzz\Client\Curl as CurlClient;
 
 class SdkFactory
 {
@@ -84,8 +84,9 @@ class SdkFactory
     {
         $client = new Client();
         if (!$client instanceof ClientInterface) {
-            $client = new GuzzleAdapter();
+            $client = new CurlClient(new Psr17Factory());
         }
+
         return $client;
     }
 }
