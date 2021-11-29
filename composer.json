@@ -4,7 +4,7 @@
     "type": "shopware-platform-plugin",
     "version": "2.5.1",
     "license": "MIT",
-    "minimum-stability": "RC",
+    "minimum-stability": "stable",
     "require": {
         "php": "^7.2 || ^8.0",
         "multisafepay/php-sdk": "^5.2",

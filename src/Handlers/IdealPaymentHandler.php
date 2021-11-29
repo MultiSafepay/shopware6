@@ -35,8 +35,11 @@ class IdealPaymentHandler extends AsyncPaymentHandler
         $paymentMethod = new Ideal();
 
         $code = $gateway ?? $paymentMethod->getGatewayCode();
-        if ($dataBag->get('issuer')) {
-            $gatewayInfo['issuer_id'] = $dataBag->get('issuer');
+
+        $issuerCode = $this->getDataBagItem('issuer',$dataBag);
+
+        if ($issuerCode) {
+            $gatewayInfo['issuer_id'] = $issuerCode;
             $type = $paymentMethod->getType();
         }
 

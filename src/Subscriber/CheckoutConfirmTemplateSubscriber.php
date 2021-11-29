@@ -18,6 +18,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -70,6 +71,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     {
         return [
             CheckoutConfirmPageLoadedEvent::class => 'addMultiSafepayExtension',
+            AccountEditOrderPageLoadedEvent::class => 'addMultiSafepayExtension',
         ];
     }
 
@@ -77,8 +79,14 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * @param CheckoutConfirmPageLoadedEvent $event
      * @throws Exception
      */
-    public function addMultiSafepayExtension(CheckoutConfirmPageLoadedEvent $event): void
+    public function addMultiSafepayExtension($event): void
     {
+        if (!$event instanceof CheckoutConfirmPageLoadedEvent && !$event instanceof AccountEditOrderPageLoadedEvent) {
+            throw new \InvalidArgumentException(
+                'Please provide ' . CheckoutConfirmPageLoadedEvent::class . ' or ' .
+                AccountEditOrderPageLoadedEvent::class
+            );
+        }
         try {
             $salesChannelContext = $event->getSalesChannelContext();
             $customer = $salesChannelContext->getCustomer();
@@ -119,7 +127,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             'active_token' => $activeToken,
             'issuers' => $issuers,
             'last_used_issuer' => $lastUsedIssuer,
-            'shopware_compare' => version_compare($this->shopwareVersion, '6.4.0.0-RC1', '<'),
+            'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
             'payment_method_name' => $activeName ?? null,
             'tokenization_checked' => $customer->getCustomFields()['tokenization_checked'] ?? null,
             'is_guest' => $customer->getGuest(),
