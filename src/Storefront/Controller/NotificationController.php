@@ -135,6 +135,10 @@ class NotificationController extends StorefrontController
 
         $body = file_get_contents('php://input');
 
+        if (!$body) {
+            return $response->setContent('NG');
+        }
+
         if (!Notification::verifyNotification(
             $body,
             $_SERVER['HTTP_AUTH'],
