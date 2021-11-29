@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.2] - 2021-11-29
+### Fixed
++ PLGSHPS6-251: iDEAL issuer input not working
++ PLGSHPS6-256: Fix 500 error on empty POST notification
++ PLGSHPS6-253: Resolve conflict Shopware 6.4 and Guzzle6 adapter
+
+***
+
 ## [2.5.1] - 2021-11-15
 ### Fixed
 + Fix iDEAL issuer dropdown not working on checkout page
