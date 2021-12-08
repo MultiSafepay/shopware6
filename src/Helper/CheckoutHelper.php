@@ -70,23 +70,20 @@ class CheckoutHelper
         }
 
         /**
-         * Check if the state if from the current transaction is equal
-         * to the transaction we want to transition to.
+         * Check if the status is the same, so we don't need to update it
          */
         if ($this->isSameStateId($transitionAction, $orderTransactionId, $context)) {
             return;
         }
 
+        $functionName = $this->convertToFunctionName($transitionAction);
+
         try {
-            $functionName = $this->convertToFunctionName($transitionAction);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         } catch (IllegalTransitionException $exception) {
-            if ($transitionAction !== StateMachineTransitionActions::ACTION_PAID) {
-                return;
-            }
-
+            //TODO: Add logger with with current status and possible transitions statuses
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
-            $this->transitionPaymentState($status, $orderTransactionId, $context);
+            $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         }
     }
 
