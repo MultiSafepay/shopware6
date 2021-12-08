@@ -27,6 +27,8 @@ use MultiSafepay\Shopware6\PaymentMethods\FashionGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\Fashioncheque;
 use MultiSafepay\Shopware6\PaymentMethods\Fietsenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
+use MultiSafepay\Shopware6\PaymentMethods\Generic2;
+use MultiSafepay\Shopware6\PaymentMethods\Generic3;
 use MultiSafepay\Shopware6\PaymentMethods\Gezondheidsbon;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
@@ -84,6 +86,8 @@ class PaymentUtil
         FashionGiftcard::class,
         Fietsenbon::class,
         Generic::class,
+        Generic2::class,
+        Generic3::class,
         Gezondheidsbon::class,
         Giropay::class,
         GivaCard::class,
