@@ -10,6 +10,7 @@
         <import resource="services/payments.xml"/>
         <import resource="services/snippets.xml"/>
         <import resource="services/controllers.xml"/>
+        <import resource="services/logger.xml"/>
         <import resource="services/helpers.xml"/>
         <import resource="services/utils.xml"/>
         <import resource="services/builders.xml"/>

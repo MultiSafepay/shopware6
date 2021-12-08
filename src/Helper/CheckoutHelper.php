@@ -6,6 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -33,6 +34,9 @@ class CheckoutHelper
     /** @var EntityRepository $stateMachineRepository */
     private $stateMachineRepository;
 
+    /** @var LoggerInterface */
+    private $logger;
+
     /**
      * CheckoutHelper constructor.
      *
@@ -43,11 +47,13 @@ class CheckoutHelper
     public function __construct(
         OrderTransactionStateHandler $orderTransactionStateHandler,
         EntityRepository $transactionRepository,
-        EntityRepository $stateMachineRepository
+        EntityRepository $stateMachineRepository,
+        LoggerInterface $logger
     ) {
         $this->transactionRepository = $transactionRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepository = $stateMachineRepository;
+        $this->logger = $logger;
     }
 
     /**
@@ -81,7 +87,15 @@ class CheckoutHelper
         try {
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         } catch (IllegalTransitionException $exception) {
-            //TODO: Add logger with with current status and possible transitions statuses
+            $this->logger->warning(
+                'IllegalTransitionException',
+                [
+                    'message' => $exception->getMessage(),
+                    'currentState' =>  $this->getTransaction($orderTransactionId, $context)->getStateMachineState()
+                        ->getName(),
+                    'orderNumber' => $this->getTransaction($orderTransactionId, $context)->getOrder()->getOrderNumber(),
+                    'status' => $status
+                ]);
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         }
@@ -121,6 +135,7 @@ class CheckoutHelper
     public function getTransaction(string $transactionId, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria([$transactionId]);
+        $criteria->addAssociation('order');
 
         /** @var OrderTransactionEntity $transaction */
         return $this->transactionRepository->search($criteria, $context)
