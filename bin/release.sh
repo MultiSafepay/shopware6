@@ -21,3 +21,17 @@ rm -rf "$RELEASE_FOLDER"
 # Create release
 mkdir "$RELEASE_FOLDER"
 git archive --format zip -9 --prefix="$FOLDER_PREFIX"/ --output "$RELEASE_FOLDER"/"$FILENAME_PREFIX""$RELEASE_VERSION".zip "$RELEASE_VERSION"
+
+# Unzip for generating composer autoloader
+cd "$RELEASE_FOLDER"
+unzip "$FILENAME_PREFIX""$RELEASE_VERSION".zip
+rm "$FILENAME_PREFIX""$RELEASE_VERSION".zip
+
+# Remove shopware temporary so we don't have all the Shopware requirements in the plugin
+composer remove shopware/administration  shopware/storefront shopware/core --working-dir="$FOLDER_PREFIX" --update-no-dev
+
+# Add shopware back in the composer.json but not in the vendor folder
+composer require shopware/administration:^6.3  shopware/storefront:^6.3 shopware/core:^6.3 --working-dir="$FOLDER_PREFIX" --no-update
+
+# zip everything
+zip -9 -r "$FILENAME_PREFIX""$RELEASE_VERSION".zip "$FOLDER_PREFIX" -x "$FOLDER_PREFIX""/composer.lock"
