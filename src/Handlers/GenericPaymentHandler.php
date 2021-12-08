@@ -62,7 +62,7 @@ class GenericPaymentHandler extends AsyncPaymentHandler
             $transaction,
             $dataBag,
             $salesChannelContext,
-            $this->settingsService->getSetting('genericGatewayCode'),
+            $this->settingsService->getSetting('genericGatewayCode', $salesChannelContext->getSalesChannelId()),
             $paymentMethod->getType(),
             $gatewayInfo
         );
