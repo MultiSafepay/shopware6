@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.3] - 2021-12-09
+### Added
++ PLGSHPS6-259: Add 2 more generic gateways
+
+### Fixed
++ Generic gateway not working when using multiple sales channels
++ PLGSHPS6-258: Fix issue with repeatedly updating order status
+
+***
+
 ## [2.5.2] - 2021-11-29
 ### Fixed
 + PLGSHPS6-251: iDEAL issuer input not working
