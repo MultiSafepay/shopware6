@@ -6,6 +6,8 @@
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler2;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler3;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
@@ -114,7 +116,12 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
-        if ($paymentMethodId !== null && $paymentMethod->getPaymentHandler() === GenericPaymentHandler::class) {
+        if ($paymentMethodId !== null
+            && in_array($paymentMethod->getPaymentHandler(), [
+                GenericPaymentHandler::class,
+                GenericPaymentHandler2::class,
+                GenericPaymentHandler3::class,
+            ])) {
             return;
         }
 
