@@ -116,14 +116,12 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
-        if (
-            $paymentMethodId !== null &&
-            (
-                $paymentMethod->getPaymentHandler() === GenericPaymentHandler::class ||
-                $paymentMethod->getPaymentHandler() === GenericPaymentHandler2::class ||
-                $paymentMethod->getPaymentHandler() === GenericPaymentHandler3::class
-            )
-        ) {
+        if ($paymentMethodId !== null
+            && in_array($paymentMethod->getPaymentHandler(), [
+                GenericPaymentHandler::class,
+                GenericPaymentHandler2::class,
+                GenericPaymentHandler3::class,
+            ])) {
             return;
         }
 
