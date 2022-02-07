@@ -6,9 +6,9 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Service;
 
+use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use MultiSafepay\Shopware6\Service\SettingsService;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**

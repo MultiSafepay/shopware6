@@ -4,6 +4,7 @@
     <exclude-pattern>*/vendor/*</exclude-pattern>
     <exclude-pattern>*/tests/bootstrap.php</exclude-pattern>
     <exclude-pattern>*/src/Resources/public/*</exclude-pattern>
-    <rule ref="PSR2"/>
-    <rule ref="PEAR.Commenting.FunctionComment.Missing"/>
+    <rule ref="./vendor/multisafepay/coding-standards/php71.phpcs.xml">
+        <exclude name="SlevomatCodingStandard.ControlStructures.AssignmentInCondition.AssignmentInCondition"/>
+    </rule>
 </ruleset>

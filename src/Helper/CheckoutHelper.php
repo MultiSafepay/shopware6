@@ -95,7 +95,8 @@ class CheckoutHelper
                         ->getName(),
                     'orderNumber' => $this->getTransaction($orderTransactionId, $context)->getOrder()->getOrderNumber(),
                     'status' => $status
-                ]);
+                ]
+            );
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         }

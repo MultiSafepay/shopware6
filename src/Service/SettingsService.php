@@ -6,8 +6,8 @@
 
 namespace MultiSafepay\Shopware6\Service;
 
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class SettingsService
 {

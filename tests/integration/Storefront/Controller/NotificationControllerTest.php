@@ -6,8 +6,12 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\StoreFront\Controller;
 
+use MultiSafepay\Api\TransactionManager;
+use MultiSafepay\Api\Transactions\TransactionResponse;
+use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\API\MspClient;
 use MultiSafepay\Shopware6\API\Object\Orders as MspOrders;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\MspHelper;
@@ -16,6 +20,8 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -24,12 +30,6 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use stdClass;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Util\RequestUtil;
-use MultiSafepay\Shopware6\Util\OrderUtil;
-use MultiSafepay\Sdk;
-use MultiSafepay\Api\TransactionManager;
-use MultiSafepay\Api\Transactions\TransactionResponse;
 
 class NotificationControllerTest extends TestCase
 {

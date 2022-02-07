@@ -143,7 +143,7 @@ class MediaInstaller implements InstallerInterface
      * @return bool
      * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
-    private function hasMediaAlreadyInstalled(PaymentMethodInterface $paymentMethod, Context $context) : bool
+    private function hasMediaAlreadyInstalled(PaymentMethodInterface $paymentMethod, Context $context): bool
     {
         $criteria = (new Criteria())->addFilter(
             new EqualsFilter(

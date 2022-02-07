@@ -6,9 +6,12 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Subscriber\OrderDeliveryStateChangeEvent;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
+use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
@@ -18,9 +21,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
 use Shopware\Core\System\StateMachine\Transition;
-use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Util\PaymentUtil;
-use \MultiSafepay\Shopware6\Util\OrderUtil;
 
 class OrderDeliveryStateChangeEventTest extends TestCase
 {

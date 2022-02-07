@@ -8,8 +8,8 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
-use PHPUnit\Framework\TestCase;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
+use PHPUnit\Framework\TestCase;
 
 class PaymentUtilTest extends TestCase
 {

@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  *
  * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
@@ -9,13 +8,13 @@ declare(strict_types=1);
 
 namespace MultiSafepay\Shopware6\Factory;
 
+use Buzz\Client\Curl as CurlClient;
 use GuzzleHttp\Client;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Service\SettingsService;
-use Nyholm\Psr7\Factory\Psr17Factory;
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
-use Buzz\Client\Curl as CurlClient;
 
 class SdkFactory
 {

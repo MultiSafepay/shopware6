@@ -1,20 +1,4 @@
-<?php
-/**
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is provided with Magento in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- *
- * Copyright © 2021 MultiSafepay, Inc. All rights reserved.
- * See DISCLAIMER.md for disclaimer details.
- *
- */
-
-declare(strict_types=1);
-
+<?php declare(strict_types=1);
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
@@ -39,7 +23,8 @@ class RecurringBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        if ($activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token')) {
+        $activeToken = $dataBag->get('active_token') === "" ? null : $dataBag->get('active_token');
+        if ($activeToken) {
             $orderRequest->addRecurringId((string)$activeToken);
         }
 
