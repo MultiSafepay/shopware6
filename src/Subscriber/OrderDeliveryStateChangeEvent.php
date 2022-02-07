@@ -100,7 +100,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
                 ->getTransactionManager()
                 ->update(
                     $order->getOrderNumber(),
-                    (new UpdateRequest())->addData([
+                    (new UpdateRequest())->addStatus('shipped')->addData([
                         [
                             'tracktrace_code' => reset($trackAndTraceCode),
                             'carrier' => '',
