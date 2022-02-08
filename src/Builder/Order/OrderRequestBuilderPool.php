@@ -18,6 +18,7 @@ namespace MultiSafepay\Shopware6\Builder\Order;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder;
+use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\GoogleAnalyticsBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\OrderRequestBuilderInterface;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder;
@@ -72,6 +73,10 @@ class OrderRequestBuilderPool
      * @var SecondChanceBuilder
      */
     private $secondChanceBuilder;
+    /**
+     * @var GoogleAnalyticsBuilder
+     */
+    private $googleAnalyticsBuilder;
 
     /**
      * OrderRequestBuilderPool constructor.
@@ -95,7 +100,8 @@ class OrderRequestBuilderPool
         DeliveryBuilder $deliveryBuilder,
         SecondsActiveBuilder $secondsActiveBuilder,
         PluginDataBuilder $pluginDataBuilder,
-        SecondChanceBuilder $secondChanceBuilder
+        SecondChanceBuilder $secondChanceBuilder,
+        GoogleAnalyticsBuilder $googleAnalyticsBuilder
     ) {
         $this->shoppingCartBuilder = $shoppingCartBuilder;
         $this->recurringBuilder = $recurringBuilder;
@@ -106,6 +112,7 @@ class OrderRequestBuilderPool
         $this->secondsActiveBuilder = $secondsActiveBuilder;
         $this->pluginDataBuilder = $pluginDataBuilder;
         $this->secondChanceBuilder = $secondChanceBuilder;
+        $this->googleAnalyticsBuilder = $googleAnalyticsBuilder;
     }
 
     /**
@@ -123,6 +130,7 @@ class OrderRequestBuilderPool
             'seconds_active' => $this->secondsActiveBuilder,
             'plugin_data' => $this->pluginDataBuilder,
             'second_chance' => $this->secondChanceBuilder,
+            'google_analytics' => $this->googleAnalyticsBuilder,
         ];
     }
 
