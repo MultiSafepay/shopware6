@@ -95,7 +95,6 @@ class PaymentUtil
         Goodcard::class,
         Ideal::class,
         In3::class,
-        IngHomePay::class,
         Kbc::class,
         Klarna::class,
         Maestro::class,
@@ -120,6 +119,10 @@ class PaymentUtil
         WijnCadeau::class,
         WinkelCheque::class,
         YourGift::class,
+    ];
+
+    public const DELETED_GATEWAYS = [
+        IngHomePay::class
     ];
 
     /**

@@ -7,6 +7,9 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\IngHomePayPaymentHandler;
 
+/**
+ * @deprecated No longer supported by MultiSafepay
+ */
 class IngHomePay implements PaymentMethodInterface
 {
     /**

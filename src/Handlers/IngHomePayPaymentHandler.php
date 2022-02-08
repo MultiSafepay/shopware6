@@ -12,6 +12,9 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
+/**
+ * @deprecated No longer supported by MultiSafepay
+ */
 class IngHomePayPaymentHandler extends AsyncPaymentHandler
 {
     /**

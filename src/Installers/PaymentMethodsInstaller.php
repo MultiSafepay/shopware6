@@ -3,6 +3,7 @@
  * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
+
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
@@ -40,6 +41,7 @@ class PaymentMethodsInstaller implements InstallerInterface
 
     /**
      * PaymentMethodsInstaller constructor.
+     *
      * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
@@ -71,6 +73,8 @@ class PaymentMethodsInstaller implements InstallerInterface
         foreach (PaymentUtil::GATEWAYS as $gateway) {
             $this->addPaymentMethod(new $gateway(), $context->getContext(), $context->getPlugin()->isActive());
         }
+
+        $this->disableGateways($context);
     }
 
     /**
@@ -139,7 +143,6 @@ class PaymentMethodsInstaller implements InstallerInterface
                 self::TEMPLATE => $paymentMethod->getTemplate()
             ]
         ];
-
 
         if ($isActive && $paymentMethodId === null) {
             $paymentData['active'] = true;
@@ -262,5 +265,15 @@ class PaymentMethodsInstaller implements InstallerInterface
         }
 
         return 'msp_' . $paymentMethod->getName();
+    }
+
+    /**
+     * @param UpdateContext $context
+     */
+    private function disableGateways(UpdateContext $context)
+    {
+        foreach (PaymentUtil::DELETED_GATEWAYS as $gateway) {
+            $this->setPaymentMethodActive(false, new $gateway(), $context->getContext());
+        }
     }
 }
