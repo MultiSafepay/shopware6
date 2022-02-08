@@ -158,7 +158,12 @@ class CheckoutHelper
         $actionStatusTransition = $this->getTransitionFromActionName($actionName, $context);
         $actionStatusTransitionId = $actionStatusTransition->getId();
 
-        return $currentStateId === $actionStatusTransitionId;
+        if ($currentStateId === $actionStatusTransitionId) {
+            return true;
+        }
+
+        //note: DO THIS CHECK TO PREVENT ERRORS ON 6.3
+        return $transaction->getStateMachineState()->getTechnicalName() === $actionStatusTransition->getTechnicalName();
     }
 
     /**
