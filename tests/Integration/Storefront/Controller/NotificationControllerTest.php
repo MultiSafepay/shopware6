@@ -4,7 +4,7 @@
  * See DISCLAIMER.md for disclaimer details.
  */
 
-namespace MultiSafepay\Shopware6\Tests\Integration\StoreFront\Controller;
+namespace MultiSafepay\Shopware6\Tests\Integration\Storefront\Controller;
 
 use MultiSafepay\Api\TransactionManager;
 use MultiSafepay\Api\Transactions\TransactionResponse;
@@ -15,6 +15,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\ApiHelper;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Helper\MspHelper;
+use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Controller\NotificationController;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
@@ -140,6 +141,7 @@ class NotificationControllerTest extends TestCase
                 $sdkFactory,
                 $requestUtil,
                 $orderUtil,
+                $this->getContainer()->get(SettingsService::class)
             ])
             ->setMethodsExcept(['notification'])
             ->getMock();

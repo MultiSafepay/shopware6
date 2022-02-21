@@ -14,6 +14,8 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler2;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler3;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
@@ -159,14 +161,17 @@ class PaymentMethodsHandlerTest extends TestCase
 
         $settingsServiceMock = null;
 
-        if ($paymentMethod->getPaymentHandler() === GenericPaymentHandler::class) {
+        if (in_array($paymentMethod->getPaymentHandler(), [
+            GenericPaymentHandler::class,
+            GenericPaymentHandler2::class,
+            GenericPaymentHandler3::class,
+        ])) {
             $settingsServiceMock = $this->getMockBuilder(SettingsService::class)
                 ->disableOriginalConstructor()
                 ->getMock();
 
             $settingsServiceMock->expects($this->once())
                 ->method('getSetting')
-                ->with('genericGatewayCode')
                 ->willReturn(self::GENERIC_CODE);
         }
 

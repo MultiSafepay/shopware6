@@ -25,8 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['7.4']
-        shopware_version: ['v6.3.5.0', 'v6.4.0.0']
+        php-version: [ '7.4' ]
+        shopware_version: [ 'v6.4.8.1' ]
     name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
     steps:
       - name: Install php
@@ -34,6 +34,8 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           extensions: intl
+      - name: Disable mysqldump column statistics
+        run: echo 'column-statistics=0' | sudo tee -a /etc/mysql/conf.d/mysqldump.cnf
       - name: Checkout Shopware 6 code
         uses: actions/checkout@v2
         with:
@@ -45,17 +47,17 @@ jobs:
           path: custom/plugins/MltisafeMultiSafepay
       - name: Install Shopware
         run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
-      - name: Install Multisafepay Plugin
+      - name: Install Multisafepay dependencies
         working-directory: ./custom/plugins/MltisafeMultiSafepay
-        run: |
-          make composer-production -B
-          make activate-plugin -B
-      - name: prepare unit test database
+        #TODO: Add github/cache here
+        run: composer install --no-dev
+      - name: Install Multisafepay
+        run: bin/console plugin:refresh && bin/console plugin:install -c --activate  MltisafeMultiSafepay
+      - name: Initialize test databases
         run: ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
       - name: Run PHPUnit
-        working-directory: ./custom/plugins/MltisafeMultiSafepay
-        run: |
-          ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
+        run: vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist --coverage-clover=./custom/plugins/MltisafeMultiSafepay/coverage.xml
       - name: Send clover to codecov
+        if: ${{ always() }}
         working-directory: ./custom/plugins/MltisafeMultiSafepay
         run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -R .

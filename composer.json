@@ -35,7 +35,8 @@
             "Http\\Client\\": "vendor/php-http/httplug/src/",
             "Psr\\Http\\Client\\": "vendor/psr/http-client/src/",
             "MultiSafepay\\Shopware6\\": "src/",
-            "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/"
+            "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/",
+            "MultiSafepay\\Shopware6\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -61,10 +62,5 @@
         "multisafepay/coding-standards": "dev-master",
         "phpunit/phpunit": "^9.5 || 8.3.4",
         "phpro/grumphp": "^1.3"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "MultiSafepay\\Shopware6\\Tests\\": "tests/"
-        }
     }
 }

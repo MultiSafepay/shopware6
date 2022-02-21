@@ -15,7 +15,7 @@ install:
 
 .PHONY: phpunit
 phpunit:
-	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app  ../../../vendor/bin/phpunit
+	docker-compose exec --workdir=/var/www/html app  vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist
 
 .PHONY: administration-build
 administration-build:
@@ -32,6 +32,6 @@ composer-dev:
 
 .PHONY: activate-plugin
 activate-plugin:
-	@cd ../../.. && php bin/console plugin:install -c --activate MltisafeMultiSafepay
+	@cd ../../.. && php bin/console plugin:install -c -r --activate MltisafeMultiSafepay
 
 # ------------------------------------------------------------------------------------------------------------
