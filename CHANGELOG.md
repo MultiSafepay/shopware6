@@ -1,6 +1,24 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.4] - 2022-02-21
+### Added
++ PLGSHPS6-266: Add Google Analytics support
+
+### Changed
++ PLGSHPS6-261: Disable ING Home'Pay on update
+
+### Fixed
++ Do not update name and description of generic gateways 2 and 3 on update, thanks to [StevendeVries](https://github.com/StevendeVries)
++ Update all links to MultiSafepay Docs
++ PLGSHPS6-267: Fix shipping request not working
++ Fix error on 6.3 with the status open - initialized
+
+### Deprecated
++ PLGSHPS6-261: Deprecate all ING Home'Pay classes
+
+***
+
 ## [2.5.3] - 2021-12-09
 ### Added
 + PLGSHPS6-259: Add 2 more generic gateways
