@@ -15,7 +15,7 @@ All notable changes to this project will be documented in this file.
 + Fix error on 6.3 with the status open - initialized
 
 ### Deprecated
-+ All ING Home'Pay classes
++ PLGSHPS6-261: Deprecate all ING Home'Pay classes
 
 ***
 
