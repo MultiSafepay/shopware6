@@ -8,12 +8,23 @@ use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class DeliveryBuilder implements OrderRequestBuilderInterface
 {
+    private $orderRepository;
+
+    public function __construct(EntityRepositoryInterface $orderRepository)
+    {
+        $this->orderRepository = $orderRepository;
+    }
+
     /**
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
@@ -27,28 +38,65 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
         SalesChannelContext $salesChannelContext
     ): void {
         $customer = $salesChannelContext->getCustomer();
-        $defaultShippingAddress = $customer->getDefaultShippingAddress();
-        [$shippingStreet, $shippingHouseNumber] =
-            $addressParser = (new AddressParser())->parse($defaultShippingAddress->getStreet());
 
-        $orderRequestAddress = (new Address())->addCity($defaultShippingAddress->getCity())
+        $shippingOrderAddress = $this->getShippingOrderAddress($transaction, $salesChannelContext);
+
+        if ($shippingOrderAddress === null) {
+            return;
+        }
+
+        [$shippingStreet, $shippingHouseNumber] =
+            (new AddressParser())->parse($shippingOrderAddress->getStreet());
+
+        $orderRequestAddress = (new Address())->addCity($shippingOrderAddress->getCity())
             ->addCountry(new Country(
-                $defaultShippingAddress->getCountry() ? $defaultShippingAddress->getCountry()->getIso() : ''
+                $shippingOrderAddress->getCountry() ? $shippingOrderAddress->getCountry()->getIso() : ''
             ))
             ->addHouseNumber($shippingHouseNumber)
             ->addStreetName($shippingStreet)
-            ->addZipCode(trim($defaultShippingAddress->getZipcode()));
+            ->addZipCode(trim($shippingOrderAddress->getZipcode()));
 
-        if ($defaultShippingAddress->getCountryState()) {
-            $orderRequestAddress->addState($defaultShippingAddress->getCountryState()->getName());
+        if ($shippingOrderAddress->getCountryState()) {
+            $orderRequestAddress->addState($shippingOrderAddress->getCountryState()->getName());
         }
 
-        $deliveryDetails = (new CustomerDetails())->addFirstName($defaultShippingAddress->getFirstName())
-            ->addLastName($defaultShippingAddress->getLastName())
+        $deliveryDetails = (new CustomerDetails())->addFirstName($shippingOrderAddress->getFirstName())
+            ->addLastName($shippingOrderAddress->getLastName())
             ->addAddress($orderRequestAddress)
-            ->addPhoneNumber(new PhoneNumber($defaultShippingAddress->getPhoneNumber() ?? ''))
+            ->addPhoneNumber(new PhoneNumber($shippingOrderAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()));
 
         $orderRequest->addDelivery($deliveryDetails);
+    }
+
+    private function getShippingOrderAddress(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext)
+    {
+        $deliveries = $transaction->getOrder()->getDeliveries();
+
+        if ($deliveries === null) {
+            $deliveries = $this->getOrderFromDatabase(
+                $transaction->getOrder()->getId(),
+                $salesChannelContext->getContext()
+            )->getDeliveries();
+        }
+
+
+
+        if ($deliveries === null
+            || $deliveries->first() === null
+            || $deliveries->first()->getShippingOrderAddress() === null
+        ) {
+            return null;
+        }
+        return $deliveries->first()->getShippingOrderAddress();
+    }
+
+    private function getOrderFromDatabase(string $orderId, Context $context): OrderEntity
+    {
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('deliveries');
+        $criteria->addAssociation('deliveries.shippingOrderAddress.country');
+
+        return $this->orderRepository->search($criteria, $context)->first();
     }
 }

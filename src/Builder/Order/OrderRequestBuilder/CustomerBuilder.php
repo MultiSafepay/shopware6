@@ -9,7 +9,10 @@ use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
+use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -23,18 +26,19 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     private $requestUtil;
 
     private $languageRepository;
-
     /**
-     * CustomerBuilder constructor.
-     *
-     * @param RequestUtil $requestUtil
+     * @var EntityRepositoryInterface
      */
+    private $addressRepository;
+
     public function __construct(
         RequestUtil $requestUtil,
-        EntityRepositoryInterface $languageRepository
+        EntityRepositoryInterface $languageRepository,
+        EntityRepositoryInterface $addressRepository
     ) {
         $this->requestUtil = $requestUtil;
         $this->languageRepository = $languageRepository;
+        $this->addressRepository = $addressRepository;
     }
 
     /**
@@ -51,29 +55,29 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     ): void {
         $request = $this->requestUtil->getGlobals();
         $customer = $salesChannelContext->getCustomer();
-        $defaultBillingAddress = $customer->getDefaultBillingAddress();
+        $billingAddress = $this->getBillingAddress($transaction->getOrder(), $salesChannelContext->getContext());
         [$billingStreet, $billingHouseNumber] =
-            (new AddressParser())->parse($defaultBillingAddress->getStreet());
+            (new AddressParser())->parse($billingAddress->getStreet());
 
-        $orderRequestAddress = (new Address())->addCity($defaultBillingAddress->getCity())
+        $orderRequestAddress = (new Address())->addCity($billingAddress->getCity())
             ->addCountry(new Country(
-                $defaultBillingAddress->getCountry() ? $defaultBillingAddress->getCountry()->getIso() : ''
+                $billingAddress->getCountry() ? $billingAddress->getCountry()->getIso() : ''
             ))
             ->addHouseNumber($billingHouseNumber)
             ->addStreetName($billingStreet)
-            ->addZipCode(trim($defaultBillingAddress->getZipcode()));
+            ->addZipCode(trim($billingAddress->getZipcode()));
 
-        if ($defaultBillingAddress->getCountryState() !== null) {
-            $orderRequestAddress->addState($defaultBillingAddress->getCountryState()->getName());
+        if ($billingAddress->getCountryState() !== null) {
+            $orderRequestAddress->addState($billingAddress->getCountryState()->getName());
         }
 
 
         $customerDetails = (new CustomerDetails())
             ->addLocale($this->getLocale($salesChannelContext))
-            ->addFirstName($defaultBillingAddress->getFirstName())
-            ->addLastName($defaultBillingAddress->getLastName())
+            ->addFirstName($billingAddress->getFirstName())
+            ->addLastName($billingAddress->getLastName())
             ->addAddress($orderRequestAddress)
-            ->addPhoneNumber(new PhoneNumber($defaultBillingAddress->getPhoneNumber() ?? ''))
+            ->addPhoneNumber(new PhoneNumber($billingAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()))
             ->addUserAgent($request->headers->get('User-Agent'))
             ->addReferrer($request->server->get('HTTP_REFERER'))
@@ -96,5 +100,17 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             return 'en_GB';
         }
         return str_replace('-', '_', $language->getLocale()->getCode());
+    }
+
+
+    private function getBillingAddress(OrderEntity $order, Context $context): OrderAddressEntity
+    {
+        if ($order->getBillingAddress() !== null) {
+            return $order->getBillingAddress();
+        }
+
+        $criteria = new Criteria([$order->getBillingAddressId()]);
+        $criteria->addAssociation('country');
+        return $this->addressRepository->search($criteria, $context)->first();
     }
 }
