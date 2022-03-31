@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.5] - 2022-02-21
+### Added
++ PLGSHPS6-272: Add 2 more generic gateways
+
+### Changed
++ PLGSHPS6-260: Use billing and shipping address from order instead of default address
+
+### Fixed
++ PLGSHPS6-270: Fix issue related with access to private properties of the Token object
++ PLGSHPS6-279: Fix validate API key button not working on 6.4.9.0
+
+***
+
 ## [2.5.4] - 2022-02-21
 ### Added
 + PLGSHPS6-266: Add Google Analytics support
