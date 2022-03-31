@@ -40,8 +40,11 @@ class ApiController extends AbstractController
     public function verifyApiKey(RequestDataBag $requestDataBag): JsonResponse
     {
         $actualPluginConfig = $requestDataBag->get('actualPluginConfig');
-        $channelApiKey = $actualPluginConfig->get('MltisafeMultiSafepay.config.apiKey');
-        $channelEnv = $actualPluginConfig->get('MltisafeMultiSafepay.config.environment');
+
+        if ($actualPluginConfig !== null) {
+            $channelApiKey = $actualPluginConfig->get('MltisafeMultiSafepay.config.apiKey');
+            $channelEnv = $actualPluginConfig->get('MltisafeMultiSafepay.config.environment');
+        }
 
         $globalPluginConfig = $requestDataBag->get('globalPluginConfig');
         $globalApiKey = $globalPluginConfig->get('MltisafeMultiSafepay.config.apiKey');

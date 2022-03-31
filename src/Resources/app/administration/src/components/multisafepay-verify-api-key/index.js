@@ -20,16 +20,28 @@ Component.register('multisafepay-verify-api-key', {
             let config = this.$parent.$parent.$parent.actualConfigData;
             if (config) {
                 return config.null;
+            } else if (this.$parent.$parent.$parent.$parent.actualConfigData) {
+                return this.$parent.$parent.$parent.$parent.actualConfigData.null;
+            } else if (this.$parent.$parent.$parent.$parent.$parent.actualConfigData) {
+                //Since 6.4.9.0
+                return this.$parent.$parent.$parent.$parent.$parent.actualConfigData.null
             }
-            return this.$parent.$parent.$parent.$parent.actualConfigData.null;
+
         },
         actualPluginConfig() {
-            let currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
-            if (typeof currentSalesChannelId !== 'undefined') {
+            if (this.$parent.$parent.$parent.currentSalesChannelId) {
+                let currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
                 return this.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+            } else if (this.$parent.$parent.$parent.currentSalesChannelId) {
+                let currentSalesChannelId = this.$parent.$parent.$parent.$parent.currentSalesChannelId;
+                return this.$parent.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+            } else if (this.$parent.$parent.$parent.$parent.$parent.currentSalesChannelId) {
+                //Since 6.4.9.0
+                let currentSalesChannelId = this.$parent.$parent.$parent.$parent.$parent.currentSalesChannelId;
+                return this.$parent.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+            } else {
+                return null
             }
-            currentSalesChannelId = this.$parent.$parent.$parent.$parent.currentSalesChannelId;
-            return this.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
         }
     },
     methods: {
