@@ -167,8 +167,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     private function getRealTokenizationName(string $paymentMethodName, $tokens, string $activeToken = null): string
     {
         foreach ($tokens as $token) {
-            if ($token->token === $activeToken) {
-                return $paymentMethodName . ' (' . $token->display . ')';
+            if ($token->getToken() === $activeToken) {
+                return $paymentMethodName . ' (' . $token->getDisplay() . ')';
             }
         }
 
