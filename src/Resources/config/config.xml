@@ -116,6 +116,22 @@
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
             </helpText>
         </input-field>
+        <input-field>
+            <name>genericGatewayCode4</name>
+            <label>Generic gateway code 4</label>
+            <label lang="de-DE">Generic gateway code 4</label>
+            <helpText>
+                <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
+            </helpText>
+        </input-field>
+        <input-field>
+            <name>genericGatewayCode5</name>
+            <label>Generic gateway code 5</label>
+            <label lang="de-DE">Generic gateway code 5</label>
+            <helpText>
+                <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
+            </helpText>
+        </input-field>
     </card>
 
     <card>

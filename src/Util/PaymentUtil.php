@@ -29,6 +29,8 @@ use MultiSafepay\Shopware6\PaymentMethods\Fietsenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\Generic2;
 use MultiSafepay\Shopware6\PaymentMethods\Generic3;
+use MultiSafepay\Shopware6\PaymentMethods\Generic4;
+use MultiSafepay\Shopware6\PaymentMethods\Generic5;
 use MultiSafepay\Shopware6\PaymentMethods\Gezondheidsbon;
 use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
@@ -88,6 +90,8 @@ class PaymentUtil
         Generic::class,
         Generic2::class,
         Generic3::class,
+        Generic4::class,
+        Generic5::class,
         Gezondheidsbon::class,
         Giropay::class,
         GivaCard::class,

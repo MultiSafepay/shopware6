@@ -82,6 +82,18 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler4">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
+        <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler5">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>

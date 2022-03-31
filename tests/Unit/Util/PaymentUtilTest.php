@@ -9,6 +9,8 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\Generic2;
 use MultiSafepay\Shopware6\PaymentMethods\Generic3;
+use MultiSafepay\Shopware6\PaymentMethods\Generic4;
+use MultiSafepay\Shopware6\PaymentMethods\Generic5;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
@@ -33,7 +35,7 @@ class PaymentUtilTest extends TestCase
     public function testPaymentMethodsHavingCorrectTranslations()
     {
         foreach (PaymentUtil::GATEWAYS as $gateway) {
-            if (in_array($gateway, [Generic::class, Generic2::class, Generic3::class])) {
+            if (in_array($gateway, [Generic::class, Generic2::class, Generic3::class, Generic4::class, Generic5::class])) {
                 // Skip tests for generic because generic doesn't have translations
                 continue;
             }
@@ -70,7 +72,7 @@ class PaymentUtilTest extends TestCase
     public function testPaymentMethodsHavingCorrectPaymentHandler()
     {
         foreach (PaymentUtil::GATEWAYS as $gateway) {
-            if (in_array($gateway, [Generic3::class, Generic2::class])) {
+            if (in_array($gateway, [Generic2::class, Generic3::class, Generic4::class, Generic5::class])) {
                 //These are different cases, we can skip them for now
                 continue;
             }

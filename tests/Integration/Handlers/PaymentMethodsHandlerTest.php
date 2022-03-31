@@ -16,6 +16,8 @@ use MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler2;
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler3;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler4;
+use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler5;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
@@ -165,6 +167,8 @@ class PaymentMethodsHandlerTest extends TestCase
             GenericPaymentHandler::class,
             GenericPaymentHandler2::class,
             GenericPaymentHandler3::class,
+            GenericPaymentHandler4::class,
+            GenericPaymentHandler5::class,
         ])) {
             $settingsServiceMock = $this->getMockBuilder(SettingsService::class)
                 ->disableOriginalConstructor()
