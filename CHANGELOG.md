@@ -1,7 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.5.5] - 2022-02-21
+## [2.5.6] - 2022-04-01
+
+### Fixed
++ PLGSHPS6-280: Fix sales channel validate button not working on versions between 6.4.0 and 6.4.9
+
+***
+
+## [2.5.5] - 2022-03-31
 ### Added
 + PLGSHPS6-272: Add 2 more generic gateways
 
