@@ -32,9 +32,9 @@ Component.register('multisafepay-verify-api-key', {
             if (this.$parent.$parent.$parent.currentSalesChannelId) {
                 let currentSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
                 return this.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
-            } else if (this.$parent.$parent.$parent.currentSalesChannelId) {
+            } else if (this.$parent.$parent.$parent.$parent.currentSalesChannelId) {
                 let currentSalesChannelId = this.$parent.$parent.$parent.$parent.currentSalesChannelId;
-                return this.$parent.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
+                return this.$parent.$parent.$parent.$parent.actualConfigData[currentSalesChannelId];
             } else if (this.$parent.$parent.$parent.$parent.$parent.currentSalesChannelId) {
                 //Since 6.4.9.0
                 let currentSalesChannelId = this.$parent.$parent.$parent.$parent.$parent.currentSalesChannelId;
