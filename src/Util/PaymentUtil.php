@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Util;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\Alipay;
+use MultiSafepay\Shopware6\PaymentMethods\AlipayPlus;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\ApplePay;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
@@ -70,6 +71,7 @@ class PaymentUtil
     public const GATEWAYS = [
         AfterPay::class,
         Alipay::class,
+        AlipayPlus::class,
         AmericanExpress::class,
         ApplePay::class,
         Bancontact::class,
