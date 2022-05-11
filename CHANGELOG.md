@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.6.1] - 2022-05-11
+### Changed
++ Update release script
+
+***
+
 ## [2.6.0] - 2022-05-11
 ### Added
 + DAVAMS-479: Add Alipay+
