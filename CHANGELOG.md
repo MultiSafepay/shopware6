@@ -1,12 +1,16 @@
-
-## Unreleased
-
-**Important:**
-
-**With this update we will move tokenization to the gateway level. Make sure to re-enable Tokenization again**
-
 # Changelog
 All notable changes to this project will be documented in this file.
+
+## [2.6.0] - 2022-05-11
+### Added
++ DAVAMS-479: Add Alipay+
++ PLGSHPS6-194: Add payment component in credit cards gateways
+
+### Changed
++ PLGSHPS6-291: Update MultiSafepay plugin icon
++ PLGSHPS6-194: Tokenization setting field has been moved to the gateway level. Make sure to re-enable Tokenization again
+
+***
 
 ## [2.5.6] - 2022-04-01
 
