@@ -27,6 +27,9 @@ cd "$RELEASE_FOLDER"
 unzip "$FILENAME_PREFIX""$RELEASE_VERSION".zip
 rm "$FILENAME_PREFIX""$RELEASE_VERSION".zip
 
+# Remove composer grumphp dependency because a conflict with the minimum php requirement for a release
+composer remove phpro/grumphp --working-dir="$FOLDER_PREFIX" --update-no-dev --dev --no-update
+
 # Remove shopware temporary so we don't have all the Shopware requirements in the plugin
 composer remove shopware/administration  shopware/storefront shopware/core --working-dir="$FOLDER_PREFIX" --update-no-dev
 
