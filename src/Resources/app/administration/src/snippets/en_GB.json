@@ -20,5 +20,11 @@
         "multisafepay_test_account":"If you would like to have a clear overview of what MultiSafepay has to offer, feel free to create a <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">test account</a>.",
         "multisafepay_assistance_integration_team": "Need assistance? Feel free to contact our integration team:",
         "multisafepay_live_account": "If you would like to set up a live account, feel free to create a <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> or contact the MultiSafepay Sales department:"
+    },
+    "multisafepay-tokenization": {
+        "help_text": "Check out our <a href=\"https://docs.multisafepay.com/features/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about tokenization."
+    },
+    "multisafepay-component": {
+        "help_text": "Check out our <a href=\"https://docs.multisafepay.com/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about Payment Component."
     }
 }

@@ -56,7 +56,7 @@ class AmericanExpress implements PaymentMethodInterface
      */
     public function getTemplate(): ?string
     {
-        return '@MltisafeMultiSafepay/storefront/multisafepay/tokenization/select-token.html.twig';
+        return null;
     }
 
     /**

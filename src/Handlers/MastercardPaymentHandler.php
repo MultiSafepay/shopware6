@@ -7,6 +7,8 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
+use MultiSafepay\Shopware6\Support\PaymentComponent;
+use MultiSafepay\Shopware6\Support\Tokenization;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -14,6 +16,9 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class MastercardPaymentHandler extends AsyncPaymentHandler
 {
+    use Tokenization;
+    use PaymentComponent;
+
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag

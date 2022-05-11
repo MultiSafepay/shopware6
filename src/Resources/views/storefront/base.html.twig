@@ -1,0 +1,6 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_script_hmr_mode %}
+    <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
+    {{ parent() }}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% block sw_settings_payment_detail_content_field_after_order_enabled %}
+    {% parent %}
+    <sw-field
+            v-if="tokenizationSupported"
+            :is-loading="isLoading"
+            type="switch"
+            v-model="paymentMethod.customFields.tokenization"
+            label="Tokenization"
+            :help-text="$tc('multisafepay-tokenization.help_text')"
+    ></sw-field>
+    <sw-field
+            v-if="componentSupported"
+            :is-loading="isLoading"
+            type="switch"
+            v-model="paymentMethod.customFields.component"
+            label="Component"
+            :help-text="$tc('multisafepay-component.help_text')"
+    ></sw-field>
+{% endblock %}

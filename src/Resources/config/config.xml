@@ -36,18 +36,6 @@
         <title>Configuration</title>
         <title lang="de-DE">Konfiguration</title>
 
-        <input-field type="bool">
-            <name>tokenization</name>
-            <label>Enable tokenization</label>
-            <label lang="de-DE">Tokenisierung aktivieren</label>
-            <helpText>
-                <![CDATA[Check out our <a href="https://docs.multisafepay.com/features/recurring-payments/" target="_blank" style="color:#fff">documentation center</a> to found more about tokenization.]]>
-            </helpText>
-            <helpText lang="de-DE">
-                <![CDATA[Weitere Informationen zur Tokenisierung finden Sie in unserem <a href="https://docs.multisafepay.com/features/recurring-payments/" target="_blank" style="color:#fff">Dokumentationscenter.</a>]]>
-            </helpText>
-        </input-field>
-
         <input-field type="int">
             <name>timeActive</name>
             <label>Time an order stays active</label>

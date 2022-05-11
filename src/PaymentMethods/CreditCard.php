@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2022 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
-use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
+use MultiSafepay\Shopware6\Handlers\CreditCardPaymentHandler;
 
-class Mastercard implements PaymentMethodInterface
+class CreditCard implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -16,7 +16,7 @@ class Mastercard implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Mastercard';
+        return 'Credit Card';
     }
 
     /**
@@ -26,7 +26,7 @@ class Mastercard implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Pay with Mastercard';
+        return 'Pay with Credit card';
     }
 
     /**
@@ -36,7 +36,7 @@ class Mastercard implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return MastercardPaymentHandler::class;
+        return CreditCardPaymentHandler::class;
     }
 
     /**
@@ -46,7 +46,7 @@ class Mastercard implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'MASTERCARD';
+        return 'CREDITCARD';
     }
 
     /**
@@ -66,7 +66,7 @@ class Mastercard implements PaymentMethodInterface
      */
     public function getMedia(): string
     {
-        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/mastercard.png';
+        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/creditcard.png';
     }
 
     /**
@@ -79,7 +79,7 @@ class Mastercard implements PaymentMethodInterface
         return [
             'de-DE' => [
                 'name'        => $this->getName(),
-                'description' => 'Bezahlen mit Mastercard',
+                'description' => 'Bezahlen mit Credit card',
             ],
             'en-GB' => [
                 'name'        => $this->getName(),

@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\Service;
 
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class SettingsService
@@ -77,5 +78,20 @@ class SettingsService
     public function getTimeActiveLabel(?string $salesChannelId = null): string
     {
         return (string)$this->getSetting(self::TIME_ACTIVE_LABEL_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     * @param PaymentMethodEntity $paymentMethod
+     * @param string $key
+     * @param mixed|null $default
+     * @return mixed|null
+     */
+    public function getGatewaySetting(PaymentMethodEntity $paymentMethod, string $key, $default = null)
+    {
+        $customFields = $paymentMethod->getCustomFields();
+        if (isset($customFields[$key])) {
+            return $customFields[$key];
+        }
+        return $default;
     }
 }

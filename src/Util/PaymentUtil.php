@@ -19,6 +19,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\PaymentMethods\Boekenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Cbc;
+use MultiSafepay\Shopware6\PaymentMethods\CreditCard;
 use MultiSafepay\Shopware6\PaymentMethods\DirectBankTransfer;
 use MultiSafepay\Shopware6\PaymentMethods\DirectDebit;
 use MultiSafepay\Shopware6\PaymentMethods\Dotpay;
@@ -81,6 +82,7 @@ class PaymentUtil
         Betaalplan::class,
         Boekenbon::class,
         Cbc::class,
+        CreditCard::class,
         DirectDebit::class,
         DirectBankTransfer::class,
         Dotpay::class,

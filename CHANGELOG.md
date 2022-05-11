@@ -1,3 +1,10 @@
+
+## Unreleased
+
+**Important:**
+
+**With this update we will move tokenization to the gateway level. Make sure to re-enable Tokenization again**
+
 # Changelog
 All notable changes to this project will be documented in this file.
 

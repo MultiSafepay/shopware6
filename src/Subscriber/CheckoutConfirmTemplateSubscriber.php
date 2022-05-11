@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
+use MultiSafepay\Api\Gateways\Gateway;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
@@ -15,9 +16,16 @@ use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
+use MultiSafepay\Shopware6\Support\Tokenization;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -32,7 +40,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     /**
      * @var EntityRepositoryInterface
      */
-    private $customerRepository;
+    private $languageRepository;
 
     /**
      * @var string
@@ -48,18 +56,18 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * CheckoutConfirmTemplateSubscriber constructor.
      *
      * @param SdkFactory $sdkFactory
-     * @param EntityRepositoryInterface $customerRepository
+     * @param EntityRepositoryInterface $languageRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
      */
     public function __construct(
         SdkFactory $sdkFactory,
-        EntityRepositoryInterface $customerRepository,
+        EntityRepositoryInterface $languageRepository,
         SettingsService $settingsService,
         string $shopwareVersion
     ) {
         $this->sdkFactory = $sdkFactory;
-        $this->customerRepository = $customerRepository;
+        $this->languageRepository = $languageRepository;
         $this->shopwareVersion = $shopwareVersion;
         $this->settingsService = $settingsService;
     }
@@ -94,43 +102,33 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             $struct = new MultiSafepayStruct();
             $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
             $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
-            $tokens = $sdk->getTokenManager()->getList($customer->getId());
         } catch (InvalidApiKeyException $invalidApiKeyException) {
             /***
              * @TODO add better logging system
              */
             return;
         } catch (ApiException $apiException) {
-            $tokens = [];
         }
-
-        $activeToken = $customer->getCustomFields()['active_token'] ?? null;
 
         switch ($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()) {
             case IdealPaymentHandler::class:
                 $activeName = $this->getRealIdealName($issuers, $lastUsedIssuer);
                 break;
-            case VisaPaymentHandler::class:
-            case MastercardPaymentHandler::class:
-            case AmericanExpressPaymentHandler::class:
-                $activeName = $this->getRealTokenizationName(
-                    $event->getSalesChannelContext()->getPaymentMethod()->getTranslated()['name'],
-                    $tokens,
-                    $activeToken
-                );
-                break;
         }
 
         $struct->assign([
-            'tokenization_enabled' => $this->settingsService->getSetting('tokenization'),
-            'tokens' => (array)$tokens,
-            'active_token' => $activeToken,
+            'api_token' => $this->getComponentsToken($salesChannelContext),
+            'gateway_code' => $this->getGatewayCode($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()),
+            'env' => $this->getComponentsEnvironment($salesChannelContext),
+            'locale' => $this->getLocale(
+                $event->getSalesChannelContext()->getSalesChannel()->getLanguageId(),
+                $event->getContext()
+            ),
+            'show_tokenization' => $this->showTokenization($salesChannelContext),
             'issuers' => $issuers,
             'last_used_issuer' => $lastUsedIssuer,
             'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
             'payment_method_name' => $activeName ?? null,
-            'tokenization_checked' => $customer->getCustomFields()['tokenization_checked'] ?? null,
-            'is_guest' => $customer->getGuest(),
             'current_payment_method_id' => $event->getSalesChannelContext()->getPaymentMethod()->getId(),
         ]);
 
@@ -158,20 +156,66 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         return $result;
     }
 
-    /**
-     * @param string $paymentMethodName
-     * @param $tokens
-     * @param string|null $activeToken
-     * @return string
-     */
-    private function getRealTokenizationName(string $paymentMethodName, $tokens, string $activeToken = null): string
+    private function getComponentsToken(SalesChannelContext $salesChannelContext): ?string
     {
-        foreach ($tokens as $token) {
-            if ($token->getToken() === $activeToken) {
-                return $paymentMethodName . ' (' . $token->getDisplay() . ')';
+        if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
+            return null;
+        }
+
+        return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())->getApiTokenManager()
+            ->get()->getApiToken();
+    }
+
+    private function getComponentsEnvironment(SalesChannelContext $salesChannelContext): ?string
+    {
+        if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
+            return null;
+        }
+
+        return $this->settingsService->isLiveMode() ? 'live' : 'test';
+    }
+
+    private function getLocale(string $languageId, Context $context): string
+    {
+        $criteria = new Criteria([$languageId]);
+        $criteria->addAssociation('locale');
+
+        $locale = $this->languageRepository->search($criteria, $context)
+            ->get($languageId)->getLocale()->getCode();
+        return substr($locale, 0, 2);
+    }
+
+    /**
+     * @param string $paymentHandler
+     * @return string|null
+     */
+    private function getGatewayCode(string $paymentHandler)
+    {
+        foreach (PaymentUtil::GATEWAYS as $gateway) {
+            /** @var PaymentMethodInterface $gateway */
+            $gateway = new $gateway();
+            if ($gateway->getPaymentHandler() === $paymentHandler) {
+                return $gateway->getGatewayCode();
             }
         }
 
-        return $paymentMethodName;
+        return null;
+    }
+
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @return bool
+     */
+    private function showTokenization(SalesChannelContext $salesChannelContext): bool
+    {
+        if ($salesChannelContext->getCustomer()->getGuest()) {
+            return false;
+        }
+
+        if (!in_array(Tokenization::class, class_uses($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()))) {
+            return false;
+        }
+
+        return (bool)$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'tokenization', false);
     }
 }

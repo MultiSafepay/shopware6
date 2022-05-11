@@ -22,6 +22,7 @@ use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 
 class OrderRequestBuilder
 {
@@ -73,10 +74,25 @@ class OrderRequestBuilder
                 !$dataBag->get('active_token') ? $type : TransactionTypeSource::TRANSACTION_TYPE_DIRECT_VALUE
             );
 
+        if ($this->getPayload($dataBag)) {
+            $orderRequest->addType(TransactionTypeSource::TRANSACTION_TYPE_DIRECT_VALUE);
+            $orderRequest->addData(['payment_data' => ['payload' => $this->getPayload($dataBag)]]);
+        }
+
         foreach ($this->orderRequestBuilderPool->getOrderRequestBuilders() as $orderRequestBuilder) {
             $orderRequestBuilder->build($orderRequest, $transaction, $dataBag, $salesChannelContext);
         }
 
         return $orderRequest;
+    }
+
+    private function getPayload(RequestDataBag $dataBag): ?string
+    {
+        if ($dataBag->get('payload')) {
+            return $dataBag->get('payload');
+        }
+
+        $request = (new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER))->request;
+        return $request->get('payload') ? $request->get('payload') : null;
     }
 }

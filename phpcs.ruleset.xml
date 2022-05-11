@@ -4,7 +4,11 @@
     <exclude-pattern>*/vendor/*</exclude-pattern>
     <exclude-pattern>*/tests/bootstrap.php</exclude-pattern>
     <exclude-pattern>*/src/Resources/public/*</exclude-pattern>
+    <exclude-pattern>*/src/Resources/app/storefront/dist/storefront/*</exclude-pattern>
     <rule ref="./vendor/multisafepay/coding-standards/php71.phpcs.xml">
         <exclude name="SlevomatCodingStandard.ControlStructures.AssignmentInCondition.AssignmentInCondition"/>
+    </rule>
+    <rule ref="PSR2.Methods.FunctionCallSignature.Indent">
+        <exclude-pattern>*/src/Resources/app/storefront/src/multisafepay-tokenization/multisafepay-tokenization.plugin.js</exclude-pattern>
     </rule>
 </ruleset>

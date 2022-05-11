@@ -61,4 +61,41 @@ export default class MultiSafepayApiService extends ApiService {
             return ApiService.handleResponse(response);
         });
     }
+    isTokenizationAllowed(paymentMethodId)
+    {
+        const apiRoute = `${this.getApiBasePath()}/tokenization-allowed`;
+
+        return this.httpClient.post(
+            apiRoute,
+            {
+                paymentMethodId: paymentMethodId
+            },
+            {
+                headers: this.getBasicHeaders()
+            }
+        ).then((response) => {
+            return ApiService.handleResponse(response);
+        }).catch((response) => {
+            return ApiService.handleResponse(response);
+        });
+    }
+
+    isComponentAllowed(paymentMethodId)
+    {
+        const apiRoute = `${this.getApiBasePath()}/component-allowed`;
+
+        return this.httpClient.post(
+            apiRoute,
+            {
+                paymentMethodId: paymentMethodId
+            },
+            {
+                headers: this.getBasicHeaders()
+            }
+        ).then((response) => {
+            return ApiService.handleResponse(response);
+        }).catch((response) => {
+            return ApiService.handleResponse(response);
+        });
+    }
 }

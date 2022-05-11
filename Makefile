@@ -17,9 +17,14 @@ install:
 phpunit:
 	docker-compose exec --workdir=/var/www/html app  vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist
 
-.PHONY: administration-build
 administration-build:
 	docker-compose exec app  php psh.phar administration:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
+	mv ./src/Resources/public/administration/js/mltisafemultisafepay.js ./src/Resources/public/administration/js/mltisafe-multi-safepay.js
+	docker-compose exec app  php psh.phar cache --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
+
+.PHONY: storefront-build
+storefront-build:
+	docker-compose exec app  php psh.phar storefront:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
 # ------------------------------------------------------------------------------------------------------------
 
 .PHONY: composer-production

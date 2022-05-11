@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2022 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
 namespace MultiSafepay\Shopware6\Handlers;
 
-use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
+use MultiSafepay\Shopware6\PaymentMethods\CreditCard;
 use MultiSafepay\Shopware6\Support\PaymentComponent;
 use MultiSafepay\Shopware6\Support\Tokenization;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -14,30 +14,20 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class AmericanExpressPaymentHandler extends AsyncPaymentHandler
+class CreditCardPaymentHandler extends AsyncPaymentHandler
 {
     use Tokenization;
     use PaymentComponent;
 
-    /**
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
-     * @param string|null $gateway
-     * @param string $type
-     * @param array $gatewayInfo
-     * @return RedirectResponse
-     * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException
-     */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
         string $gateway = null,
-        string $type = null,
+        string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
-        $paymentMethod = new AmericanExpress();
+        $paymentMethod = new CreditCard();
         return parent::pay(
             $transaction,
             $dataBag,
