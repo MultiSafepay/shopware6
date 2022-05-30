@@ -79,8 +79,8 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             ->addAddress($orderRequestAddress)
             ->addPhoneNumber(new PhoneNumber($billingAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()))
-            ->addUserAgent($request->headers->get('User-Agent'))
-            ->addReferrer($request->server->get('HTTP_REFERER'))
+            ->addUserAgent($request->headers->get('User-Agent') ?? '')
+            ->addReferrer($request->server->get('HTTP_REFERER') ?? '')
             ->addReference($customer->getGuest() ? '' : $customer->getId());
 
         $orderRequest->addCustomer($customerDetails);

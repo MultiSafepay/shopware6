@@ -72,7 +72,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * @param AsyncPaymentTransactionStruct $transaction
      * @return string
      */
-    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
     {
         $parameter = parse_url($transaction->getReturnUrl())['query'];
         $paymentToken = explode('=', $parameter)[1];

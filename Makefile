@@ -15,7 +15,7 @@ install:
 
 .PHONY: phpunit
 phpunit:
-	docker-compose exec --workdir=/var/www/html app  vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist
+	docker-compose exec --workdir=/var/www/html app vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist
 
 administration-build:
 	docker-compose exec app  php psh.phar administration:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"

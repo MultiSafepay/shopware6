@@ -14,7 +14,7 @@ RUN { \
 	&& a2enconf docker-php && a2enmod headers
 
 WORKDIR /var/www/html/custom/plugins/MltisafeMultiSafepay/
-RUN composer install --no-dev
+RUN composer update --no-dev
 WORKDIR /var/www/html
 
 USER dockware
