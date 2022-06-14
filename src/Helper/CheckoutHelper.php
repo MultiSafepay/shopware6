@@ -6,12 +6,14 @@
 
 namespace MultiSafepay\Shopware6\Helper;
 
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -37,23 +39,36 @@ class CheckoutHelper
     /** @var LoggerInterface */
     private $logger;
 
+    /** @var EntityRepositoryInterface */
+    private $paymentMethodRepository;
+
+    /** @var PaymentUtil */
+    private $paymentUtil;
+
     /**
      * CheckoutHelper constructor.
      *
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param EntityRepository $transactionRepository
      * @param EntityRepository $stateMachineRepository
+     * @param LoggerInterface $logger
+     * @param EntityRepositoryInterface $paymentMethodsRepository
+     * @param PaymentUtil $paymentUtil
      */
     public function __construct(
         OrderTransactionStateHandler $orderTransactionStateHandler,
         EntityRepository $transactionRepository,
         EntityRepository $stateMachineRepository,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EntityRepositoryInterface $paymentMethodsRepository,
+        PaymentUtil $paymentUtil
     ) {
         $this->transactionRepository = $transactionRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepository = $stateMachineRepository;
         $this->logger = $logger;
+        $this->paymentMethodRepository = $paymentMethodsRepository;
+        $this->paymentUtil = $paymentUtil;
     }
 
     /**
@@ -91,7 +106,7 @@ class CheckoutHelper
                 'IllegalTransitionException',
                 [
                     'message' => $exception->getMessage(),
-                    'currentState' =>  $this->getTransaction($orderTransactionId, $context)->getStateMachineState()
+                    'currentState' => $this->getTransaction($orderTransactionId, $context)->getStateMachineState()
                         ->getName(),
                     'orderNumber' => $this->getTransaction($orderTransactionId, $context)->getOrder()->getOrderNumber(),
                     'status' => $status
@@ -195,6 +210,41 @@ class CheckoutHelper
         }
 
         return OrderTransactionStates::STATE_OPEN;
+    }
+
+    /**
+     * @param OrderTransactionEntity $transaction
+     * @param Context $context
+     * @param string $gatewayCode
+     */
+    public function transitionPaymentMethodIfNeeded(
+        OrderTransactionEntity $transaction,
+        Context $context,
+        string $gatewayCode
+    ): void {
+        $paymentMethodId = $transaction->getPaymentMethodId();
+        $criteria = new Criteria([$paymentMethodId]);
+        $paymentMethod = $this->paymentMethodRepository->search($criteria, $context)->get($paymentMethodId);
+        $expectedPaymentHandler = $paymentMethod->getHandlerIdentifier();
+        $usedPaymentHandler = $this->paymentUtil->getHandlerIdentifierForGatewayCode($gatewayCode);
+
+        if ($expectedPaymentHandler === $usedPaymentHandler) {
+            return;
+        }
+
+        $paymentMethodCriteria = new Criteria();
+        $paymentMethodCriteria->addFilter(new EqualsFilter('handlerIdentifier', $usedPaymentHandler));
+        $newPaymentMethod = $this->paymentMethodRepository->search($paymentMethodCriteria, $context)->first();
+
+        if (!isset($newPaymentMethod)) {
+            return;
+        }
+
+        $updateData = [
+            'id' => $transaction->getId(),
+            'paymentMethodId' => $newPaymentMethod->getId(),
+        ];
+        $this->transactionRepository->update([$updateData], $context);
     }
 
     /**

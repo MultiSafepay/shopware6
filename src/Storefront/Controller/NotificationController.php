@@ -12,10 +12,15 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\OrderUtil;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\Util\Notification;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -97,7 +102,8 @@ class NotificationController extends StorefrontController
             return $response->setContent('NG');
         }
 
-        $transactionId = $order->getTransactions()->first()->getId();
+        $transaction = $order->getTransactions()->first();
+        $transactionId = $transaction->getId();
 
         try {
             $result = $this->sdkFactory->create($order->getSalesChannelId())
@@ -107,10 +113,14 @@ class NotificationController extends StorefrontController
         }
 
         $this->checkoutHelper->transitionPaymentState($result->getStatus(), $transactionId, $this->context);
+        $this->checkoutHelper->transitionPaymentMethodIfNeeded(
+            $transaction,
+            $this->context,
+            $result->getPaymentDetails()->getType()
+        );
 
         return $response->setContent('OK');
     }
-
 
     /**
      * @RouteScope(scopes={"storefront"})
@@ -146,10 +156,16 @@ class NotificationController extends StorefrontController
         )) {
             return $response->setContent('NG');
         }
-        $transactionId = $order->getTransactions()->first()->getId();
+        $shopwareTransaction = $order->getTransactions()->first();
+        $transactionId = $shopwareTransaction->getId();
         $transaction = new TransactionResponse(json_decode($body, true), $body);
 
         $this->checkoutHelper->transitionPaymentState($transaction->getStatus(), $transactionId, $this->context);
+        $this->checkoutHelper->transitionPaymentMethodIfNeeded(
+            $shopwareTransaction,
+            $this->context,
+            $transaction->getPaymentDetails()->getType()
+        );
 
         return $response->setContent('OK');
     }

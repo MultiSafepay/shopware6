@@ -167,4 +167,20 @@ class PaymentUtil
 
         return $transaction->getPaymentMethod()->getPlugin()->getBaseClass() === MltisafeMultiSafepay::class;
     }
+
+    /**
+     * @param string $gatewayCode
+     * @return string|null
+     */
+    public function getHandlerIdentifierForGatewayCode(string $gatewayCode): ?string
+    {
+        foreach (self::GATEWAYS as $paymentMethodClassName) {
+            $paymentMethod = new $paymentMethodClassName();
+            if ($paymentMethod->getGatewayCode() === $gatewayCode) {
+                return $paymentMethod->getPaymentHandler();
+            }
+        }
+
+        return null;
+    }
 }
