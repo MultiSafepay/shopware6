@@ -61,6 +61,7 @@ use MultiSafepay\Shopware6\PaymentMethods\TrustPay;
 use MultiSafepay\Shopware6\PaymentMethods\Visa;
 use MultiSafepay\Shopware6\PaymentMethods\VvvCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\WebshopGiftcard;
+use MultiSafepay\Shopware6\PaymentMethods\WeChatPay;
 use MultiSafepay\Shopware6\PaymentMethods\WellnessGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
@@ -122,6 +123,7 @@ class PaymentUtil
         TrustPay::class,
         Visa::class,
         VvvCadeaukaart::class,
+        WeChatPay::class,
         WebshopGiftcard::class,
         WellnessGiftcard::class,
         WijnCadeau::class,
