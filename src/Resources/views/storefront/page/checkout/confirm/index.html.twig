@@ -1,6 +1,11 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
 
 
+{% block page_checkout_confirm_payment %}
+    {{ parent() }}
+    <template data-multisafepay-apple-pay
+              data-multisafepay-apple-pay-options='{{ page.paymentMethods.elements|json_encode }}'></template>
+{% endblock %}
 {% block page_checkout_additional %}
     {{ parent() }}
     {% if context.paymentMethod.translated.customFields.component == true and page.extensions.multisafepay.api_token %}

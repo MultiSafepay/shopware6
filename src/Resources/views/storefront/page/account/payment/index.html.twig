@@ -1,0 +1,9 @@
+{% sw_extends '@Storefront/storefront/page/account/payment/index.html.twig' %}
+
+
+{% block page_account_payment_main %}
+    {{ parent() }}
+
+    <template data-multisafepay-apple-pay
+              data-multisafepay-apple-pay-options='{{ page.paymentMethods.elements|json_encode }}'></template>
+{% endblock %}
