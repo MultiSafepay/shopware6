@@ -3,26 +3,31 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\CustomerDetails;
+use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\ValueObject\Customer\Address;
 use MultiSafepay\ValueObject\Customer\AddressParser;
 use MultiSafepay\ValueObject\Customer\Country;
 use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
+use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class DeliveryBuilder implements OrderRequestBuilderInterface
 {
     private $orderRepository;
+    private $orderUtil;
 
-    public function __construct(EntityRepositoryInterface $orderRepository)
+    public function __construct(EntityRepositoryInterface $orderRepository, OrderUtil $orderUtil)
     {
         $this->orderRepository = $orderRepository;
+        $this->orderUtil = $orderUtil;
     }
 
     /**
@@ -56,8 +61,10 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
             ->addStreetName($shippingStreet)
             ->addZipCode(trim($shippingOrderAddress->getZipcode()));
 
-        if ($shippingOrderAddress->getCountryState()) {
-            $orderRequestAddress->addState($shippingOrderAddress->getCountryState()->getName());
+        $state = $this->orderUtil->getState($shippingOrderAddress, $salesChannelContext->getContext());
+
+        if ($state !== null) {
+            $orderRequestAddress->addState($state);
         }
 
         $deliveryDetails = (new CustomerDetails())->addFirstName($shippingOrderAddress->getFirstName())

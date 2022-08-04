@@ -6,12 +6,15 @@
 
 namespace MultiSafepay\Shopware6\Util;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 
 class OrderUtil
 {
@@ -19,15 +22,20 @@ class OrderUtil
      * @var EntityRepositoryInterface
      */
     private $orderRepository;
+    /** @var EntityRepositoryInterface */
+    private $countryStateRepository;
 
     /**
      * OrderUtil constructor.
      *
      * @param EntityRepositoryInterface $orderRepository
      */
-    public function __construct(EntityRepositoryInterface $orderRepository)
-    {
+    public function __construct(
+        EntityRepositoryInterface $orderRepository,
+        EntityRepositoryInterface $countryStateRepository
+    ) {
         $this->orderRepository = $orderRepository;
+        $this->countryStateRepository = $countryStateRepository;
     }
 
     /**
@@ -61,5 +69,27 @@ class OrderUtil
             ->addAssociation('salesChannel');
 
         return $this->orderRepository->search($criteria, $context)->get($orderId);
+    }
+
+    public function getState($address, Context $context): ?string
+    {
+        if (!in_array(get_class($address), [OrderAddressEntity::class, OrderDeliveryEntity::class])) {
+            throw new \InvalidArgumentException('Argument 1 passed to '.get_class($this).'::getState() must be an instance of '.OrderDeliveryEntity::class.' or '.OrderAddressEntity::class.', instace of '.get_class($address).' given.');
+        }
+
+        /** OrderDeliveryEntity|OrderAddressEntity $address */
+        if (!$address->getCountryStateId()) {
+            return null;
+        }
+
+        if ($address->getCountryState() === null) {
+            $criteria = new Criteria([$address->getCountryStateId()]);
+            /** @var CountryStateEntity $countryState */
+            $countryState = $this->countryStateRepository->search($criteria, $context)->first();
+
+            return $countryState->getName();
+        }
+
+        return $address->getCountryState()->getName();
     }
 }

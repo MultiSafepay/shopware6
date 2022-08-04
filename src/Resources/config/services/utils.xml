@@ -14,6 +14,7 @@
 
         <service id="MultiSafepay\Shopware6\Util\OrderUtil">
             <argument type="service" id="order.repository"/>
+            <argument type="service" id="country_state.repository"/>
         </service>
 
         <service id="MultiSafepay\Shopware6\Util\TaxUtil"/>
