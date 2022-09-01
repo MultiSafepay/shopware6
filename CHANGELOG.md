@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.6.2] - 2022-09-01
+### Added
++ PLGSHPS6-295: Add WeChat Pay
+
+### Changed
++ PLGSHPS6-243: Change payment method in notification if needed
+
+### Fixed
++ PLGSHPS6-301: Fix dead links that redirect to MultiSafepay docs
++ PLGSHPS6-297: Fix state data missing from order request
++ PLGSHPS6-292: Only show Apple Pay in Shopware 6.4 when it should
++ Fix User-Agent and HTTP Referer being mandatory in order request 
+
+***
+
 ## [2.6.1] - 2022-05-11
 ### Changed
 + Update release script
