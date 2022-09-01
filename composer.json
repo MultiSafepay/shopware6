@@ -58,8 +58,8 @@
             "en-GB": "https://store.shopware.com/en/multisafepay.html"
         },
         "supportLink": {
-            "de-DE": "https://docs.multisafepay.com/shopware-6/",
-            "en-GB": "https://docs.multisafepay.com/shopware-6/"
+            "de-DE": "https://docs.multisafepay.com/docs/shopware",
+            "en-GB": "https://docs.multisafepay.com/docs/shopware"
         }
     },
     "require-dev": {
