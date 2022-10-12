@@ -10,6 +10,7 @@ use MultiSafepay\Shopware6\MltisafeMultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\AfterPay;
 use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AlipayPlus;
+use MultiSafepay\Shopware6\PaymentMethods\AmazonPay;
 use MultiSafepay\Shopware6\PaymentMethods\AmericanExpress;
 use MultiSafepay\Shopware6\PaymentMethods\ApplePay;
 use MultiSafepay\Shopware6\PaymentMethods\Bancontact;
@@ -75,6 +76,7 @@ class PaymentUtil
         AfterPay::class,
         Alipay::class,
         AlipayPlus::class,
+        AmazonPay::class,
         AmericanExpress::class,
         ApplePay::class,
         Bancontact::class,
