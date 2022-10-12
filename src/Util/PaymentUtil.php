@@ -46,6 +46,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleErotiekbon;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleTuinbon;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleVerwenCadeaubon;
@@ -109,6 +110,7 @@ class PaymentUtil
         Maestro::class,
         Mastercard::class,
         MultiSafepay::class,
+        MyBank::class,
         NationaleErotiekbon::class,
         NationaleTuinbon::class,
         NationaleVerwenCadeaubon::class,

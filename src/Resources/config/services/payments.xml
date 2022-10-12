@@ -159,6 +159,11 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
