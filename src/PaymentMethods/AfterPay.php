@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2019 MultiSafepay, Inc. All rights reserved.
+ * Copyright © 2022 MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 namespace MultiSafepay\Shopware6\PaymentMethods;
@@ -16,7 +16,7 @@ class AfterPay implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'AfterPay';
+        return 'Riverty';
     }
 
     /**
@@ -26,7 +26,7 @@ class AfterPay implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Pay with AfterPay';
+        return 'Pay with '.$this->getName();
     }
 
     /**
@@ -66,7 +66,7 @@ class AfterPay implements PaymentMethodInterface
      */
     public function getMedia(): string
     {
-        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/afterpay.png';
+        return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/riverty.png';
     }
 
     /**
@@ -79,7 +79,7 @@ class AfterPay implements PaymentMethodInterface
         return [
             'de-DE' => [
                 'name'        => $this->getName(),
-                'description' => 'Bezahlen mit AfterPay',
+                'description' => 'Bezahlen mit '.$this->getName(),
             ],
             'en-GB' => [
                 'name'        => $this->getName(),
