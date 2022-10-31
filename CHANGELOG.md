@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.6.3] - 2022-11-01
+### Added
++ DAVAMS-488: Add MyBank payment method
++ DAVAMS-520: Add Amazon Pay
+
+### Changed
++ DAVAMS-546: Rebrand AfterPay to Riverty
+
+***
+
 ## [2.6.2] - 2022-09-01
 ### Added
 + PLGSHPS6-295: Add WeChat Pay
