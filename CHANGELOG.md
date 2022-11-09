@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.6.4] - 2022-11-09
+### Fixed
+PLGSHPS6-305: Fix shipping request not working
+
+***
+
 ## [2.6.3] - 2022-11-01
 ### Added
 + DAVAMS-488: Add MyBank payment method
