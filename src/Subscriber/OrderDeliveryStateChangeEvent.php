@@ -101,12 +101,10 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
                 ->update(
                     $order->getOrderNumber(),
                     (new UpdateRequest())->addStatus('shipped')->addData([
-                        [
-                            'tracktrace_code' => reset($trackAndTraceCode),
-                            'carrier' => '',
-                            'ship_date' => date('Y-m-d H:i:s'),
-                            'reason' => 'Shipped',
-                        ],
+                        'tracktrace_code' => reset($trackAndTraceCode),
+                        'carrier' => '',
+                        'ship_date' => date('Y-m-d H:i:s'),
+                        'reason' => 'Shipped',
                     ])
                 );
         } catch (InvalidApiKeyException $invalidApiKeyException) {
