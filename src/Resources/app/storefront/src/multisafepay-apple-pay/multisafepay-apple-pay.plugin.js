@@ -16,8 +16,7 @@ export default class multisafepayApplePay extends Plugin {
     onDOMContentLoaded()
     {
         for (const paymentMethodId in this.options) {
-            const paymentMethod = this.options[paymentMethodId];
-            if (paymentMethod.formattedHandlerIdentifier === 'handler_multisafepay_applepaypaymenthandler') {
+            if (this.options[paymentMethodId].formattedHandlerIdentifier === 'handler_multisafepay_applepaypaymenthandler') {
                 var elementId = "paymentMethod" + paymentMethodId;
                 var applePaySelectElement = document.getElementById(elementId).parentElement.parentElement.parentElement;
                 applePaySelectElement.style.display = 'none';
