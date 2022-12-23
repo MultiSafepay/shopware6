@@ -6,6 +6,7 @@ import template from './extension/sw-order-detail/sw-order-detail.html.twig';
 import MultiSafepayApiService from './service/MultiSafepayApi.service';
 import localeDE from './snippets/de_DE.json';
 import localeEN from './snippets/en_GB.json';
+import localeNL from './snippets/nl_NL.json';
 
 const { Component, Application } = Shopware;
 
@@ -21,3 +22,4 @@ Application.addServiceProvider('multiSafepayApiService', (container) => {
 
 Shopware.Locale.extend('de-DE', localeDE);
 Shopware.Locale.extend('en-GB', localeEN);
+Shopware.Locale.extend('nl-NL', localeNL);

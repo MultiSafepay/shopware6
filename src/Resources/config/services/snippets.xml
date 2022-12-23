@@ -10,5 +10,8 @@
         <service id="MultiSafepay\Shopware6\Resources\snippet\en_GB\EnglishTranslations" public="true">
             <tag name="shopware.snippet.file"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Resources\snippet\en_GB\DutchTranslations" public="true">
+            <tag name="shopware.snippet.file"/>
+        </service>
     </services>
 </container>

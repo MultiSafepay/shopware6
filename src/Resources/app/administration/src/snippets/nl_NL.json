@@ -1,0 +1,30 @@
+{
+    "multisafepay-verify-api-key": {
+        "success": "De verbinding is succesvol tot stand gekomen",
+        "error": "De verbinding is niet tot stand gekomen. Controleer uw API gegevens",
+        "apiButton": "Controleer API gegevens"
+    },
+    "msp-support": {
+        "documentation": "Documentatie",
+        "api_documentation": "API documentatie",
+        "read_docs": "Lees onze documentatie voor meer informatie over MultiSafepay en hoe u aan de slag kunt gaan",
+        "manual": "Handleiding",
+        "changelog": "Changelog",
+        "faq": "FAQ",
+        "for_developers": "Voor Ontwikkelaars",
+        "account": "Account",
+        "e-mail": "E-mail",
+        "telephone": "Telefoon",
+        "contact": "Contact",
+        "multisafepay_account_needed": "Om deze plugin te gebruiken heeft u een MultiSafepay-account nodig.",
+        "multisafepay_test_account":"Wilt u een duidelijk overzicht van wat MultiSafepay te bieden heeft, maak dan gerust een <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">testaccount</a> aan.",
+        "multisafepay_assistance_integration_team": "Assistentie nodig? Neem gerust contact op met ons integratie team:",
+        "multisafepay_live_account": "Wilt u een live account aanmaken, maak dan gerust een <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> aan of neem contact op met de MultiSafepay Sales afdeling:"
+    },
+    "multisafepay-tokenization": {
+        "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over tokenization."
+    },
+    "multisafepay-component": {
+        "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over Payment Component."
+    }
+}

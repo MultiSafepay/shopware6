@@ -5,11 +5,13 @@
     <card>
         <title>API credentials</title>
         <title lang="de-DE">API credentials</title>
+        <title lang="nl-NL">API gegevens</title>
 
         <input-field type="single-select">
             <name>environment</name>
             <label>Test or Live:</label>
             <label lang="de-DE">Test oder Live</label>
+            <label lang="nl-NL">Test of Live</label>
             <options>
                 <option>
                     <id>test</id>
@@ -26,6 +28,7 @@
             <name>apiKey</name>
             <label>API Key:</label>
             <label lang="de-DE">API Schlüssel</label>
+            <label lang="nl-NL">API sleutel</label>
         </input-field>
 
         <component name="multisafepay-verify-api-key">
@@ -35,13 +38,16 @@
     <card>
         <title>Configuration</title>
         <title lang="de-DE">Konfiguration</title>
+        <title lang="nl-NL">Instellingen</title>
 
         <input-field type="int">
             <name>timeActive</name>
             <label>Time an order stays active</label>
             <label lang="de-DE">Zeit, in der eine Bestellung aktiv bleibt</label>
+            <label lang="nl-NL">Tijd dat een bestelling actief blijft</label>
             <placeholder>Default: 30</placeholder>
             <placeholder lang="de-DE">Standard: 30</placeholder>
+            <placeholder lang="nl-NL">Standaard: 30</placeholder>
             <defaultValue>30</defaultValue>
         </input-field>
 
@@ -74,6 +80,9 @@
             <helpText lang="de-DE">
                 <![CDATA[Weitere Informationen zur Google Analytics in der API finden Sie in unserem <a href="https://docs.multisafepay.com/docs/google-analytics" target="_blank" style="color:#fff">Dokumentationscenter.</a>]]>
             </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Bekijk ons <a href="https://docs.multisafepay.com/docs/google-analytics" target="_blank" style="color:#fff">documentatiecentrum</a> voor meer informatie over Google Analytics in de API.]]>
+            </helpText>
         </input-field>
     </card>
 
@@ -87,6 +96,9 @@
             <helpText>
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
             </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Vul de door MultiSafepay verstrekte gateway-code in om de "generic gateway" te gebruiken]]>
+            </helpText>
         </input-field>
         <input-field>
             <name>genericGatewayCode2</name>
@@ -94,6 +106,9 @@
             <label lang="de-DE">Generic gateway code 2</label>
             <helpText>
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
+            </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Vul de door MultiSafepay verstrekte gateway-code in om de "generic gateway" te gebruiken]]>
             </helpText>
         </input-field>
         <input-field>
@@ -103,6 +118,9 @@
             <helpText>
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
             </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Vul de door MultiSafepay verstrekte gateway-code in om de "generic gateway" te gebruiken]]>
+            </helpText>
         </input-field>
         <input-field>
             <name>genericGatewayCode4</name>
@@ -111,6 +129,9 @@
             <helpText>
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
             </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Vul de door MultiSafepay verstrekte gateway-code in om de "generic gateway" te gebruiken]]>
+            </helpText>
         </input-field>
         <input-field>
             <name>genericGatewayCode5</name>
@@ -118,6 +139,9 @@
             <label lang="de-DE">Generic gateway code 5</label>
             <helpText>
                 <![CDATA[Fill in the gateway code provided by MultiSafepay to use the "generic gateway"]]>
+            </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Vul de door MultiSafepay verstrekte gateway-code in om de "generic gateway" te gebruiken]]>
             </helpText>
         </input-field>
     </card>
