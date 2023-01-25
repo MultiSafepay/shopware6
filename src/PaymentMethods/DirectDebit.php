@@ -24,16 +24,6 @@ class DirectDebit implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with Direct Debit';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return DirectDebitPaymentHandler::class;
@@ -67,25 +57,6 @@ class DirectDebit implements PaymentMethodInterface
     public function getMedia(): string
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/directdebit.png';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => 'Lastschrift',
-                'description' => 'Bezahlen mit Lastschrift',
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

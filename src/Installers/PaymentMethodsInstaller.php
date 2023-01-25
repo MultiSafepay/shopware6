@@ -133,11 +133,9 @@ class PaymentMethodsInstaller implements InstallerInterface
             'id' => $paymentMethodId,
             'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
             'name' => $paymentMethod->getName(),
-            'description' => $paymentMethod->getDescription(),
             'pluginId' => $pluginId,
             'mediaId' => $mediaId,
             'afterOrderEnabled' => true,
-            'translations' => $paymentMethod->getTranslations(),
             'customFields' => [
                 self::IS_MULTISAFEPAY => true,
                 self::TEMPLATE => $paymentMethod->getTemplate()

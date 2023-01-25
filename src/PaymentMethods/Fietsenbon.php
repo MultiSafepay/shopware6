@@ -24,16 +24,6 @@ class Fietsenbon implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with ' . $this->getName();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return FietsenbonPaymentHandler::class;
@@ -67,25 +57,6 @@ class Fietsenbon implements PaymentMethodInterface
     public function getMedia(): string
     {
         return '';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => $this->getName(),
-                'description' => 'Bezahlen mit '. $this->getName(),
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

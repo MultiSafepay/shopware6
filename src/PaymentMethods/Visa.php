@@ -25,16 +25,6 @@ class Visa implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with Visa';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getMedia(): string
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/visa.png';
@@ -68,25 +58,6 @@ class Visa implements PaymentMethodInterface
     public function getTemplate(): ?string
     {
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => $this->getName(),
-                'description' => 'Bezahlen mit Visa',
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

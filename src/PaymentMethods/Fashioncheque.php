@@ -24,16 +24,6 @@ class Fashioncheque implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with ' . $this->getName();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return FashionchequePaymentHandler::class;
@@ -67,25 +57,6 @@ class Fashioncheque implements PaymentMethodInterface
     public function getMedia(): string
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/fashioncheque.png';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => $this->getName(),
-                'description' => 'Bezahlen mit '. $this->getName(),
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

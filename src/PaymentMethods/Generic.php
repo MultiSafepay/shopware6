@@ -25,16 +25,6 @@ class Generic implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return '';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return GenericPaymentHandler::class;
@@ -68,16 +58,6 @@ class Generic implements PaymentMethodInterface
     public function getMedia(): string
     {
         return '';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [];
     }
 
     /**

@@ -26,16 +26,6 @@ class Ideal implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with iDEAL';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return IdealPaymentHandler::class;
@@ -69,25 +59,6 @@ class Ideal implements PaymentMethodInterface
     public function getMedia(): string
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/ideal.png';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => $this->getName(),
-                'description' => 'Bezahlen mit iDEAL',
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

@@ -24,16 +24,6 @@ class CreditCard implements PaymentMethodInterface
      *
      * @return string
      */
-    public function getDescription(): string
-    {
-        return 'Pay with Credit card';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     */
     public function getPaymentHandler(): string
     {
         return CreditCardPaymentHandler::class;
@@ -67,25 +57,6 @@ class CreditCard implements PaymentMethodInterface
     public function getMedia(): string
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/creditcard.png';
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return array
-     */
-    public function getTranslations(): array
-    {
-        return [
-            'de-DE' => [
-                'name'        => $this->getName(),
-                'description' => 'Bezahlen mit Credit card',
-            ],
-            'en-GB' => [
-                'name'        => $this->getName(),
-                'description' => $this->getDescription(),
-            ],
-        ];
     }
 
     /**

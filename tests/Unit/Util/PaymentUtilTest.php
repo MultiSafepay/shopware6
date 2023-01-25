@@ -30,23 +30,6 @@ class PaymentUtilTest extends TestCase
     }
 
     /**
-     * Test if all payment methods contains the english and german translations.
-     */
-    public function testPaymentMethodsHavingCorrectTranslations()
-    {
-        foreach (PaymentUtil::GATEWAYS as $gateway) {
-            if (in_array($gateway, [Generic::class, Generic2::class, Generic3::class, Generic4::class, Generic5::class])) {
-                // Skip tests for generic because generic doesn't have translations
-                continue;
-            }
-            /** @var PaymentMethodInterface $paymentMethod */
-            $paymentMethod = new $gateway();
-            $this->assertArrayHasKey('en-GB', $paymentMethod->getTranslations());
-            $this->assertArrayHasKey('de-DE', $paymentMethod->getTranslations());
-        }
-    }
-
-    /**
      * Test if a gateway has a template
      */
     public function testPaymentMethodsHavingATemplateStringOrNull()

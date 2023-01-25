@@ -16,13 +16,6 @@ interface PaymentMethodInterface
     public function getName(): string;
 
     /**
-     * Return the description of the payment method.
-     *
-     * @return string
-     */
-    public function getDescription(): string;
-
-    /**
      * Return the payment handler of a plugin.
      *
      * @return string
@@ -49,13 +42,6 @@ interface PaymentMethodInterface
      * @return string
      */
     public function getMedia(): string;
-
-    /**
-     * Get the German and English translations of a payment method
-     *
-     * @return array
-     */
-    public function getTranslations(): array;
 
     /**
      * Get the type that is currently being used.
