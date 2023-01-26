@@ -49,10 +49,6 @@
         </service>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder"/>
 
-        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\GoogleAnalyticsBuilder">
-            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
-        </service>
-
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
 
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder">

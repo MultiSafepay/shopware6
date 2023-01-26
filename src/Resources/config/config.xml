@@ -70,20 +70,6 @@
             </options>
             <defaultValue>3</defaultValue>
         </input-field>
-        <input-field type="text">
-            <name>GoogleAnalytics</name>
-            <label>Google Analytics</label>
-            <label lang="de-DE">Google Analytics</label>
-            <helpText>
-                <![CDATA[Check out our <a href="https://docs.multisafepay.com/docs/google-analytics" target="_blank" style="color:#fff">documentation center</a> to found more about Google Analytics in the API.]]>
-            </helpText>
-            <helpText lang="de-DE">
-                <![CDATA[Weitere Informationen zur Google Analytics in der API finden Sie in unserem <a href="https://docs.multisafepay.com/docs/google-analytics" target="_blank" style="color:#fff">Dokumentationscenter.</a>]]>
-            </helpText>
-            <helpText lang="nl-NL">
-                <![CDATA[Bekijk ons <a href="https://docs.multisafepay.com/docs/google-analytics" target="_blank" style="color:#fff">documentatiecentrum</a> voor meer informatie over Google Analytics in de API.]]>
-            </helpText>
-        </input-field>
     </card>
 
     <card>
