@@ -57,6 +57,7 @@ class MediaInstaller implements InstallerInterface
     public function update(UpdateContext $context): void
     {
         foreach (PaymentUtil::GATEWAYS as $gateway) {
+            $this->updateMedia(new $gateway(), $context->getContext());
             $this->addMedia(new $gateway(), $context->getContext());
         }
     }
@@ -169,5 +170,43 @@ class MediaInstaller implements InstallerInterface
         }
 
         return 'msp_' . $paymentMethod->getName();
+    }
+
+    private function updateMedia(PaymentMethodInterface $paymentMethod, Context $context): void
+    {
+        $media = $this->getMedia($paymentMethod, $context);
+
+        if (!$media) {
+            return;
+        }
+
+        $mediaFile = $this->createMediaFile($paymentMethod->getMedia());
+
+        if ($media->getFileSize() === $mediaFile) {
+            return;
+        }
+
+        $this->fileSaver->persistFileToMedia(
+            $mediaFile,
+            $this->getMediaName($paymentMethod),
+            $media->getId(),
+            $context
+        );
+    }
+
+    /**
+     * @param PaymentMethodInterface $paymentMethod
+     * @param Context $context
+     * @return MediaEntity|null
+     */
+    private function getMedia(PaymentMethodInterface $paymentMethod, Context $context)
+    {
+        $criteria = (new Criteria())->addFilter(
+            new EqualsFilter(
+                'fileName',
+                $this->getMediaName($paymentMethod)
+            )
+        );
+        return $this->mediaRepository->search($criteria, $context)->first();
     }
 }
