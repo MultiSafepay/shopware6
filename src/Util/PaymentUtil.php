@@ -39,6 +39,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Giropay;
 use MultiSafepay\Shopware6\PaymentMethods\GivaCard;
 use MultiSafepay\Shopware6\PaymentMethods\Good4fun;
 use MultiSafepay\Shopware6\PaymentMethods\Goodcard;
+use MultiSafepay\Shopware6\PaymentMethods\GooglePay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\In3;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
@@ -106,6 +107,7 @@ class PaymentUtil
         GivaCard::class,
         Good4fun::class,
         Goodcard::class,
+        GooglePay::class,
         Ideal::class,
         In3::class,
         Kbc::class,
