@@ -11,7 +11,6 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\Generic2;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;

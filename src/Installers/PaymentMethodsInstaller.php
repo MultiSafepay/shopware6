@@ -16,7 +16,7 @@ use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -34,9 +34,9 @@ class PaymentMethodsInstaller implements InstallerInterface
 
     /** @var PluginIdProvider */
     public $pluginIdProvider;
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     public $paymentMethodRepository;
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     public $mediaRepository;
 
     /**

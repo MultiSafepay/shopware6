@@ -34,7 +34,7 @@ use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -72,7 +72,7 @@ class PaymentMethodsHandlerTest extends TestCase
     private $customerRepository;
 
     /**
-     * @var EntityRepositoryInterface|null
+     * @var EntityRepository|null
      */
     private $orderRepository;
 
@@ -82,12 +82,12 @@ class PaymentMethodsHandlerTest extends TestCase
     private $context;
 
     /**
-     * @var EntityRepositoryInterface|null
+     * @var EntityRepository|null
      */
     private $orderTransactionRepository;
 
     /**
-     * @var EntityRepositoryInterface|null
+     * @var EntityRepository|null
      */
     private $paymentMethodRepository;
 
@@ -103,7 +103,7 @@ class PaymentMethodsHandlerTest extends TestCase
     {
         parent::setUp();
         $this->customerRepository = $this->getContainer()->get('customer.repository');
-        /** @var EntityRepositoryInterface $orderRepository */
+        /** @var EntityRepository $orderRepository */
         $this->orderRepository = $this->getContainer()->get('order.repository');
         $this->orderTransactionRepository = $this->getContainer()->get('order_transaction.repository');
         $this->paymentMethodRepository = $this->getContainer()->get('payment_method.repository');

@@ -13,7 +13,7 @@ use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
@@ -52,7 +52,7 @@ class PaymentUtilTest extends TestCase
     {
         parent::setUp();
 
-        /** @var EntityRepositoryInterface $orderRepository */
+        /** @var EntityRepository $orderRepository */
         $this->orderRepository = $this->getContainer()->get('order.repository');
         $this->context = Context::createDefaultContext();
         $this->paymentUtil = $this->getContainer()->get(PaymentUtil::class);

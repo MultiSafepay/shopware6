@@ -7,23 +7,18 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
-use MultiSafepay\Api\Gateways\Gateway;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
-use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
-use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use MultiSafepay\Shopware6\Support\Tokenization;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
@@ -38,7 +33,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     private $sdkFactory;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $languageRepository;
 
@@ -56,13 +51,13 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * CheckoutConfirmTemplateSubscriber constructor.
      *
      * @param SdkFactory $sdkFactory
-     * @param EntityRepositoryInterface $languageRepository
+     * @param EntityRepository $languageRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
      */
     public function __construct(
         SdkFactory $sdkFactory,
-        EntityRepositoryInterface $languageRepository,
+        EntityRepository $languageRepository,
         SettingsService $settingsService,
         string $shopwareVersion
     ) {

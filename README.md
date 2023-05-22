@@ -28,8 +28,8 @@ See MultiSafepay Docs – [Shopware](https://docs.multisafepay.com/docs/shopware
 ## Prerequisites
 
 - You will need a [MultiSafepay account](https://testmerchant.multisafepay.com/signup). Consider a test account first.
-- Shopware 6.3.x, 6.4.x ([Starter edition](https://www.shopware.com/en/pricing) supported)
-- Tested on PHP 7.2.0
+- Shopware 6.4.x, 6.5.x (_[Starter Edition](https://www.shopware.com/en/pricing) supported)_
+- Tested on Shopware 6.5.0.0, 6.4.20.2 and PHP8.1
 - [MIT License](https://github.com/MultiSafepay/shopware6/blob/develop/LICENSE)
 
 ## Installation and configuration

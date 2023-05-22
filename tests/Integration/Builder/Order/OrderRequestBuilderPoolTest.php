@@ -15,7 +15,6 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Builder\Order;
 
-use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder;
@@ -35,14 +34,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Cart\Token\TokenFactoryInterfaceV2;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class OrderRequestBuilderPoolTest extends TestCase

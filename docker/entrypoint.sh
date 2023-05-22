@@ -13,6 +13,6 @@ bin/console plugin:install -c --activate MltisafeMultiSafepay
 
 php psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
 
-mysql -uroot -proot shopware -e "update sales_channel_domain set url='https://$1.$2' where url LIKE '%localhost%'"
+mysql -uroot -proot -happ shopware -e "update sales_channel_domain set url='https://$1.$2' where url LIKE '%localhost'"
 
 /entrypoint.sh

@@ -6,7 +6,6 @@
 
 namespace MultiSafepay\Shopware6\Handlers;
 
-use MultiSafepay\Shopware6\PaymentMethods\Alipay;
 use MultiSafepay\Shopware6\PaymentMethods\AlipayPlus;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;

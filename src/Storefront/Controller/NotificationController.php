@@ -12,16 +12,10 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\OrderUtil;
-use MultiSafepay\Shopware6\Util\PaymentUtil;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\Util\Notification;
-use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -83,11 +77,11 @@ class NotificationController extends StorefrontController
     }
 
     /**
-     * @RouteScope(scopes={"storefront"})
      * @Route("/multisafepay/notification",
      *      name="frontend.multisafepay.notification",
      *      options={"seo"="false"},
-     *      methods={"GET"}
+     *      methods={"GET"},
+     *      defaults={"_routeScope"={"storefront"}}
      *     )
      * @return Response
      */
@@ -123,12 +117,12 @@ class NotificationController extends StorefrontController
     }
 
     /**
-     * @RouteScope(scopes={"storefront"})
      * @Route("/multisafepay/notification",
      *      name="frontend.multisafepay.postnotification",
      *      options={"seo"="false"},
      *      defaults={"csrf_protected"=false},
-     *      methods={"POST"}
+     *      methods={"POST"},
+     *      defaults={"_routeScope"={"storefront"}}
      *     )
      * @return Response
      */

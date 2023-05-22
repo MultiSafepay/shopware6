@@ -15,7 +15,7 @@ use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
@@ -24,7 +24,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderDeliveryRepository;
 
@@ -46,13 +46,13 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
     /**
      * OrderDeliveryStateChangeEvent constructor.
      *
-     * @param EntityRepositoryInterface $orderDeliveryRepository
+     * @param EntityRepository $orderDeliveryRepository
      * @param SdkFactory $sdkFactory
      * @param PaymentUtil $paymentUtil
      * @param OrderUtil $orderUtil
      */
     public function __construct(
-        EntityRepositoryInterface $orderDeliveryRepository,
+        EntityRepository $orderDeliveryRepository,
         SdkFactory $sdkFactory,
         PaymentUtil $paymentUtil,
         OrderUtil $orderUtil

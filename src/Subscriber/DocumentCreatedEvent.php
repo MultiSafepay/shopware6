@@ -14,7 +14,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Checkout\Order\OrderEvents;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -38,7 +38,7 @@ class DocumentCreatedEvent implements EventSubscriberInterface
     /**
      * DocumentCreatedEvent constructor.
      *
-     * @param EntityRepositoryInterface $orderRepository
+     * @param EntityRepository $orderRepository
      * @param SdkFactory $sdkFactory
      */
     public function __construct(

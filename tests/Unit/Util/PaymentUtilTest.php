@@ -6,7 +6,6 @@
 
 namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 
-use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\PaymentMethods\Generic2;
 use MultiSafepay\Shopware6\PaymentMethods\Generic3;
 use MultiSafepay\Shopware6\PaymentMethods\Generic4;

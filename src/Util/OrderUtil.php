@@ -10,7 +10,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -19,20 +19,20 @@ use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 class OrderUtil
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderRepository;
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     private $countryStateRepository;
 
     /**
      * OrderUtil constructor.
      *
-     * @param EntityRepositoryInterface $orderRepository
+     * @param EntityRepository $orderRepository
      */
     public function __construct(
-        EntityRepositoryInterface $orderRepository,
-        EntityRepositoryInterface $countryStateRepository
+        EntityRepository $orderRepository,
+        EntityRepository $countryStateRepository
     ) {
         $this->orderRepository = $orderRepository;
         $this->countryStateRepository = $countryStateRepository;

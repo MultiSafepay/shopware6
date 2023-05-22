@@ -13,7 +13,6 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -39,7 +38,7 @@ class CheckoutHelper
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     private $paymentMethodRepository;
 
     /** @var PaymentUtil */
@@ -52,7 +51,7 @@ class CheckoutHelper
      * @param EntityRepository $transactionRepository
      * @param EntityRepository $stateMachineRepository
      * @param LoggerInterface $logger
-     * @param EntityRepositoryInterface $paymentMethodsRepository
+     * @param EntityRepository $paymentMethodsRepository
      * @param PaymentUtil $paymentUtil
      */
     public function __construct(
@@ -60,7 +59,7 @@ class CheckoutHelper
         EntityRepository $transactionRepository,
         EntityRepository $stateMachineRepository,
         LoggerInterface $logger,
-        EntityRepositoryInterface $paymentMethodsRepository,
+        EntityRepository $paymentMethodsRepository,
         PaymentUtil $paymentUtil
     ) {
         $this->transactionRepository = $transactionRepository;

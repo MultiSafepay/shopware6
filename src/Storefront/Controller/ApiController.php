@@ -3,15 +3,11 @@ namespace MultiSafepay\Shopware6\Storefront\Controller;
 
 use Exception;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @RouteScope(scopes={"api"})
- */
 class ApiController extends AbstractController
 {
     /**
@@ -31,10 +27,15 @@ class ApiController extends AbstractController
 
     /**
      * phpcs:ignore Generic.Files.LineLength
-     * @Route("/api/multisafepay/verify-api-key", name="api.action.multisafepay.verify-api-key", methods={"POST"})
+     * @Route("/api/multisafepay/verify-api-key",
+     *     name="api.action.multisafepay.verify-api-key",
+     *     methods={"POST"},
+     *     defaults={"_routeScope"={"api"}}
+     * )
      * @Route("/api/v{version}/multisafepay/verify-api-key",
      *     name="api.action.multisafepay.verify-api-key-old",
-     *     methods={"POST"}
+     *     methods={"POST"},
+     *     defaults={"_routeScope"={"api"}}
      *   )
      */
     public function verifyApiKey(RequestDataBag $requestDataBag): JsonResponse

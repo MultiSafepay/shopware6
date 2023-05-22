@@ -1,5 +1,5 @@
 import Plugin from 'src/plugin-system/plugin.class';
-import StoreApiClient from 'src/service/store-api-client.service';
+import StoreApi from '../service/store-api.service';
 
 export default class multisafepayTokenization extends Plugin {
 
@@ -8,27 +8,24 @@ export default class multisafepayTokenization extends Plugin {
         paymentMethods: null
     };
 
-    init()
-    {
-        this._client = new StoreApiClient();
+    init() {
+        this._client = new StoreApi();
         this.fetchData();
     }
 
-    fetchData()
-    {
-        const payload = JSON.stringify({paymentMethodId: this.options.activePaymentMethod.id, paymentMethods: this.options.paymentMethods});
-        this._client.post(
-            'store-api/v3/multisafepay/tokenization/tokens',
-            payload,
-            (response) => {
-                var tokens = JSON.parse(response).tokens
-                this.setupHtml(tokens)
-            }
-        );
+    fetchData() {
+        let self = this
+        const payload = JSON.stringify({
+            paymentMethodId: this.options.activePaymentMethod.id,
+            paymentMethods: this.options.paymentMethods
+        });
+        this._client.post('/store-api/v3/multisafepay/tokenization/tokens', payload).then(function (response) {
+            const tokens = response.data.tokens
+            self.setupHtml(tokens)
+        })
     }
 
-    setupHtml(tokens)
-    {
+    setupHtml(tokens) {
         const multiSafepayCheckoutField = document.getElementById('multisafepay-checkout')
 
         var span = document.createElement('span');
@@ -46,8 +43,6 @@ export default class multisafepayTokenization extends Plugin {
         label.htmlFor = 'saveToken'
         label.classList = 'custom-control-label'
         label.innerText = 'Save your credit card for next purchase'
-
-
 
 
         if (tokens.length !== 0) {

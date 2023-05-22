@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace MultiSafepay\Shopware6\Controllers\StoreApi;
 
-use MultiSafepay\Api\Gateways\Gateway;
 use MultiSafepay\Api\Tokens\Token;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
@@ -11,29 +10,22 @@ use OpenApi\Annotations as OA;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
-use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\SalesChannel\SuccessResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @RouteScope(scopes={"store-api"})
- */
 class TokensRoute extends AbstractRoute
 {
     private $sdkFactory;
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository|\Shopware\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodRepositoryDecorator */
     private $paymentMethodRepository;
 
-    public function __construct(SdkFactory $sdkFactory, EntityRepositoryInterface $paymentMethodRepository)
+    public function __construct(SdkFactory $sdkFactory, $paymentMethodRepository)
     {
         $this->sdkFactory = $sdkFactory;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -75,11 +67,10 @@ class TokensRoute extends AbstractRoute
      *     )
      * )
      *
-     * @loginRequired
      * @Route("/store-api/multisafepay/tokenization/tokens", name="store-api.multisafepay.tokens",
-     *     methods={"GET", "POST"})
+     *     methods={"GET", "POST"},defaults={"_routeScope"={"store-api"},"_loginRequired"=true})
      * @Route("/store-api/v{version}/multisafepay/tokenization/tokens", name="store-api.multisafepay.tokens.old",
-     *     methods={"GET", "POST"})
+     *     methods={"GET", "POST"}, defaults={"_routeScope"={"store-api"},"_loginRequired"=true})
      */
     public function load(Request $request, SalesChannelContext $context, CustomerEntity $customer)
     {

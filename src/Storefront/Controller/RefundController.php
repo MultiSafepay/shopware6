@@ -13,16 +13,12 @@ use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @RouteScope(scopes={"api"})
- */
 class RefundController extends AbstractController
 {
     /**
@@ -41,20 +37,20 @@ class RefundController extends AbstractController
     private $paymentUtil;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderRepository;
 
     /**
      * RefundController constructor.
      *
-     * @param EntityRepositoryInterface $orderRepository
+     * @param EntityRepository $orderRepository
      * @param SdkFactory $sdkFactory
      * @param PaymentUtil $paymentUtil
      * @param OrderUtil $orderUtil
      */
     public function __construct(
-        EntityRepositoryInterface $orderRepository,
+        EntityRepository $orderRepository,
         SdkFactory $sdkFactory,
         PaymentUtil $paymentUtil,
         OrderUtil $orderUtil
@@ -68,10 +64,14 @@ class RefundController extends AbstractController
     /**
      * @Route("/api/multisafepay/get-refund-data",
      *      name="api.action.multisafepay.get-refund-data",
-     *      methods={"POST"})
+     *      methods={"POST"},
+     *      defaults={"_routeScope"={"api"}}
+     * )
      * @Route("/api/v{version}/multisafepay/get-refund-data",
      *      name="api.action.multisafepay.get-refund-data-old",
-     *      methods={"POST"})
+     *      methods={"POST"},
+     *      defaults={"_routeScope"={"api"}}
+     * )
      */
     public function getRefundData(Request $request, Context $context): JsonResponse
     {
@@ -110,8 +110,10 @@ class RefundController extends AbstractController
     }
 
     /**
-     * @Route("/api/multisafepay/refund", name="api.action.multisafepay.refund", methods={"POST"})
-     * @Route("/api/v{version}/multisafepay/refund", name="api.action.multisafepay.refund-old", methods={"POST"})
+     * @Route("/api/multisafepay/refund", name="api.action.multisafepay.refund", methods={"POST"},
+     *     defaults={"_routeScope"={"api"}})
+     * @Route("/api/v{version}/multisafepay/refund", name="api.action.multisafepay.refund-old", methods={"POST"},
+     *     defaults={"_routeScope"={"api"}})
      */
     public function refund(Request $request, Context $context): JsonResponse
     {

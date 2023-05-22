@@ -2,13 +2,11 @@
 namespace MultiSafepay\Shopware6\Tests\Integration\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
-use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
-use Petstore30\Order;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;

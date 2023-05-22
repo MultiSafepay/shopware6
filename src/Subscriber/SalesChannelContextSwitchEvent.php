@@ -10,7 +10,7 @@ use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent as BaseSalesChannelContextSwitchEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -18,24 +18,24 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class SalesChannelContextSwitchEvent implements EventSubscriberInterface
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     public $customerRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     public $paymentMethodRepository;
 
     /**
      * SalesChannelContextSwitchEvent constructor.
      *
-     * @param EntityRepositoryInterface $customerRepository
-     * @param EntityRepositoryInterface $paymentMethodRepository
+     * @param EntityRepository $customerRepository
+     * @param EntityRepository|\Shopware\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodRepositoryDecorator $paymentMethodRepository
      */
     public function __construct(
-        EntityRepositoryInterface $customerRepository,
-        EntityRepositoryInterface $paymentMethodRepository
+        EntityRepository $customerRepository,
+        $paymentMethodRepository
     ) {
         $this->customerRepository = $customerRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;

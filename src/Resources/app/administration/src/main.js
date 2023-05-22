@@ -2,18 +2,14 @@ import './components/multisafepay-refund';
 import './components/multisafepay-verify-api-key';
 import './components/multisafepay-support';
 import './paymentMethodSettings'
-import template from './extension/sw-order-detail/sw-order-detail.html.twig';
+import './override/sw-order-detail-general';
+import './override/sw-order-detail'
 import MultiSafepayApiService from './service/MultiSafepayApi.service';
 import localeDE from './snippets/de_DE.json';
 import localeEN from './snippets/en_GB.json';
 import localeNL from './snippets/nl_NL.json';
 
-const { Component, Application } = Shopware;
-
-
-Component.override('sw-order-detail-base', {
-    template
-});
+const { Application } = Shopware;
 
 Application.addServiceProvider('multiSafepayApiService', (container) => {
     const initContainer = Application.getContainer('init');
