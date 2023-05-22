@@ -1,6 +1,24 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2023-05-22
+### Added
++ PLGSHPS6-318: Add compatibility for shopware 6.5
++ PLGSHPS6-294: Add Google Pay redirect
++ PLGSHPS6-308: Add image update while updating plugin
++ DAVAMS-563: Add Pay After Delivery Installments payment method
++ PLGSHPS6-160: Add dutch translations
+
+## Changed
++ DAVAMS-582: Update Pay After Delivery logo
+
+## Removed
++ PLGSHPS6-318: Remove compatibility for shopware 6.3
++ DAVAMS-565: Remove Google Analytics within the Order Request
++ PLGSHPS6-238: Remove payment method description
+
+***
+
 ## [2.6.4] - 2022-11-09
 ### Fixed
 PLGSHPS6-305: Fix shipping request not working

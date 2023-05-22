@@ -16,7 +16,7 @@ jobs:
       - name: Install php dependencies
         uses: shivammathur/setup-php@master
         with:
-          php-version: '7.2'
+          php-version: '7.4'
       - name: Get Release Version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         id: version
