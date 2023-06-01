@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Copyright © 2023 MultiSafepay, Inc. All rights reserved.
+ * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
 
