@@ -16,7 +16,7 @@ class CreditCard implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Credit Card';
+        return 'Card payment';
     }
 
     /**
