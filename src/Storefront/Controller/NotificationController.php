@@ -120,9 +120,8 @@ class NotificationController extends StorefrontController
      * @Route("/multisafepay/notification",
      *      name="frontend.multisafepay.postnotification",
      *      options={"seo"="false"},
-     *      defaults={"csrf_protected"=false},
      *      methods={"POST"},
-     *      defaults={"_routeScope"={"storefront"}}
+     *      defaults={"_routeScope"={"storefront"},"csrf_protected"=false}
      *     )
      * @return Response
      */
