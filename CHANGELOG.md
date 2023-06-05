@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.7.1] - 2023-06-05
+### Fixed
++ PLGSHPS6-323: Fix strict typing issue on Shopware 6.4.17
++ PLGSHPS6-322: Fix notification not working on 6.4
+
+### Changed
++ DAVAMS-618: Rename Credit Card to Card payment
+
+***
+
 ## [2.7.0] - 2023-05-22
 ### Added
 + PLGSHPS6-318: Add compatibility for shopware 6.5
@@ -9,10 +19,10 @@ All notable changes to this project will be documented in this file.
 + DAVAMS-563: Add Pay After Delivery Installments payment method
 + PLGSHPS6-160: Add dutch translations
 
-## Changed
+### Changed
 + DAVAMS-582: Update Pay After Delivery logo
 
-## Removed
+### Removed
 + PLGSHPS6-318: Remove compatibility for shopware 6.3
 + DAVAMS-565: Remove Google Analytics within the Order Request
 + PLGSHPS6-238: Remove payment method description
