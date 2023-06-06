@@ -118,7 +118,6 @@ class PaymentUtil
         MyBank::class,
         NationaleErotiekbon::class,
         NationaleTuinbon::class,
-        NationaleVerwenCadeaubon::class,
         ParfumCadeaukaart::class,
         PayAfterDelivery::class,
         PayAfterDeliveryInstallments::class,
@@ -140,7 +139,8 @@ class PaymentUtil
     ];
 
     public const DELETED_GATEWAYS = [
-        IngHomePay::class
+        IngHomePay::class,
+        NationaleVerwenCadeaubon::class
     ];
 
     /**
