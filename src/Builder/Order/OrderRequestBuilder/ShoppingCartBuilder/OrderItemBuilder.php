@@ -65,8 +65,18 @@ class OrderItemBuilder implements ShoppingCartBuilderInterface
     ): TransactionItem {
         $taxRate = $this->taxUtil->getTaxRate($item->getPrice());
 
+        $options = [];
+        if (isset($item->getPayload()['options'])) {
+            $options = $item->getPayload()['options'];
+        }
+
+        $label = $item->getLabel();
+        foreach ($options as $option) {
+            $label .= ' ('.$option['group'].':'.$option['option'].')';
+        }
+
         return (new TransactionItem())
-            ->addName($item->getLabel())
+            ->addName($label)
             ->addUnitPrice(new Money(round(
                 $this->priceUtil->getUnitPriceExclTax($item->getPrice(), $hasNetPrices) * 100,
                 10
