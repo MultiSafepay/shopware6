@@ -64,8 +64,10 @@ class CustomerBuilder implements OrderRequestBuilderInterface
         $request = $this->requestUtil->getGlobals();
         $customer = $salesChannelContext->getCustomer();
         $billingAddress = $this->getBillingAddress($transaction->getOrder(), $salesChannelContext->getContext());
+        $additionalAddress = $billingAddress->getAdditionalAddressLine1() .' ' .
+                             $billingAddress->getAdditionalAddressLine2();
         [$billingStreet, $billingHouseNumber] =
-            (new AddressParser())->parse($billingAddress->getStreet());
+            (new AddressParser())->parse($billingAddress->getStreet(), $additionalAddress);
 
         $orderRequestAddress = (new Address())->addCity($billingAddress->getCity())
             ->addCountry(new Country(

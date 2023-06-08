@@ -52,8 +52,11 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
             return;
         }
 
+        $additionalAddress = $shippingOrderAddress->getAdditionalAddressLine1() .' ' .
+                             $shippingOrderAddress->getAdditionalAddressLine2();
+
         [$shippingStreet, $shippingHouseNumber] =
-            (new AddressParser())->parse($shippingOrderAddress->getStreet());
+            (new AddressParser())->parse($shippingOrderAddress->getStreet(), $additionalAddress);
 
         $orderRequestAddress = (new Address())->addCity($shippingOrderAddress->getCity())
             ->addCountry(new Country(
