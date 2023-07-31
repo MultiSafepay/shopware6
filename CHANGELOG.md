@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.7.2] - 2023-07-31
+### Added
++ PLGSHPS6-325: Add support for additional address fields
++ PLGSHPS6-224: Add product options to configurable products on the payment page
+
+### Changed
++ PLGSHPS6-326: Don't overwrite payment method data on update
+
+### Removed
++ PLGSHPS6-131: Remove Nationale verwen Cadeaubon
+
+***
+
 ## [2.7.1] - 2023-06-05
 ### Fixed
 + PLGSHPS6-323: Fix strict typing issue on Shopware 6.4.17
