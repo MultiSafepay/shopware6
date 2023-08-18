@@ -31,7 +31,7 @@ class ComponentController extends AbstractController
     public function componentAllowed(Request $requestDataBag, Context $context): JsonResponse
     {
         $supported = false;
-        $paymentMethodId = $requestDataBag->get('paymentMethodId');
+        $paymentMethodId = $requestDataBag->request->get('paymentMethodId');
         $criteria = new Criteria([$paymentMethodId]);
         $paymentMethod = $this->paymentRepository->search($criteria, $context)->get($paymentMethodId);
         $handler = $paymentMethod->getHandlerIdentifier();

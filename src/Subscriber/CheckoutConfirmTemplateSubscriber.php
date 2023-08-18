@@ -134,7 +134,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param Issuer[] $issuers
+     * @param \MultiSafepay\Api\Issuers\Issuer[] $issuers
      * @param string|null $lastUsedIssuer
      * @return string
      */

@@ -26,7 +26,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class TokensRoute extends AbstractRoute
 {
     private $sdkFactory;
-    /** @var EntityRepository|\Shopware\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodRepositoryDecorator */
+    /** @var EntityRepository */
     private $paymentMethodRepository;
 
     public function __construct(SdkFactory $sdkFactory, $paymentMethodRepository)
@@ -78,10 +78,10 @@ class TokensRoute extends AbstractRoute
      */
     public function load(Request $request, SalesChannelContext $context, CustomerEntity $customer)
     {
-        if ($request->get('paymentMethodId')) {
+        if ($request->request->get('paymentMethodId')) {
             $tokens = $this->getFilteredTokens(
-                $request->get('paymentMethodId'),
-                $request->get('paymentMethods'),
+                $request->request->get('paymentMethodId'),
+                $request->request->get('paymentMethods'),
                 $context->getContext(),
                 $customer
             );

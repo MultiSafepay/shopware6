@@ -79,10 +79,10 @@ class RefundController extends AbstractController
      */
     public function getRefundData(Request $request, Context $context): JsonResponse
     {
-        $order = $this->orderUtil->getOrder($request->get('orderId'), $context);
+        $order = $this->orderUtil->getOrder($request->request->get('orderId'), $context);
         $paymentHandler = $order->getTransactions()->first()->getPaymentMethod()->getHandlerIdentifier();
 
-        if (!$this->paymentUtil->isMultisafepayPaymentMethod($request->get('orderId'), $context)) {
+        if (!$this->paymentUtil->isMultisafepayPaymentMethod($request->request->get('orderId'), $context)) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);
         }
 
@@ -121,7 +121,7 @@ class RefundController extends AbstractController
      */
     public function refund(Request $request, Context $context): JsonResponse
     {
-        $order = $this->orderUtil->getOrder($request->get('orderId'), $context);
+        $order = $this->orderUtil->getOrder($request->request->get('orderId'), $context);
         $transactionManager = $this->sdkFactory->create($order->getSalesChannelId())->getTransactionManager();
         $transactionData = $transactionManager->get($order->getOrderNumber());
 
@@ -130,7 +130,7 @@ class RefundController extends AbstractController
          */
         $refundRequest = (new RefundRequest())->addMoney(
             new Money(
-                $request->get('amount'),
+                $request->request->get('amount'),
                 $order->getCurrency()->getIsoCode()
             )
         );
