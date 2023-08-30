@@ -6,46 +6,27 @@
     <template data-multisafepay-apple-pay
               data-multisafepay-apple-pay-options='{{ page.paymentMethods.elements|json_encode }}'></template>
 {% endblock %}
-{% block page_checkout_additional %}
+
+{% block page_checkout_finish_customer_comment %}
     {{ parent() }}
-    {% if context.paymentMethod.translated.customFields.component == true and page.extensions.multisafepay.api_token %}
-        {% if page.cart %}
-            {% set amount = page.cart.price.totalPrice %}
-        {% else %}
-            {% set amount = page.order.amountTotal %}
-        {% endif %}
 
-        {% set multiSafepayComponentOptions = {
-            env: page.extensions.multisafepay.env,
-            gateway: page.extensions.multisafepay.gateway_code,
-            showTokenization: page.extensions.multisafepay.show_tokenization,
-            apiToken: page.extensions.multisafepay.api_token,
-            currency: context.currency.isoCode,
-            amount: amount * 100,
-            country: context.shippingLocation.country.iso,
-            locale: page.extensions.multisafepay.locale,
-            customerId: context.customer.id
-        } %}
-
-        <div class="checkout-additional">
-            <template data-multisafepay-component
-                      data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'></template>
-            <div id="multisafepay-checkout" style="margin-bottom: 2rem"></div>
-            <input type="hidden" id="multisafepay-payload" name="payload" value="" form="confirmOrderForm">
-        </div>
-
-    {% elseif page.extensions.multisafepay.show_tokenization == true %}
-
-        {% set multiSafepayTokenizationOptions = {
-            activePaymentMethod: context.paymentMethod,
-            paymentMethods: page.paymentMethods
-        } %}
-
-        <div class="checkout-additional">
-            <template data-multisafepay-tokenization
-                      data-multisafepay-tokenization-options='{{ multiSafepayTokenizationOptions|json_encode }}'>
-            </template>
-            <div id="multisafepay-checkout"></div>
+    {% if config('core.cart.showCustomerComment') %}
+        <div class="card checkout-card">
+            {% include '@MltisafeMultiSafepay/storefront/multisafepay/payment-additional/additional.html.twig' %}
         </div>
     {% endif %}
 {% endblock %}
+
+{% block page_checkout_additional %}
+    {{ parent() }}
+
+    {% if config('core.cart.showCustomerComment') == false %}
+        <div class="checkout-additional">
+            {% include '@MltisafeMultiSafepay/storefront/multisafepay/payment-additional/additional.html.twig' %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+
+
+{#{% endblock %}#}

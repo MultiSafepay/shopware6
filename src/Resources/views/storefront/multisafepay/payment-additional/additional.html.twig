@@ -1,0 +1,35 @@
+{% if context.paymentMethod.translated.customFields.component == true and page.extensions.multisafepay.api_token %}
+    {% if page.cart %}
+        {% set amount = page.cart.price.totalPrice %}
+    {% else %}
+        {% set amount = page.order.amountTotal %}
+    {% endif %}
+
+    {% set multiSafepayComponentOptions = {
+        env: page.extensions.multisafepay.env,
+        gateway: page.extensions.multisafepay.gateway_code,
+        showTokenization: page.extensions.multisafepay.show_tokenization,
+        apiToken: page.extensions.multisafepay.api_token,
+        currency: context.currency.isoCode,
+        amount: amount * 100,
+        country: context.shippingLocation.country.iso,
+        locale: page.extensions.multisafepay.locale,
+        customerId: context.customer.id
+    } %}
+
+    <template data-multisafepay-component
+              data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'></template>
+    <div id="multisafepay-checkout" style="margin-bottom: 2rem"></div>
+    <input type="hidden" id="multisafepay-payload" name="payload" value="" form="confirmOrderForm">
+
+{% elseif page.extensions.multisafepay.show_tokenization == true %}
+
+    {% set multiSafepayTokenizationOptions = {
+        activePaymentMethod: context.paymentMethod,
+        paymentMethods: page.paymentMethods
+    } %}
+    <template data-multisafepay-tokenization
+              data-multisafepay-tokenization-options='{{ multiSafepayTokenizationOptions|json_encode }}'>
+    </template>
+    <div id="multisafepay-checkout"></div>
+{% endif %}
