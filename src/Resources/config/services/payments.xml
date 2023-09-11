@@ -219,6 +219,11 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <tag name="shopware.payment.method.async" />
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\ZiniaPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
+            <tag name="shopware.payment.method.async" />
+        </service>
 
     </services>
 </container>

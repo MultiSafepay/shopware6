@@ -70,6 +70,7 @@ use MultiSafepay\Shopware6\PaymentMethods\WellnessGiftcard;
 use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
+use MultiSafepay\Shopware6\PaymentMethods\Zinia;
 use Shopware\Core\Framework\Context;
 
 class PaymentUtil
@@ -136,6 +137,7 @@ class PaymentUtil
         WijnCadeau::class,
         WinkelCheque::class,
         YourGift::class,
+        Zinia::class
     ];
 
     public const DELETED_GATEWAYS = [
