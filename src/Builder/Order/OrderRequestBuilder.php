@@ -68,6 +68,11 @@ class OrderRequestBuilder
         if ($this->getPayload($dataBag)) {
             $orderRequest->addType(TransactionTypeSource::TRANSACTION_TYPE_DIRECT_VALUE);
             $orderRequest->addData(['payment_data' => ['payload' => $this->getPayload($dataBag)]]);
+            $orderRequest->addRecurringModel('cardOnFile');
+        }
+
+        if ($dataBag->getBoolean('tokenize')) {
+            $orderRequest->addData(['recurring_model' => 'cardOnFile']);
         }
 
         foreach ($this->orderRequestBuilderPool->getOrderRequestBuilders() as $orderRequestBuilder) {

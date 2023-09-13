@@ -7,6 +7,7 @@
 
     {% set multiSafepayComponentOptions = {
         env: page.extensions.multisafepay.env,
+        tokens: page.extensions.multisafepay.tokens,
         gateway: page.extensions.multisafepay.gateway_code,
         showTokenization: page.extensions.multisafepay.show_tokenization,
         apiToken: page.extensions.multisafepay.api_token,
@@ -21,6 +22,7 @@
               data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'></template>
     <div id="multisafepay-checkout" style="margin-bottom: 2rem"></div>
     <input type="hidden" id="multisafepay-payload" name="payload" value="" form="confirmOrderForm">
+    <input type="hidden" id="multisafepay-tokenize" name="tokenize" value="" form="confirmOrderForm">
 
 {% elseif page.extensions.multisafepay.show_tokenization == true %}
 

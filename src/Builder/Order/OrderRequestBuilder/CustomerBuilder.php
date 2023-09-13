@@ -92,8 +92,11 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             ->addPhoneNumber(new PhoneNumber($billingAddress->getPhoneNumber() ?? ''))
             ->addEmailAddress(new EmailAddress($customer->getEmail()))
             ->addUserAgent($request->headers->get('User-Agent') ?? '')
-            ->addReferrer($request->server->get('HTTP_REFERER') ?? '')
-            ->addReference($customer->getGuest() ? '' : $customer->getId());
+            ->addReferrer($request->server->get('HTTP_REFERER') ?? '');
+
+        if ($dataBag->getBoolean('tokenize')) {
+            $customerDetails->addReference($customer->getGuest() ? '' : $customer->getId());
+        }
 
         $orderRequest->addCustomer($customerDetails);
     }

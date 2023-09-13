@@ -112,6 +112,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         }
 
         $struct->assign([
+            'tokens' => $this->getTokens($salesChannelContext),
             'api_token' => $this->getComponentsToken($salesChannelContext),
             'gateway_code' => $this->getGatewayCode($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()),
             'env' => $this->getComponentsEnvironment($salesChannelContext),
@@ -177,6 +178,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 
         $locale = $this->languageRepository->search($criteria, $context)
             ->get($languageId)->getLocale()->getCode();
+
         return substr($locale, 0, 2);
     }
 
@@ -207,10 +209,32 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             return false;
         }
 
-        if (!in_array(Tokenization::class, class_uses($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()))) {
+        if (!in_array(
+            Tokenization::class,
+            class_uses($salesChannelContext->getPaymentMethod()->getHandlerIdentifier())
+        )) {
             return false;
         }
 
-        return (bool)$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'tokenization', false);
+        return (bool)$this->settingsService->getGatewaySetting(
+            $salesChannelContext->getPaymentMethod(),
+            'tokenization',
+            false
+        );
+    }
+
+    private function getTokens(SalesChannelContext $salesChannelContext)
+    {
+        if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
+            return null;
+        }
+
+        try {
+            return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
+                ->getTokenManager()
+                ->getListByGatewayCodeAsArray($salesChannelContext->getCustomer()->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
+        } catch (ApiException $apiException) {
+            return [];
+        }
     }
 }

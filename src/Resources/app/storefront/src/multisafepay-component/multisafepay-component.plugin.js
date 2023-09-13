@@ -3,6 +3,7 @@ import Plugin from 'src/plugin-system/plugin.class';
 export default class multisafepayComponent extends Plugin {
 
     static options = {
+        tokens: null,
         env: 'test',
         apiToken: null,
         currency: 'EUR',
@@ -46,12 +47,12 @@ export default class multisafepayComponent extends Plugin {
                         embed_mode: true
                     }
                 }
-            }
+            },
+            recurring:{model: "cardOnFile", tokens: this.options.tokens},
         }
 
         if (this.options.showTokenization) {
             multisafepayOptions.order.recurring = {model: 'cardOnFile'}
-            multisafepayOptions.order.customer.reference = this.options.customerId
         }
 
         this.multiSafepay = new MultiSafepay(multisafepayOptions);
@@ -69,6 +70,7 @@ export default class multisafepayComponent extends Plugin {
             return false;
         }
         document.getElementById('multisafepay-payload').value = this.multiSafepay.getPaymentData().payload;
+        document.getElementById('multisafepay-tokenize').value = this.multiSafepay.getPaymentData().tokenize;
         return true;
     }
 
