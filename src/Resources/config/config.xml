@@ -70,6 +70,13 @@
             </options>
             <defaultValue>3</defaultValue>
         </input-field>
+        <input-field type="bool">
+            <name>excludeShoppingCart</name>
+            <label>Exclude shopping cart on payment page</label>
+            <label lang="de-DE">Warenkorb auf der Zahlungsseite ausschließen</label>
+            <label lang="nl-NL">Sluit winkelwagen uit op de betaalpagina</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
     </card>
 
     <card>

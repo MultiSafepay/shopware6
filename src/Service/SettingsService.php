@@ -94,4 +94,9 @@ class SettingsService
         }
         return $default;
     }
+
+    public function isShoppingCartExcluded(): bool
+    {
+        return (bool) $this->getSetting('excludeShoppingCart');
+    }
 }

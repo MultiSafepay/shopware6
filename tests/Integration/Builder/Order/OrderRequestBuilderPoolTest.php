@@ -17,6 +17,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool;
+use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
@@ -170,7 +171,8 @@ class OrderRequestBuilderPoolTest extends TestCase
             $this->getContainer()->get(DeliveryBuilder::class),
             $this->getContainer()->get(SecondsActiveBuilder::class),
             $this->getContainer()->get(PluginDataBuilder::class),
-            $this->getContainer()->get(SecondChanceBuilder::class)
+            $this->getContainer()->get(SecondChanceBuilder::class),
+            $this->getContainer()->get(SettingsService::class)
         );
     }
 }

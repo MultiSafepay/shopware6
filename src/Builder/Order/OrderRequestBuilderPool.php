@@ -16,6 +16,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
+use MultiSafepay\Shopware6\Service\SettingsService;
 
 class OrderRequestBuilderPool
 {
@@ -65,6 +66,11 @@ class OrderRequestBuilderPool
     private $secondChanceBuilder;
 
     /**
+     * @var SettingsService
+     */
+    private $settingService;
+
+    /**
      * OrderRequestBuilderPool constructor.
      *
      * @param ShoppingCartBuilder $shoppingCartBuilder
@@ -76,6 +82,7 @@ class OrderRequestBuilderPool
      * @param SecondsActiveBuilder $secondsActiveBuilder
      * @param PluginDataBuilder $pluginDataBuilder
      * @param SecondChanceBuilder $secondChanceBuilder
+     * @param SettingsService $service
      */
     public function __construct(
         ShoppingCartBuilder $shoppingCartBuilder,
@@ -86,7 +93,8 @@ class OrderRequestBuilderPool
         DeliveryBuilder $deliveryBuilder,
         SecondsActiveBuilder $secondsActiveBuilder,
         PluginDataBuilder $pluginDataBuilder,
-        SecondChanceBuilder $secondChanceBuilder
+        SecondChanceBuilder $secondChanceBuilder,
+        SettingsService $service
     ) {
         $this->shoppingCartBuilder = $shoppingCartBuilder;
         $this->recurringBuilder = $recurringBuilder;
@@ -97,6 +105,7 @@ class OrderRequestBuilderPool
         $this->secondsActiveBuilder = $secondsActiveBuilder;
         $this->pluginDataBuilder = $pluginDataBuilder;
         $this->secondChanceBuilder = $secondChanceBuilder;
+        $this->settingService = $service;
     }
 
     /**
@@ -104,8 +113,7 @@ class OrderRequestBuilderPool
      */
     public function getOrderRequestBuilders(): array
     {
-        return [
-            'shopping_cart' => $this->shoppingCartBuilder,
+        $builderPool = [
             'recurring' => $this->recurringBuilder,
             'description' => $this->descriptionBuilder,
             'payment_options' => $this->paymentOptionsBuilder,
@@ -115,6 +123,12 @@ class OrderRequestBuilderPool
             'plugin_data' => $this->pluginDataBuilder,
             'second_chance' => $this->secondChanceBuilder,
         ];
+
+        if (!$this->settingService->isShoppingCartExcluded()) {
+            $builderPool['shopping_cart'] = $this->shoppingCartBuilder;
+        }
+
+        return $builderPool;
     }
 
     /**
