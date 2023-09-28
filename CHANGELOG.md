@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] - 2023-09-28
+### Added
++ PLGSHPS6-333: Add option for excluding shopping cart information on the payment page
++ DAVAMS-658: Add Zinia payment method
+
+### Fixed
++ PLGSHPS6-332: Fixed payment component styling broken when extra information field is enabled
+
+### Removed
++ DAVAMS-644: Remove customer reference from component object
+***
+
 ## [2.7.2] - 2023-07-31
 ### Added
 + PLGSHPS6-325: Add support for additional address fields
