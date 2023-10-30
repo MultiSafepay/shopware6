@@ -17,6 +17,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use MultiSafepay\Shopware6\Support\Tokenization;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -91,18 +92,22 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             );
         }
         try {
+            $struct = new MultiSafepayStruct();
             $salesChannelContext = $event->getSalesChannelContext();
             $customer = $salesChannelContext->getCustomer();
-            $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
-            $struct = new MultiSafepayStruct();
-            $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
             $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
+            $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+            $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
         } catch (InvalidApiKeyException $invalidApiKeyException) {
             /***
              * @TODO add better logging system
              */
             return;
         } catch (ApiException $apiException) {
+            /***
+             * @TODO add better logging system
+             */
+            $issuers = [];
         }
 
         switch ($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()) {
@@ -158,8 +163,12 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             return null;
         }
 
-        return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())->getApiTokenManager()
-            ->get()->getApiToken();
+        try {
+            return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())->getApiTokenManager()
+                ->get()->getApiToken();
+        } catch (ApiException | ClientExceptionInterface $exception) {
+            return null;
+        }
     }
 
     private function getComponentsEnvironment(SalesChannelContext $salesChannelContext): ?string
