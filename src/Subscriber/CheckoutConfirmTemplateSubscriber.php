@@ -119,6 +119,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         $struct->assign([
             'tokens' => $this->getTokens($salesChannelContext),
             'api_token' => $this->getComponentsToken($salesChannelContext),
+            'template_id' => $this->getTemplateId($salesChannelContext),
             'gateway_code' => $this->getGatewayCode($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()),
             'env' => $this->getComponentsEnvironment($salesChannelContext),
             'locale' => $this->getLocale(
@@ -245,5 +246,10 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         } catch (ApiException $apiException) {
             return [];
         }
+    }
+
+    private function getTemplateId(): ?string
+    {
+        return $this->settingsService->getSetting('templateId');
     }
 }

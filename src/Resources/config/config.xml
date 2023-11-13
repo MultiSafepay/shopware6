@@ -77,6 +77,10 @@
             <label lang="nl-NL">Sluit winkelwagen uit op de betaalpagina</label>
             <defaultValue>false</defaultValue>
         </input-field>
+        <input-field type="text">
+            <name>templateId</name>
+            <label>Payment component Template ID</label>
+        </input-field>
     </card>
 
     <card>
