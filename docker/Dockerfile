@@ -1,8 +1,8 @@
-FROM dockware/contribute:latest
+FROM dockware/dev:latest
 USER root
 
 COPY docker/entrypoint.sh /entrypoint-multisafepay.sh
-COPY . /var/www/html/custom/plugins/MltisafeMultiSafepay/
+COPY . /var/www/package-source/multisafepay/MltisafeMultiSafepay/
 
 RUN git clone https://github.com/vishnubob/wait-for-it.git /wait-for-it/
 RUN chmod +x /entrypoint-multisafepay.sh
@@ -13,8 +13,6 @@ RUN { \
         } | tee "/etc/apache2/conf-available/docker-php.conf" \
 	&& a2enconf docker-php && a2enmod headers
 
-WORKDIR /var/www/html/custom/plugins/MltisafeMultiSafepay/
-RUN composer update --no-dev
 WORKDIR /var/www/html
 
 USER dockware
