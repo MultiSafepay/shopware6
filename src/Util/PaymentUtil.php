@@ -86,7 +86,6 @@ class PaymentUtil
         Banktransfer::class,
         BeautyAndWellness::class,
         Belfius::class,
-        Betaalplan::class,
         Boekenbon::class,
         Cbc::class,
         CreditCard::class,
@@ -142,7 +141,8 @@ class PaymentUtil
 
     public const DELETED_GATEWAYS = [
         IngHomePay::class,
-        NationaleVerwenCadeaubon::class
+        NationaleVerwenCadeaubon::class,
+        Betaalplan::class
     ];
 
     /**
