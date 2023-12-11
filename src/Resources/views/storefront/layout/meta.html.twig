@@ -2,6 +2,8 @@
 
 {% block layout_head_stylesheet %}
     {{ parent() }}
-    <link href="https://pay.multisafepay.com/sdk/components/v2/components.css" rel="stylesheet"
-          type="text/css">
+    {% if activeRoute == 'frontend.checkout.confirm.page' || activeRoute == 'frontend.account.edit-order.page' %}
+        <link href="https://pay.multisafepay.com/sdk/components/v2/components.css" rel="stylesheet"
+              type="text/css">
+    {% endif %}
 {% endblock %}
