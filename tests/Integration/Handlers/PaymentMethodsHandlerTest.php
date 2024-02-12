@@ -43,6 +43,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
 use Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -153,6 +154,8 @@ class PaymentMethodsHandlerTest extends TestCase
      */
     private function createPaymentHandlerMock(PaymentMethodInterface $paymentMethod): MockObject
     {
+        $eventDispatcher = new EventDispatcher();
+
         $orderRequestBuilder = $this->getMockBuilder(OrderRequestBuilder::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -161,15 +164,21 @@ class PaymentMethodsHandlerTest extends TestCase
             ->method('build')
             ->willReturn(new OrderRequest());
 
-        $settingsServiceMock = null;
-
-        if (in_array($paymentMethod->getPaymentHandler(), [
+        $genericPaymentHandlers = [
             GenericPaymentHandler::class,
             GenericPaymentHandler2::class,
             GenericPaymentHandler3::class,
             GenericPaymentHandler4::class,
             GenericPaymentHandler5::class,
-        ])) {
+        ];
+
+        $constructorArgs = [
+            $this->setupSdkFactory(),
+            $orderRequestBuilder,
+            $eventDispatcher,
+        ];
+
+        if (in_array($paymentMethod->getPaymentHandler(), $genericPaymentHandlers)) {
             $settingsServiceMock = $this->getMockBuilder(SettingsService::class)
                 ->disableOriginalConstructor()
                 ->getMock();
@@ -177,14 +186,15 @@ class PaymentMethodsHandlerTest extends TestCase
             $settingsServiceMock->expects($this->once())
                 ->method('getSetting')
                 ->willReturn(self::GENERIC_CODE);
+
+            // Remove the last argument from the array and add the settingsServiceMock
+            $constructorArgs[2] = $settingsServiceMock;
+            // Add the eventDispatcher as the last argument
+            $constructorArgs[] = $eventDispatcher;
         }
 
         return $this->getMockBuilder($paymentMethod->getPaymentHandler())
-            ->setConstructorArgs([
-                $this->setupSdkFactory(),
-                $orderRequestBuilder,
-                $settingsServiceMock,
-            ])
+            ->setConstructorArgs($constructorArgs)
             ->setMethodsExcept(['pay', 'finalize'])
             ->getMock();
     }

@@ -14,6 +14,7 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class GenericPaymentHandler extends AsyncPaymentHandler
 {
@@ -28,14 +29,16 @@ class GenericPaymentHandler extends AsyncPaymentHandler
      * @param SdkFactory $sdkFactory
      * @param OrderRequestBuilder $orderRequestBuilder
      * @param SettingsService $settingsService
+     * @param EventDispatcherInterface $eventDispatcher
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
-        SettingsService $settingsService
+        SettingsService $settingsService,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->settingsService = $settingsService;
-        parent::__construct($sdkFactory, $orderRequestBuilder);
+        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher);
     }
 
     /**
