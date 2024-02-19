@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Handlers;
 use Exception;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
+use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -20,6 +21,7 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
@@ -34,17 +36,25 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     private $orderRequestBuilder;
 
     /**
-     * AsyncPaymentHandler constructor.
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    /**
+     * AsyncPaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
      * @param OrderRequestBuilder $orderRequestBuilder
+     * @param EventDispatcherInterface $eventDispatcher
      */
     public function __construct(
         SdkFactory $sdkFactory,
-        OrderRequestBuilder $orderRequestBuilder
+        OrderRequestBuilder $orderRequestBuilder,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -65,15 +75,28 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         array $gatewayInfo = []
     ): RedirectResponse {
         try {
-            $response = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
-                ->getTransactionManager()->create($this->orderRequestBuilder->build(
-                    $transaction,
-                    $dataBag,
-                    $salesChannelContext,
-                    (string)$gateway,
-                    $type,
-                    $gatewayInfo
-                ));
+            // Build the order request
+            $orderRequest = $this->orderRequestBuilder->build(
+                $transaction,
+                $dataBag,
+                $salesChannelContext,
+                (string)$gateway,
+                $type,
+                $gatewayInfo
+            );
+
+            // Launch the event before processing the transaction
+            $event = new FilterOrderRequestEvent($orderRequest, $salesChannelContext->getContext());
+            // Dispatch the event
+            $this->eventDispatcher->dispatch($event, FilterOrderRequestEvent::NAME);
+
+            // Get the order request probably modified by the event
+            $orderRequest = $event->getOrderRequest();
+
+            // Process the transaction
+            $response = $this->sdkFactory->create(
+                $salesChannelContext->getSalesChannel()->getId()
+            )->getTransactionManager()->create($orderRequest);
         } catch (ApiException $apiException) {
             /**
              * @Todo improve log handling for better debugging

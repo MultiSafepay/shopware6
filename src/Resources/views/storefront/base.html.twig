@@ -5,6 +5,8 @@
         window.accessKey = '{{ context.salesChannel.accessKey }}';
         window.contextToken = '{{ context.token }}';
     </script>
-    <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
+    {% if activeRoute == 'frontend.checkout.confirm.page' || activeRoute == 'frontend.account.edit-order.page' %}
+        <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
+    {% endif %}
     {{ parent() }}
 {% endblock %}

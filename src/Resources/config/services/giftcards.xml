@@ -2,112 +2,133 @@
 
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="MultiSafepay\Shopware6\Handlers\BeautyAndWellnessPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BoekenbonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\FashionchequePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\FashionGiftcardPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\FietsenbonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GezondheidsbonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GivaCardPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\Good4funPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GoodcardPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\NationaleErotiekbonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\NationaleTuinbonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\NationaleVerwenCadeaubonPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\ParfumCadeaukaartPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PodiumCadeaukaartPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\SportEnFitCadeauPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\VvvCadeaukaartPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\WebshopGiftcardPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\WellnessGiftcardPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\WijnCadeauPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\WinkelChequePaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\YourGiftPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
-            <tag name="shopware.payment.method.async" />
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
         </service>
     </services>
 </container>

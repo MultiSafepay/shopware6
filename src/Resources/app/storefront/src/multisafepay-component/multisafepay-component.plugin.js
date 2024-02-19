@@ -12,7 +12,8 @@ export default class multisafepayComponent extends Plugin {
         country: 'NL',
         locale: null,
         customerId: null,
-        showTokenization: false
+        showTokenization: false,
+        template_id: null
     };
 
     init()
@@ -36,17 +37,15 @@ export default class multisafepayComponent extends Plugin {
             env: this.options.env,
             apiToken: this.options.apiToken,
             order: {
+                payment_options: {
+                    template_id: this.options.template_id
+                },
                 customer: {
                     locale: this.options.locale,
                     country: this.options.country,
                 },
                 currency: this.options.currency,
                 amount: this.options.amount,
-                template: {
-                    settings: {
-                        embed_mode: true
-                    }
-                }
             },
             recurring:{model: "cardOnFile", tokens: this.options.tokens},
         }

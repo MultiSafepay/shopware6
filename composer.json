@@ -2,12 +2,12 @@
     "name": "multisafepay/shopware6",
     "description": "MultiSafepay module for shopware 6",
     "type": "shopware-platform-plugin",
-    "version": "2.8.0",
+    "version": "2.9.0",
     "license": "MIT",
     "minimum-stability": "stable",
     "require": {
         "php": "^7.2 || ^8.0",
-        "multisafepay/php-sdk": "^5.7",
+        "multisafepay/php-sdk": "^5.12",
         "nyholm/psr7": "^1.1",
         "shopware/core": "^6.4",
         "shopware/storefront": "^6.4",
@@ -31,7 +31,8 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "phpro/grumphp": true,
-            "php-http/discovery": false
+            "php-http/discovery": false,
+            "symfony/runtime": false
         }
     },
     "autoload": {

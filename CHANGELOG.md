@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.9.0] - 2024-02-19
+### Added
++ PLGSHPS6-344: Add a new event to allow modify the order request
++ DAVAMS-537: Add support for Template ID in the Payment Component
+
+### Changed
++ PLGSHPS6-338: Load component js/css only in checkout pages
+
+### Fixed
++ DAVAMS-669: Improve error handling if API is not available
+
+### Removed
++ DAVAMS-713: Disable Santander Betaal per Maand on update
+
+***
+
 ## [2.8.0] - 2023-09-28
 ### Added
 + PLGSHPS6-333: Add option for excluding shopping cart information on the payment page
@@ -11,6 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 + DAVAMS-644: Remove customer reference from component object
+
 ***
 
 ## [2.7.2] - 2023-07-31
