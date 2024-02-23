@@ -47,6 +47,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Kbc;
 use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
+use MultiSafepay\Shopware6\PaymentMethods\Multibanco;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleErotiekbon;
@@ -115,6 +116,7 @@ class PaymentUtil
         Klarna::class,
         Maestro::class,
         Mastercard::class,
+        Multibanco::class,
         MultiSafepay::class,
         MyBank::class,
         NationaleErotiekbon::class,
