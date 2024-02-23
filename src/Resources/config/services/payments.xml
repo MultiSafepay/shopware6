@@ -219,6 +219,12 @@
             <argument type="service" id="event_dispatcher"/>
             <tag name="shopware.payment.method.async"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Handlers\PayAfterDeliveryMfPaymentHandler">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
+            <argument type="service" id="event_dispatcher"/>
+            <tag name="shopware.payment.method.async"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayPalPaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>

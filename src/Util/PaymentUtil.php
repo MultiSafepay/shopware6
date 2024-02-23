@@ -55,6 +55,7 @@ use MultiSafepay\Shopware6\PaymentMethods\NationaleVerwenCadeaubon;
 use MultiSafepay\Shopware6\PaymentMethods\ParfumCadeaukaart;
 use MultiSafepay\Shopware6\PaymentMethods\PayAfterDelivery;
 use MultiSafepay\Shopware6\PaymentMethods\PayAfterDeliveryInstallments;
+use MultiSafepay\Shopware6\PaymentMethods\PayAfterDeliveryMf;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\PaymentMethods\Paysafecard;
 use MultiSafepay\Shopware6\PaymentMethods\PodiumCadeaukaart;
@@ -121,6 +122,7 @@ class PaymentUtil
         ParfumCadeaukaart::class,
         PayAfterDelivery::class,
         PayAfterDeliveryInstallments::class,
+        PayAfterDeliveryMf::class,
         PayPal::class,
         Paysafecard::class,
         PodiumCadeaukaart::class,
