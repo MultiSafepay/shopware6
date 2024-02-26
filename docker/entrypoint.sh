@@ -9,6 +9,7 @@ sudo service mysql start;
 /wait-for-it/wait-for-it.sh 127.0.0.1:3306 -- echo "database is up"
 
 composer config repositories.MultiSafepay path /var/www/package-source/multisafepay/*
+composer config allow-plugins.php-http/discovery false
 composer require multisafepay/shopware6
 
 bin/console plugin:refresh

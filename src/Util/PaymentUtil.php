@@ -47,6 +47,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Kbc;
 use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use MultiSafepay\Shopware6\PaymentMethods\Maestro;
 use MultiSafepay\Shopware6\PaymentMethods\Mastercard;
+use MultiSafepay\Shopware6\PaymentMethods\Mbway;
 use MultiSafepay\Shopware6\PaymentMethods\Multibanco;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
@@ -116,6 +117,7 @@ class PaymentUtil
         Klarna::class,
         Maestro::class,
         Mastercard::class,
+        Mbway::class,
         Multibanco::class,
         MultiSafepay::class,
         MyBank::class,
