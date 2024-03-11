@@ -54,9 +54,3 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Push changes to public repo
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GLOBAL_GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-          repository: MultiSafepay/shopware6
