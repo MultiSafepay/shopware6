@@ -32,7 +32,7 @@ export default class multisafepayComponent extends Plugin {
 
     onDOMContentLoaded()
     {
-        var multisafepayOptions = {
+        const multisafepayOptions = {
             debug: false,
             env: this.options.env,
             apiToken: this.options.apiToken,
@@ -47,11 +47,7 @@ export default class multisafepayComponent extends Plugin {
                 currency: this.options.currency,
                 amount: this.options.amount,
             },
-            recurring:{model: "cardOnFile", tokens: this.options.tokens},
-        }
-
-        if (this.options.showTokenization) {
-            multisafepayOptions.order.recurring = {model: 'cardOnFile'}
+            recurring: this.options.showTokenization ? {model: 'cardOnFile', tokens: this.options.tokens} : undefined
         }
 
         this.multiSafepay = new MultiSafepay(multisafepayOptions);
