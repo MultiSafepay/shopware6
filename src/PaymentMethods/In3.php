@@ -16,7 +16,7 @@ class In3 implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'in3';
+        return 'iDEAL+in3';
     }
 
     /**
