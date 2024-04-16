@@ -42,6 +42,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Goodcard;
 use MultiSafepay\Shopware6\PaymentMethods\GooglePay;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\In3;
+use MultiSafepay\Shopware6\PaymentMethods\In3B2b;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\Kbc;
 use MultiSafepay\Shopware6\PaymentMethods\Klarna;
@@ -113,6 +114,7 @@ class PaymentUtil
         GooglePay::class,
         Ideal::class,
         In3::class,
+        In3B2b::class,
         Kbc::class,
         Klarna::class,
         Maestro::class,

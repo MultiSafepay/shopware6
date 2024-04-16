@@ -1,4 +1,4 @@
-FROM dockware/dev:6.5.8.8
+FROM dockware/dev:6.5.8.7
 USER root
 
 COPY docker/entrypoint.sh /entrypoint-multisafepay.sh

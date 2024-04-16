@@ -10,6 +10,7 @@ use MultiSafepay\Api\Transactions\RefundRequest;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler;
+use MultiSafepay\Shopware6\Handlers\In3B2bPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\In3PaymentHandler;
 use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler;
@@ -95,6 +96,7 @@ class RefundController extends AbstractController
                 KlarnaPaymentHandler::class,
                 EinvoicePaymentHandler::class,
                 In3PaymentHandler::class,
+                In3B2bPaymentHandler::class
             ]
         )) {
             return new JsonResponse(['isAllowed' => false, 'refundedAmount' => 0]);
