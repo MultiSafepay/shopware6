@@ -64,8 +64,8 @@ export default class multisafepayComponent extends Plugin {
             event.preventDefault();
             return false;
         }
-        document.getElementById('multisafepay-payload').value = this.multiSafepay.getPaymentData().payload;
-        document.getElementById('multisafepay-tokenize').value = this.multiSafepay.getPaymentData().tokenize;
+        document.getElementById('multisafepay-payload').value = this.multiSafepay.getPaymentData().payload || '';
+        document.getElementById('multisafepay-tokenize').value = this.multiSafepay.getPaymentData().tokenize || false;
         return true;
     }
 
@@ -75,7 +75,7 @@ export default class multisafepayComponent extends Plugin {
             event.preventDefault();
             return false;
         }
-        document.getElementById('multisafepay-payload').value = this.multiSafepay.getPaymentData().payload;
+        document.getElementById('multisafepay-payload').value = this.multiSafepay.getPaymentData().payload || '';
         return true;
     }
 }
