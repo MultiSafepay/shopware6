@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.10.0] - 2024-04-18
+### Added
++ DAVAMS-763: Add in3 B2B payment method
++ DAVAMS-683: Add Multibanco payment method
++ DAVAMS-682: Add MB WAY payment method
++ DAVAMS-655: Add BNPL_MF payment method
+
+### Changed
++ DAVAMS-744: Rebranding in3 B2C -> iDEAL+in3
+
+### Fixed
++ PLGSHPS6-353: Handle potential undefined values in Payment Components
++ PLGSHPS6-352: Tokenization is shown when it is disabled in the admin section
++ PLGSHPS6-346: Hide Apple Pay when not supported on account/order/edit pages, thanks to @stv-tk
+
 ## [2.9.0] - 2024-02-19
 ### Added
 + PLGSHPS6-344: Add a new event to allow modify the order request
