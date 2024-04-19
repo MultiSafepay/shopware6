@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.10.1] - 2024-04-19
+### Fixed
++ PLGSHPS6-356: Fix composer.json to restrict compatible Shopware 6 versions
+
 ## [2.10.0] - 2024-04-18
 ### Added
 + DAVAMS-763: Add in3 B2B payment method
