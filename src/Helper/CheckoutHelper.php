@@ -105,7 +105,7 @@ class CheckoutHelper
             $this->logger->warning(
                 'IllegalTransitionException',
                 [
-                    'message' => $exception->getMessage(),
+                    'message' => 'An illegal transition exception occurred',
                     'currentState' => $this->getTransaction($orderTransactionId, $context)->getStateMachineState()
                         ->getName(),
                     'orderNumber' => $this->getTransaction($orderTransactionId, $context)->getOrder()->getOrderNumber(),
