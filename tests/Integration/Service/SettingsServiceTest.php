@@ -38,10 +38,10 @@ class SettingsServiceTest extends TestCase
      * Test the function getSettings environment with Default installation settings.
      * So the value will be null.
      */
-    public function testGetSettingEnvironmentNullWithNoSettingsChanged(): void
+    public function testGetSettingEnvironmentLiveWithDefaultSettings(): void
     {
         $result = $this->mspSettings->getSetting('environment');
-        $this->assertNull($result);
+        $this->assertEquals('live', $result);
     }
 
     /**

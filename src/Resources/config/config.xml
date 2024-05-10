@@ -21,6 +21,7 @@
                     <name>Live</name>
                 </option>
             </options>
+            <defaultValue>live</defaultValue>
         </input-field>
 
         <input-field>
