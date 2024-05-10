@@ -16,4 +16,12 @@
             label="Component"
             :help-text="$tc('multisafepay-component.help_text')"
     ></sw-field>
+    <sw-field
+            v-if="paymentMethod.name.toLowerCase().includes('mybank')"
+            :is-loading="isLoading"
+            type="switch"
+            v-model="paymentMethod.customFields.direct"
+            label="Pay inside checkout"
+            :help-text="$tc('multisafepay-direct.help_text')"
+    ></sw-field>
 {% endblock %}

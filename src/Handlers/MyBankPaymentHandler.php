@@ -29,16 +29,26 @@ class MyBankPaymentHandler extends AsyncPaymentHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
         string $gateway = null,
-        string $type = null,
+        string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new MyBank();
+
+        $code = $gateway ?? $paymentMethod->getGatewayCode();
+
+        $issuerCode = $this->getDataBagItem('issuer', $dataBag);
+
+        if ($issuerCode) {
+            $gatewayInfo['issuer_id'] = $issuerCode;
+            $type = $paymentMethod->getType();
+        }
+
         return parent::pay(
             $transaction,
             $dataBag,
             $salesChannelContext,
-            $paymentMethod->getGatewayCode(),
-            $paymentMethod->getType(),
+            $code,
+            $type,
             $gatewayInfo
         );
     }

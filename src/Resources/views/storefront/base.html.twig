@@ -5,8 +5,29 @@
         window.accessKey = '{{ context.salesChannel.accessKey }}';
         window.contextToken = '{{ context.token }}';
     </script>
+    {% set component = context.paymentMethod.customFields.component %}
+    {% set paymentName = context.paymentMethod.name|lower %}
+    {% set direct = context.paymentMethod.customFields.direct %}
+
     {% if activeRoute == 'frontend.checkout.confirm.page' || activeRoute == 'frontend.account.edit-order.page' %}
-        <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
+        {% if component == true %}
+            <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
+        {% endif %}
+        {% if (paymentName == 'ideal' and component == false) or ('mybank' in paymentName and direct == true) %}
+            <script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js"></script>
+            <script>
+                {% if paymentName == 'ideal' and component == false %}
+                new SlimSelect({
+                    select: '#issuers-ideal'
+                })
+                {% endif %}
+                {% if 'mybank' in paymentName and direct == true %}
+                new SlimSelect({
+                    select: '#issuers-mybank'
+                })
+                {% endif %}
+            </script>
+        {% endif %}
     {% endif %}
     {{ parent() }}
 {% endblock %}

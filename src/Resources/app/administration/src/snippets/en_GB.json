@@ -26,5 +26,8 @@
     },
     "multisafepay-component": {
         "help_text": "Check out our <a href=\"https://docs.multisafepay.com/docs/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about Payment Component."
+    },
+    "multisafepay-direct": {
+        "help_text": "Enable the payment inside the checkout page"
     }
 }

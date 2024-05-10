@@ -2,8 +2,16 @@
 
 {% block layout_head_stylesheet %}
     {{ parent() }}
+    {% set component = context.paymentMethod.customFields.component %}
+    {% set paymentName = context.paymentMethod.name|lower %}
+    {% set direct = context.paymentMethod.customFields.direct %}
+
     {% if activeRoute == 'frontend.checkout.confirm.page' || activeRoute == 'frontend.account.edit-order.page' %}
-        <link href="https://pay.multisafepay.com/sdk/components/v2/components.css" rel="stylesheet"
-              type="text/css">
+        {% if component == true %}
+            <link href="https://pay.multisafepay.com/sdk/components/v2/components.css" rel="stylesheet">
+        {% endif %}
+        {% if (paymentName == 'ideal' and component == false) or ('mybank' in paymentName and direct == true) %}
+            <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" />
+        {% endif %}
     {% endif %}
 {% endblock %}

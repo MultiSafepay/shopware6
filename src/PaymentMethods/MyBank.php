@@ -3,12 +3,16 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
+
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 
 class MyBank implements PaymentMethodInterface
 {
+    public const GATEWAY_NAME = 'MyBank - Bonifico Immediato';
+    public const GATEWAY_CODE = 'MYBANK';
+
     /**
      * {@inheritDoc}
      *
@@ -16,7 +20,7 @@ class MyBank implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'MyBank - Bonifico Immediato';
+        return self::GATEWAY_NAME;
     }
 
     /**
@@ -36,7 +40,7 @@ class MyBank implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'MYBANK';
+        return self::GATEWAY_CODE;
     }
 
     /**
@@ -44,9 +48,9 @@ class MyBank implements PaymentMethodInterface
      *
      * @return string|null
      */
-    public function getTemplate(): ?string
+    public function getTemplate(): string
     {
-        return null;
+        return '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig';
     }
 
     /**
@@ -66,6 +70,6 @@ class MyBank implements PaymentMethodInterface
      */
     public function getType(): string
     {
-        return 'redirect';
+        return 'direct';
     }
 }

@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\Support\PaymentComponent;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -14,6 +15,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class IdealPaymentHandler extends AsyncPaymentHandler
 {
+    use PaymentComponent;
+
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
@@ -29,7 +32,7 @@ class IdealPaymentHandler extends AsyncPaymentHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
         string $gateway = null,
-        string $type = 'redirect',
+        string $type = 'redirect', // Last chance if everything fails (direct and component)
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new Ideal();
@@ -43,6 +46,13 @@ class IdealPaymentHandler extends AsyncPaymentHandler
             $type = $paymentMethod->getType();
         }
 
-        return parent::pay($transaction, $dataBag, $salesChannelContext, $code, $type, $gatewayInfo);
+        return parent::pay(
+            $transaction,
+            $dataBag,
+            $salesChannelContext,
+            $code,
+            $type,
+            $gatewayInfo
+        );
     }
 }

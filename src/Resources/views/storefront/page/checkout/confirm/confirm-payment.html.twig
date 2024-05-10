@@ -1,7 +1,9 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
 
 {% block page_checkout_confirm_payment_current_text %}
-    {% if context.paymentMethod.translated.name == 'iDEAL' %}
+    {% set paymentName = context.paymentMethod.name|lower %}
+
+    {% if paymentName == 'ideal' or 'mybank' in paymentName %}
         <strong>{{ "checkout.confirmCurrentPaymentShipping"|trans }}</strong>
         {{ page.extensions.multisafepay.payment_method_name }}
     {% else %}

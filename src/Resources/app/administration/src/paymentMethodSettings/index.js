@@ -34,6 +34,10 @@ Component.override('sw-settings-payment-detail', {
                 this.paymentMethod.customFields.component = false;
             }
 
+            if (!this.paymentMethod.customFields.direct) {
+                this.paymentMethod.customFields.direct = false;
+            }
+
             this.reloadEntityData()
         }
     },

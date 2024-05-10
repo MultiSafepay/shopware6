@@ -26,5 +26,8 @@
     },
     "multisafepay-component": {
         "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over Payment Component."
+    },
+    "multisafepay-direct": {
+        "help_text": "Activeer de betaling binnen de afrekenpagina."
     }
 }

@@ -7,11 +7,13 @@
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
+use MultiSafepay\Api\Issuers\Issuer;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
@@ -91,63 +93,91 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 AccountEditOrderPageLoadedEvent::class
             );
         }
+
+        $issuers = [];
+        $lastUsedIssuer = $gatewayNameWithIssuers = $gatewayCodeWithIssuers = $activeName = null;
+
         try {
             $struct = new MultiSafepayStruct();
             $salesChannelContext = $event->getSalesChannelContext();
             $customer = $salesChannelContext->getCustomer();
-            $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
-            $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
-            $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode(Ideal::GATEWAY_CODE);
-        } catch (InvalidApiKeyException $invalidApiKeyException) {
+            if (!is_null($customer)) {
+                $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
+            }
+
+            switch ($event->getSalesChannelContext()->getPaymentMethod()->getName()) {
+                case Ideal::GATEWAY_NAME:
+                    $gatewayNameWithIssuers = Ideal::GATEWAY_NAME;
+                    $gatewayCodeWithIssuers = Ideal::GATEWAY_CODE;
+                    break;
+                case MyBank::GATEWAY_NAME:
+                    $gatewayNameWithIssuers = MyBank::GATEWAY_NAME;
+                    $gatewayCodeWithIssuers = MyBank::GATEWAY_CODE;
+                    break;
+            }
+
+            try {
+                $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+            } catch (InvalidApiKeyException $invalidApiKeyException) {
+                return;
+            }
+            if (!is_null($gatewayCodeWithIssuers)) {
+                $issuers = $sdk->getIssuerManager()->getIssuersByGatewayCode($gatewayCodeWithIssuers);
+                $activeName = $this->getRealGatewayNameWithIssuers($issuers, $lastUsedIssuer, $gatewayNameWithIssuers);
+            }
+
+            $paymentMethodEntity = $event->getSalesChannelContext()->getPaymentMethod();
+            $customFields = $paymentMethodEntity->getCustomFields();
+
+            $gatewayCode = $this->getGatewayCode($paymentMethodEntity->getHandlerIdentifier());
+
+            // Validating if the "component" status of iDEAL is "not" true, so issuers should be shown
+            // because is a gateway that can switch just between using components or direct modes
+            $isIdealWithComponent = ($gatewayCode === 'IDEAL') && empty($customFields['component']);
+            // Validating if the "direct" status of MyBank "is" true, so issuers should be shown
+            // because is a gateway that can switch just between using direct or redirect modes
+            $isMyBankWithDirect = ($gatewayCode === 'MYBANK') && !empty($customFields['direct']);
+
+            $struct->assign([
+                'tokens' => $this->getTokens($salesChannelContext),
+                'api_token' => !empty($customFields['component']) ? $this->getComponentsToken($salesChannelContext) : null,
+                'template_id' => $this->getTemplateId(),
+                'gateway_code' => $gatewayCode,
+                'env' => $this->getComponentsEnvironment($salesChannelContext),
+                'locale' => $this->getLocale(
+                    $event->getSalesChannelContext()->getSalesChannel()->getLanguageId(),
+                    $event->getContext()
+                ),
+                'direct' => true,
+                'redirect' => false,
+                'show_tokenization' => $this->showTokenization($salesChannelContext),
+                'issuers' =>  ($isIdealWithComponent || $isMyBankWithDirect) ? $issuers : [],
+                'last_used_issuer' => $lastUsedIssuer,
+                'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
+                'payment_method_name' => $activeName,
+                'current_payment_method_id' => $paymentMethodEntity->getId(),
+            ]);
+
+            $event->getPage()->addExtension(
+                MultiSafepayStruct::EXTENSION_NAME,
+                $struct
+            );
+        } catch (InvalidArgumentException | ApiException | ClientExceptionInterface $exception) {
             /***
              * @TODO add better logging system
              */
-            return;
-        } catch (ApiException $apiException) {
-            /***
-             * @TODO add better logging system
-             */
-            $issuers = [];
         }
-
-        switch ($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()) {
-            case IdealPaymentHandler::class:
-                $activeName = $this->getRealIdealName($issuers, $lastUsedIssuer);
-                break;
-        }
-
-        $struct->assign([
-            'tokens' => $this->getTokens($salesChannelContext),
-            'api_token' => $this->getComponentsToken($salesChannelContext),
-            'template_id' => $this->getTemplateId($salesChannelContext),
-            'gateway_code' => $this->getGatewayCode($event->getSalesChannelContext()->getPaymentMethod()->getHandlerIdentifier()),
-            'env' => $this->getComponentsEnvironment($salesChannelContext),
-            'locale' => $this->getLocale(
-                $event->getSalesChannelContext()->getSalesChannel()->getLanguageId(),
-                $event->getContext()
-            ),
-            'show_tokenization' => $this->showTokenization($salesChannelContext),
-            'issuers' => $issuers,
-            'last_used_issuer' => $lastUsedIssuer,
-            'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
-            'payment_method_name' => $activeName ?? null,
-            'current_payment_method_id' => $event->getSalesChannelContext()->getPaymentMethod()->getId(),
-        ]);
-
-        $event->getPage()->addExtension(
-            MultiSafepayStruct::EXTENSION_NAME,
-            $struct
-        );
     }
 
     /**
-     * @param \MultiSafepay\Api\Issuers\Issuer[] $issuers
+     * @param Issuer[] $issuers
      * @param string|null $lastUsedIssuer
+     * @param string|null $gatewayCodeWithIssuers
      * @return string
      */
-    private function getRealIdealName(array $issuers, ?string $lastUsedIssuer): string
+    private function getRealGatewayNameWithIssuers(array $issuers, ?string $lastUsedIssuer, ?string $gatewayCodeWithIssuers): string
     {
-        $result = 'iDEAL';
+        $result = $gatewayCodeWithIssuers ?? '';
 
         foreach ($issuers as $issuer) {
             if ($issuer->getCode() === $lastUsedIssuer) {
@@ -196,7 +226,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
      * @param string $paymentHandler
      * @return string|null
      */
-    private function getGatewayCode(string $paymentHandler)
+    private function getGatewayCode(string $paymentHandler): ?string
     {
         foreach (PaymentUtil::GATEWAYS as $gateway) {
             /** @var PaymentMethodInterface $gateway */
@@ -233,7 +263,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         );
     }
 
-    private function getTokens(SalesChannelContext $salesChannelContext)
+    private function getTokens(SalesChannelContext $salesChannelContext): ?array
     {
         if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
             return null;
@@ -243,7 +273,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
                 ->getTokenManager()
                 ->getListByGatewayCodeAsArray($salesChannelContext->getCustomer()->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
-        } catch (ApiException $apiException) {
+        } catch (ApiException | ClientExceptionInterface $exception) {
             return [];
         }
     }
