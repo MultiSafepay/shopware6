@@ -56,7 +56,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
         foreach (PaymentUtil::GATEWAYS as $gateway) {
-            $this->addPaymentMethod(new $gateway(), $context->getContext(), false);
+            $this->addPaymentMethod(new $gateway(), $context->getContext(), false, true);
         }
     }
 
@@ -68,7 +68,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $this->updateMultiSafepayPaymentMethod($context->getContext());
 
         foreach (PaymentUtil::GATEWAYS as $gateway) {
-            $this->addPaymentMethod(new $gateway(), $context->getContext(), $context->getPlugin()->isActive());
+            $this->addPaymentMethod(new $gateway(), $context->getContext(), $context->getPlugin()->isActive(), false);
         }
 
         $this->disableGateways($context);
@@ -108,8 +108,9 @@ class PaymentMethodsInstaller implements InstallerInterface
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @param bool $isActive
+     * @param bool $isInstall
      */
-    public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context, bool $isActive): void
+    public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context, bool $isActive, bool $isInstall): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod, $context);
 
@@ -117,7 +118,7 @@ class PaymentMethodsInstaller implements InstallerInterface
 
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
-        if ($paymentMethodId) {
+        if ($paymentMethodId && $isInstall) {
             return;
         }
 
