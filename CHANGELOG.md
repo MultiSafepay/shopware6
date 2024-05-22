@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.11.0] - 2024-05-22
+### Added
++ PLGSHPS6-358: Add Payment Component for iDEAL
+
+### Fixed
++ PLGSHPS6-347: Fix IllegalTransitionException::getMessage usage despite being marked as @internal
++ PLGSHPS6-357: Fix release script to correctly set up the constraints in composer.json for compatible Shopware 6 versions
++ PLGSHPS6-359: Fix updating payment method properties during the update process
++ PLGSHPS6-360: Fix setting a default value for the environment setting field
+
 ## [2.10.1] - 2024-04-19
 ### Fixed
 + PLGSHPS6-356: Fix composer.json to restrict compatible Shopware 6 versions
