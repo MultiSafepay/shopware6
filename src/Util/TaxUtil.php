@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Util;
 
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;

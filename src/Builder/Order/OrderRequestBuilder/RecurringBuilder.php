@@ -6,20 +6,36 @@
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
+use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class RecurringBuilder
+ *
+ * This class is responsible for building the recurring
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class RecurringBuilder implements OrderRequestBuilderInterface
 {
+    /**
+     * Recurring model type
+     *
+     * @var string
+     */
     public const RECURRING_MODEL_TYPE = 'cardOnFile';
 
     /**
+     *  Build the recurring
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     * @throws InvalidArgumentException
      */
     public function build(
         OrderRequest $orderRequest,
@@ -38,12 +54,14 @@ class RecurringBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Check if the token can be saved
+     *
      * @param RequestDataBag $dataBag
      * @param CustomerEntity $customer
      * @return bool
      */
     private function canSaveToken(RequestDataBag $dataBag, CustomerEntity $customer): bool
     {
-        return $customer->getGuest() ? false : $dataBag->getBoolean('saveToken', false);
+        return !$customer->getGuest() && $dataBag->getBoolean('saveToken');
     }
 }

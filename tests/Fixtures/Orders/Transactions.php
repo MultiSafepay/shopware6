@@ -3,48 +3,53 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 
+use RuntimeException;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\StateMachine\StateMachineRegistry;
 
+/**
+ * Trait Transactions
+ *
+ * @package MultiSafepay\Shopware6\Tests\Fixtures\Orders
+ */
 trait Transactions
 {
     use KernelTestBehaviour;
 
     /**
+     *  Create a transaction
+     *
      * @param string $orderId
      * @param string $paymentMethodId
      * @param Context $context
      * @return string
      * @throws InconsistentCriteriaIdsException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
-     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException
      */
     public function createTransaction(string $orderId, string $paymentMethodId, Context $context): string
     {
-        /** @var StateMachineRegistry $stateMachineRegistry */
-        $stateMachineRegistry = $this->getContainer()->get(StateMachineRegistry::class);
-        $orderTransactionRepository = $this->getContainer()->get('order_transaction.repository');
+        $stateMachineStateRepository = self::getContainer()->get('state_machine_state.repository');
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('technicalName', 'open'));
+        $stateId = $stateMachineStateRepository->searchIds($criteria, $context)->firstId();
+        if (!$stateId) {
+            throw new RuntimeException('Initial state does not exist.');
+        }
+        $orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
         $id = Uuid::randomHex();
         $transaction = [
             'id' => $id,
             'orderId' => $orderId,
             'paymentMethodId' => $paymentMethodId,
-            'stateId' => $stateMachineRegistry->getInitialState(
-                OrderTransactionStates::STATE_MACHINE,
-                $context
-            )->getId(),
+            'stateId' => $stateId,
             'amount' => new CalculatedPrice(100, 100, new CalculatedTaxCollection(), new TaxRuleCollection(), 1),
             'payload' => '{}',
         ];
@@ -55,6 +60,8 @@ trait Transactions
     }
 
     /**
+     *  Get a transaction
+     *
      * @param string $transactionId
      * @param Context $context
      * @return OrderTransactionEntity
@@ -62,7 +69,7 @@ trait Transactions
      */
     public function getTransaction(string $transactionId, Context $context): OrderTransactionEntity
     {
-        $orderTransactionRepository = $this->getContainer()->get('order_transaction.repository');
+        $orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
         $criteria = new Criteria([$transactionId]);
         /** @var OrderTransactionEntity $transaction */
         $transaction = $orderTransactionRepository->search($criteria, $context)->get($transactionId);

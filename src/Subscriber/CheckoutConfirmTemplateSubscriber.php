@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
@@ -11,6 +10,7 @@ use MultiSafepay\Api\Issuers\Issuer;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Exception\InvalidArgumentException;
+use MultiSafepay\Exception\InvalidDataInitializationException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
@@ -28,30 +28,35 @@ use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
+/**
+ * Class CheckoutConfirmTemplateSubscriber
+ *
+ * @package MultiSafepay\Shopware6\Subscriber
+ */
 class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 {
     /**
      * @var SdkFactory
      */
-    private $sdkFactory;
+    private SdkFactory $sdkFactory;
 
     /**
      * @var EntityRepository
      */
-    private $languageRepository;
+    private EntityRepository $languageRepository;
 
     /**
      * @var string
      */
-    private $shopwareVersion;
+    private string $shopwareVersion;
 
     /**
      * @var SettingsService
      */
-    private $settingsService;
+    private SettingsService $settingsService;
 
     /**
-     * CheckoutConfirmTemplateSubscriber constructor.
+     * CheckoutConfirmTemplateSubscriber constructor
      *
      * @param SdkFactory $sdkFactory
      * @param EntityRepository $languageRepository
@@ -71,24 +76,28 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
+     *  Get the subscribed events
+     *
      * @return array
      */
     public static function getSubscribedEvents(): array
     {
         return [
             CheckoutConfirmPageLoadedEvent::class => 'addMultiSafepayExtension',
-            AccountEditOrderPageLoadedEvent::class => 'addMultiSafepayExtension',
+            AccountEditOrderPageLoadedEvent::class => 'addMultiSafepayExtension'
         ];
     }
 
     /**
-     * @param CheckoutConfirmPageLoadedEvent $event
+     *  Add the MultiSafepay extension
+     *
+     * @param CheckoutConfirmPageLoadedEvent|AccountEditOrderPageLoadedEvent $event
      * @throws Exception
      */
-    public function addMultiSafepayExtension($event): void
+    public function addMultiSafepayExtension(CheckoutConfirmPageLoadedEvent|AccountEditOrderPageLoadedEvent $event): void
     {
         if (!$event instanceof CheckoutConfirmPageLoadedEvent && !$event instanceof AccountEditOrderPageLoadedEvent) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Please provide ' . CheckoutConfirmPageLoadedEvent::class . ' or ' .
                 AccountEditOrderPageLoadedEvent::class
             );
@@ -98,10 +107,9 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         $lastUsedIssuer = $gatewayNameWithIssuers = $gatewayCodeWithIssuers = $activeName = null;
 
         try {
-            $struct = new MultiSafepayStruct();
             $salesChannelContext = $event->getSalesChannelContext();
             $customer = $salesChannelContext->getCustomer();
-            if (!is_null($customer)) {
+            if (!is_null($customer) && !is_null($customer->getCustomFields())) {
                 $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
             }
 
@@ -118,7 +126,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 
             try {
                 $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
-            } catch (InvalidApiKeyException $invalidApiKeyException) {
+            } catch (InvalidApiKeyException) {
                 return;
             }
             if (!is_null($gatewayCodeWithIssuers)) {
@@ -138,6 +146,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             // because is a gateway that can switch just between using direct or redirect modes
             $isMyBankWithDirect = ($gatewayCode === 'MYBANK') && !empty($customFields['direct']);
 
+            $struct = new MultiSafepayStruct();
             $struct->assign([
                 'tokens' => $this->getTokens($salesChannelContext),
                 'api_token' => !empty($customFields['component']) ? $this->getComponentsToken($salesChannelContext) : null,
@@ -162,7 +171,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 MultiSafepayStruct::EXTENSION_NAME,
                 $struct
             );
-        } catch (InvalidArgumentException | ApiException | ClientExceptionInterface $exception) {
+        } catch (InvalidArgumentException | ApiException | ClientExceptionInterface) {
             /***
              * @TODO add better logging system
              */
@@ -188,6 +197,12 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         return $result;
     }
 
+    /**
+     *  Get the components token
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @return string|null
+     */
     private function getComponentsToken(SalesChannelContext $salesChannelContext): ?string
     {
         if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
@@ -197,11 +212,17 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         try {
             return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())->getApiTokenManager()
                 ->get()->getApiToken();
-        } catch (ApiException | ClientExceptionInterface $exception) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface | InvalidDataInitializationException) {
             return null;
         }
     }
 
+    /**
+     *  Get the components environment
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @return string|null
+     */
     private function getComponentsEnvironment(SalesChannelContext $salesChannelContext): ?string
     {
         if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
@@ -211,18 +232,31 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         return $this->settingsService->isLiveMode() ? 'live' : 'test';
     }
 
+    /**
+     *  Get the locale
+     *
+     * @param string $languageId
+     * @param Context $context
+     * @return string
+     */
     private function getLocale(string $languageId, Context $context): string
     {
         $criteria = new Criteria([$languageId]);
         $criteria->addAssociation('locale');
 
-        $locale = $this->languageRepository->search($criteria, $context)
-            ->get($languageId)->getLocale()->getCode();
+        $locale = 'en_US';
+        $language = $this->languageRepository->search($criteria, $context)->get($languageId);
+
+        if (!is_null($language) && !is_null($language->getLocale())) {
+            $locale = $language->getLocale()->getCode();
+        }
 
         return substr($locale, 0, 2);
     }
 
     /**
+     *  Get the gateway code
+     *
      * @param string $paymentHandler
      * @return string|null
      */
@@ -240,19 +274,19 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
+     *  Show tokenization
+     *
      * @param SalesChannelContext $salesChannelContext
      * @return bool
      */
     private function showTokenization(SalesChannelContext $salesChannelContext): bool
     {
-        if ($salesChannelContext->getCustomer()->getGuest()) {
+        $customer = $salesChannelContext->getCustomer();
+        if (is_null($customer) || $customer->getGuest()) {
             return false;
         }
 
-        if (!in_array(
-            Tokenization::class,
-            class_uses($salesChannelContext->getPaymentMethod()->getHandlerIdentifier())
-        )) {
+        if (!in_array(Tokenization::class, class_uses($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()), true)) {
             return false;
         }
 
@@ -263,6 +297,12 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         );
     }
 
+    /**
+     *  Get the tokens
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @return array|null
+     */
     private function getTokens(SalesChannelContext $salesChannelContext): ?array
     {
         if (!$this->settingsService->getGatewaySetting($salesChannelContext->getPaymentMethod(), 'component')) {
@@ -270,14 +310,23 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         }
 
         try {
+            $customer = $salesChannelContext->getCustomer();
+            if (is_null($customer)) {
+                return [];
+            }
             return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
                 ->getTokenManager()
-                ->getListByGatewayCodeAsArray($salesChannelContext->getCustomer()->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
-        } catch (ApiException | ClientExceptionInterface $exception) {
+                ->getListByGatewayCodeAsArray($customer->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
             return [];
         }
     }
 
+    /**
+     *  Get the template id
+     *
+     * @return string|null
+     */
     private function getTemplateId(): ?string
     {
         return $this->settingsService->getSetting('templateId');

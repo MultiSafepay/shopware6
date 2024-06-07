@@ -3,15 +3,21 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler;
 
+/**
+ * Class PayAfterDelivery
+ *
+ * This class is used to define the details of Pay After Delivery payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class PayAfterDelivery implements PaymentMethodInterface
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -21,7 +27,7 @@ class PayAfterDelivery implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -31,7 +37,7 @@ class PayAfterDelivery implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -41,9 +47,9 @@ class PayAfterDelivery implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
-     * @return string|null
+     * @return string
      */
     public function getGatewayCode(): string
     {
@@ -51,7 +57,7 @@ class PayAfterDelivery implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -61,7 +67,7 @@ class PayAfterDelivery implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

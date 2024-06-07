@@ -8,12 +8,17 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 use MultiSafepay\Shopware6\Handlers\BetaalplanPaymentHandler;
 
 /**
+ * Class Betaalplan
+ *
+ * This class is used to define the details of Betaalplan payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
  * @deprecated No longer supported by MultiSafepay
  */
 class Betaalplan implements PaymentMethodInterface
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -23,7 +28,7 @@ class Betaalplan implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -33,7 +38,7 @@ class Betaalplan implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
      * @return string
      */
@@ -43,7 +48,7 @@ class Betaalplan implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -53,7 +58,7 @@ class Betaalplan implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -61,9 +66,9 @@ class Betaalplan implements PaymentMethodInterface
     {
         return __DIR__  . '/../Resources/views/storefront/multisafepay/logo/betaalplan.png';
     }
-    
+
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

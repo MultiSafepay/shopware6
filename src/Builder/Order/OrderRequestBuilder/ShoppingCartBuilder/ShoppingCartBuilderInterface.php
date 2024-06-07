@@ -8,9 +8,18 @@ namespace  MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCart
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item;
 use Shopware\Core\Checkout\Order\OrderEntity;
 
+/**
+ * Interface ShoppingCartBuilderInterface
+ *
+ * This interface is responsible for building the shopping cart
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder
+ */
 interface ShoppingCartBuilderInterface
 {
     /**
+     *  Build the shopping cart
+     *
      * @param OrderEntity $order
      * @param string $currency
      * @return Item[]

@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/7.1/phpunit.xsd"
-        bootstrap="../../../vendor/shopware/platform/src/Core/TestBootstrap.php"
-        cacheResult="false">
-
-    <php>
-        <ini name="error_reporting" value="E_ALL"/>
-        <env name="SYMFONY_DEPRECATIONS_HELPER" value="weak" />
-        <server name="KERNEL_CLASS" value="Shopware\Development\Kernel"/>
-        <env name="APP_ENV" value="test"/>
-        <env name="APP_DEBUG" value="1"/>
-        <env name="APP_SECRET" value="s$cretf0rt3st"/>
-        <env name="SHELL_VERBOSITY" value="-1"/>
-    </php>
-
-    <testsuites>
-        <testsuite name="MultiSafepay Integration tests">
-            <directory>tests/Integration</directory>
-        </testsuite>
-        <testsuite name="MultiSafepay Unit tests">
-            <directory>tests/Unit</directory>
-        </testsuite>
-    </testsuites>
-
-    <filter>
-        <whitelist>
-            <directory suffix=".php">./src</directory>
-        </whitelist>
-    </filter>
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="tests/TestBootstrap.php"
+         cacheResult="false">
+  <php>
+    <env name="APP_DEBUG" value="1"/>
+    <env name="APP_ENV" value="test"/>
+    <env name="APP_SECRET" value="s$cretf0rt3st"/>
+    <env name="KERNEL_CLASS" value="Shopware\Core\Kernel"/>
+    <env name="LOCK_DSN" value="flock"/>
+    <env name="SHELL_VERBOSITY" value="-1"/>
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="weak"/>
+    <ini name="error_reporting" value="E_ALL"/>
+    <ini name="DATABASE_URL" value="mysql://root:root@127.0.0.1:3306/shopware_test"/>
+    <ini name="PROJECT_ROOT" value="/var/www/html/"/>
+  </php>
+  <testsuites>
+    <testsuite name="MultiSafepay Integration tests">
+      <directory>tests/Integration</directory>
+    </testsuite>
+    <testsuite name="MultiSafepay Unit tests">
+      <directory>tests/Unit</directory>
+    </testsuite>
+  </testsuites>
+  <source>
+    <include>
+      <directory suffix=".php">./src</directory>
+    </include>
+  </source>
 </phpunit>

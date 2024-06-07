@@ -23,7 +23,7 @@
               data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'></template>
     <div id="multisafepay-checkout" style="margin-bottom: 2rem"></div>
     <input type="hidden" id="multisafepay-payload" name="payload" value="" form="confirmOrderForm">
-    <input type="hidden" id="multisafepay-tokenize" name="tokenize" value="" form="confirmOrderForm">
+    <input type="hidden" id="multisafepay-tokenize" name="tokenize" value="false" form="confirmOrderForm">
 
 {% elseif page.extensions.multisafepay.show_tokenization == true %}
 

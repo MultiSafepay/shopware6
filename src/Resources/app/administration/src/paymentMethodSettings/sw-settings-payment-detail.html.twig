@@ -1,27 +1,27 @@
 {% block sw_settings_payment_detail_content_field_after_order_enabled %}
     {% parent %}
-    <sw-field
+    <sw-switch-field
             v-if="tokenizationSupported"
-            :is-loading="isLoading"
-            type="switch"
-            v-model="paymentMethod.customFields.tokenization"
+            v-model:value="paymentMethod.customFields.tokenization"
+            name="sw-field--paymentMethod-customFields.tokenization"
+            class="sw-settings-payment-detail__field-custom-fields-tokenization"
             label="Tokenization"
             :help-text="$tc('multisafepay-tokenization.help_text')"
-    ></sw-field>
-    <sw-field
+    ></sw-switch-field>
+    <sw-switch-field
             v-if="componentSupported"
-            :is-loading="isLoading"
-            type="switch"
-            v-model="paymentMethod.customFields.component"
+            v-model:value="paymentMethod.customFields.component"
+            name="sw-field--paymentMethod-customFields.component"
+            class="sw-settings-payment-detail__field-custom-fields-component"
             label="Component"
             :help-text="$tc('multisafepay-component.help_text')"
-    ></sw-field>
-    <sw-field
+    ></sw-switch-field>
+    <sw-switch-field
             v-if="paymentMethod.name.toLowerCase().includes('mybank')"
-            :is-loading="isLoading"
-            type="switch"
-            v-model="paymentMethod.customFields.direct"
+            v-model:value="paymentMethod.customFields.direct"
+            name="sw-field--paymentMethod-customFields.direct"
+            class="sw-settings-payment-detail__field-custom-fields-direct"
             label="Pay inside checkout"
             :help-text="$tc('multisafepay-direct.help_text')"
-    ></sw-field>
+    ></sw-switch-field>
 {% endblock %}

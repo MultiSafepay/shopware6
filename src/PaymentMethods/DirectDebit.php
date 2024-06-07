@@ -7,10 +7,17 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\DirectDebitPaymentHandler;
 
+/**
+ * Class DirectDebit
+ *
+ * This class is used to define the details of Direct Debit payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class DirectDebit implements PaymentMethodInterface
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -20,7 +27,7 @@ class DirectDebit implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -30,7 +37,7 @@ class DirectDebit implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
      * @return string
      */
@@ -40,7 +47,7 @@ class DirectDebit implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -50,7 +57,7 @@ class DirectDebit implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -60,7 +67,7 @@ class DirectDebit implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

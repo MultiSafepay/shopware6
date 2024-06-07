@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Util;
 
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
@@ -77,8 +76,18 @@ use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 use MultiSafepay\Shopware6\PaymentMethods\Zinia;
 use Shopware\Core\Framework\Context;
 
+/**
+ * Class PaymentUtil
+ *
+ * @package MultiSafepay\Shopware6\Util
+ */
 class PaymentUtil
 {
+    /**
+     * Gateways
+     *
+     * @var array
+     */
     public const GATEWAYS = [
         AfterPay::class,
         Alipay::class,
@@ -147,6 +156,11 @@ class PaymentUtil
         Zinia::class
     ];
 
+    /**
+     * Deleted gateways
+     *
+     * @var array
+     */
     public const DELETED_GATEWAYS = [
         IngHomePay::class,
         NationaleVerwenCadeaubon::class,
@@ -156,10 +170,10 @@ class PaymentUtil
     /**
      * @var OrderUtil
      */
-    private $orderUtil;
+    private OrderUtil $orderUtil;
 
     /**
-     * PaymentUtil constructor.
+     * PaymentUtil constructor
      *
      * @param OrderUtil $orderUtil
      */
@@ -170,6 +184,8 @@ class PaymentUtil
     }
 
     /**
+     *  Check if the payment method is a MultiSafepay payment method
+     *
      * @param string $orderId
      * @param Context $context
      * @return bool
@@ -177,8 +193,13 @@ class PaymentUtil
     public function isMultisafepayPaymentMethod(string $orderId, Context $context): bool
     {
         $order = $this->orderUtil->getOrder($orderId, $context);
-        $transaction = $order->getTransactions()->first();
+        $getTransactions = $order->getTransactions();
 
+        if (is_null($getTransactions)) {
+            return false;
+        }
+
+        $transaction = $getTransactions->first();
         if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
             return false;
         }
@@ -187,6 +208,8 @@ class PaymentUtil
     }
 
     /**
+     *  Get the handler identifier for the gateway code
+     *
      * @param string $gatewayCode
      * @return string|null
      */

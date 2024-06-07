@@ -32,7 +32,7 @@ All notable changes to this project will be documented in this file.
 
 ## [2.9.0] - 2024-02-19
 ### Added
-+ PLGSHPS6-344: Add a new event to allow modify the order request
++ PLGSHPS6-344: Add a new event to allow modifying the order request
 + DAVAMS-537: Add support for Template ID in the Payment Component
 
 ### Changed
@@ -55,7 +55,7 @@ All notable changes to this project will be documented in this file.
 + PLGSHPS6-332: Fixed payment component styling broken when extra information field is enabled
 
 ### Removed
-+ DAVAMS-644: Remove customer reference from component object
++ DAVAMS-644: Remove customer reference from the component object
 
 ***
 
@@ -86,7 +86,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 + PLGSHPS6-318: Add compatibility for shopware 6.5
 + PLGSHPS6-294: Add Google Pay redirect
-+ PLGSHPS6-308: Add image update while updating plugin
++ PLGSHPS6-308: Add image update while updating the plugin
 + DAVAMS-563: Add Pay After Delivery Installments payment method
 + PLGSHPS6-160: Add dutch translations
 
@@ -140,7 +140,7 @@ PLGSHPS6-305: Fix shipping request not working
 ## [2.6.0] - 2022-05-11
 ### Added
 + DAVAMS-479: Add Alipay+
-+ PLGSHPS6-194: Add payment component in credit cards gateways
++ PLGSHPS6-194: Add 'payment component' in credit cards gateways
 
 ### Changed
 + PLGSHPS6-291: Update MultiSafepay plugin icon
@@ -179,7 +179,7 @@ PLGSHPS6-305: Fix shipping request not working
 + Do not update name and description of generic gateways 2 and 3 on update, thanks to [StevendeVries](https://github.com/StevendeVries)
 + Update all links to MultiSafepay Docs
 + PLGSHPS6-267: Fix shipping request not working
-+ Fix error on 6.3 with the status open - initialized
++ Fix error on 6.3 with the status open-initialized
 
 ### Deprecated
 + PLGSHPS6-261: Deprecate all ING Home'Pay classes
@@ -191,7 +191,7 @@ PLGSHPS6-305: Fix shipping request not working
 + PLGSHPS6-259: Add 2 more generic gateways
 
 ### Fixed
-+ Generic gateway not working when using multiple sales channels
++ Generic gateway is not working when using multiple sales channels
 + PLGSHPS6-258: Fix issue with repeatedly updating order status
 
 ***
@@ -213,7 +213,7 @@ PLGSHPS6-305: Fix shipping request not working
 ## [2.5.0] - 2021-10-27
 ### Fixed
 + PLGSHPS6-230: Fix get correct locale for payment page
-+ PLGSHPS6-236: Use global Shopware object directly in javascript
++ PLGSHPS6-236: Use the global Shopware object directly in javascript
 
 ### Changed
 + PLGSHPS6-229: Increase payment token lifetime according to second chance lifetime
@@ -299,7 +299,7 @@ PLGSHPS6-305: Fix shipping request not working
 + Add support for Shopware 6.3
 
 ### Fixed
-+ Fix creditcard checkout error with multilanguage store
++ Fix creditcard checkout error with multilingual store
 
 ### Changed
 + Use ACTION_PAID instead of deprecated ACTION_PAY
@@ -311,7 +311,7 @@ PLGSHPS6-305: Fix shipping request not working
 
 ## [1.5.1] - 2020-07-31
 ### Fixed
-+ Fix incorrect tax when tax free is used
++ Fix incorrect tax when tax-free is used
 + Fix incorrect tax if tax display is set to net
 
 ***
@@ -341,7 +341,7 @@ PLGSHPS6-305: Fix shipping request not working
 
 ## [1.3.0] - 2020-05-07
 ### Added
-+ Add refund for non billing suite payment methods
++ Add refund for non-billing suite payment methods
 
 ### Changed
 + New logo and title for Santander
@@ -381,7 +381,7 @@ PLGSHPS6-305: Fix shipping request not working
 + Add order-status update when notification-url is triggered
 
 ### Changed
-+ Get name from Address object instead of Customer object
++ Get name from the Address object instead of the Customer object
 + Change technical plugin name
 
 ***

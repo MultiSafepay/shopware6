@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as TransactionItem;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Util\PriceUtil;
 use MultiSafepay\Shopware6\Util\TaxUtil;
 use MultiSafepay\ValueObject\Money;
@@ -13,19 +14,27 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 
+/**
+ * Class CustomizedProductsBuilder
+ *
+ * This class is responsible for building the shopping cart for customized products
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder
+ */
 class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
 {
     /**
      * @var PriceUtil
      */
-    private $priceUtil;
+    private PriceUtil $priceUtil;
     /**
      * @var TaxUtil
      */
-    private $taxUtil;
+    private TaxUtil $taxUtil;
 
     /**
-     * CustomizedProductsBuilder constructor.
+     * CustomizedProductsBuilder constructor
+     *
      * @param PriceUtil $priceUtil
      * @param TaxUtil $taxUtil
      */
@@ -36,9 +45,12 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     * Build the shopping cart
+     *
      * @param OrderEntity $order
      * @param string $currency
      * @return array
+     * @throws InvalidArgumentException
      */
     public function build(OrderEntity $order, string $currency): array
     {
@@ -54,10 +66,13 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Get the shopping cart item
+     *
      * @param OrderLineItemEntity $item
      * @param bool $hasNetPrices
      * @param string $currency
      * @return TransactionItem
+     * @throws InvalidArgumentException
      */
     public function getShoppingCartItem(
         OrderLineItemEntity $item,
@@ -80,6 +95,8 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Get the merchant item id
+     *
      * @param OrderLineItemEntity $item
      * @return string
      */
@@ -101,10 +118,13 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Process the customized products
+     *
      * @param OrderLineItemEntity $item
      * @param array $shoppingCart
      * @param bool $hasNetPrices
      * @param string $currency
+     * @throws InvalidArgumentException
      */
     public function processCustomizedProducts(
         OrderLineItemEntity $item,
@@ -112,27 +132,35 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
         bool $hasNetPrices,
         string $currency
     ): void {
-        $shoppingCart[] = $this->getShoppingCartItem(
-            $item->getChildren()->filterByType('product')->first(),
-            $hasNetPrices,
-            $currency
-        );
+        $children = $item->getChildren();
+        if (!is_null($children)) {
+            $productChild = $children->filterByType('product')->first();
+            $shoppingCart[] = $this->getShoppingCartItem(
+                $productChild,
+                $hasNetPrices,
+                $currency
+            );
 
-        $this->calculateOptions(
-            $item->getChildren()->filterByType('customized-products-option'),
-            $shoppingCart,
-            $currency,
-            $hasNetPrices
-        );
+            $productsOptionChildren = $children->filterByType('customized-products-option');
+            $this->calculateOptions(
+                $productsOptionChildren,
+                $shoppingCart,
+                $currency,
+                $hasNetPrices
+            );
+        }
     }
 
     /**
+     *  Calculate the options
+     *
      * @param OrderLineItemCollection $orderLineItems
      * @param array $shoppingCart
      * @param string $currency
      * @param bool $hasNetPrices
      * @param TransactionItem|null $shoppingItem
-     **/
+     * @throws InvalidArgumentException
+     */
     public function calculateOptions(
         OrderLineItemCollection $orderLineItems,
         array &$shoppingCart,
@@ -152,12 +180,15 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
-     * @param \MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item|null $shoppingItem
-     * @param \MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item $optionItem
+     *  Concat the shopping item values
+     *
+     * @param TransactionItem|null $shoppingItem
+     * @param TransactionItem $optionItem
+     * @throws InvalidArgumentException
      */
     public function concatShoppingItemValues(?TransactionItem &$shoppingItem, TransactionItem $optionItem): void
     {
-        if ($shoppingItem !== null) {
+        if (!is_null($shoppingItem)) {
             $shoppingItem->addName($shoppingItem->getName() . ': ' . $optionItem->getName());
             $shoppingItem->addDescription($shoppingItem->getDescription() . ': ' . $optionItem->getDescription());
             $shoppingItem->addMerchantItemId($shoppingItem->getMerchantItemId() . ': ' . $optionItem->getMerchantItemId());

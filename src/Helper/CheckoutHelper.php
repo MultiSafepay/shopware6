@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Helper;
 
 use MultiSafepay\Shopware6\Util\PaymentUtil;
@@ -11,7 +10,6 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodRepositoryDecorator;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -20,39 +18,54 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineInvalidEntityIdException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineInvalidStateFieldException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineStateNotFoundException;
 
+/**
+ * Class CheckoutHelper
+ *
+ * This class is used to handle the checkout process
+ *
+ * @package MultiSafepay\Shopware6\Helper
+ */
 class CheckoutHelper
 {
-    /** @var OrderTransactionStateHandler $orderTransactionStateHandler */
-    private $orderTransactionStateHandler;
-
-    /** @var EntityRepository $transactionRepository */
-    private $transactionRepository;
-
-    /** @var EntityRepository $stateMachineRepository */
-    private $stateMachineRepository;
-
-    /** @var LoggerInterface */
-    private $logger;
-
-    /** @var EntityRepository */
-    private $paymentMethodRepository;
-
-    /** @var PaymentUtil */
-    private $paymentUtil;
+    /**
+     * @var OrderTransactionStateHandler $orderTransactionStateHandler
+     */
+    private OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /**
-     * CheckoutHelper constructor.
+     * @var EntityRepository $transactionRepository
+     */
+    private EntityRepository $transactionRepository;
+
+    /**
+     * @var EntityRepository $stateMachineRepository
+     */
+    private EntityRepository $stateMachineRepository;
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $paymentMethodRepository;
+
+    /**
+     * @var PaymentUtil
+     */
+    private PaymentUtil $paymentUtil;
+
+    /**
+     * CheckoutHelper constructor
      *
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param EntityRepository $transactionRepository
      * @param EntityRepository $stateMachineRepository
      * @param LoggerInterface $logger
-     * @param EntityRepository|PaymentMethodRepositoryDecorator $paymentMethodsRepository
+     * @param EntityRepository $paymentMethodsRepository
      * @param PaymentUtil $paymentUtil
      */
     public function __construct(
@@ -60,7 +73,7 @@ class CheckoutHelper
         EntityRepository $transactionRepository,
         EntityRepository $stateMachineRepository,
         LoggerInterface $logger,
-        $paymentMethodsRepository,
+        EntityRepository $paymentMethodsRepository,
         PaymentUtil $paymentUtil
     ) {
         $this->transactionRepository = $transactionRepository;
@@ -72,21 +85,19 @@ class CheckoutHelper
     }
 
     /**
+     *  Transition the payment state
+     *
      * @param string $status
      * @param string $orderTransactionId
      * @param Context $context
      * @throws IllegalTransitionException
      * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineInvalidEntityIdException
-     * @throws StateMachineInvalidStateFieldException
-     * @throws StateMachineNotFoundException
-     * @throws StateMachineStateNotFoundException
      */
     public function transitionPaymentState(string $status, string $orderTransactionId, Context $context): void
     {
         $transitionAction = $this->getCorrectTransitionAction($status);
 
-        if ($transitionAction === null) {
+        if (is_null($transitionAction)) {
             return;
         }
 
@@ -101,14 +112,21 @@ class CheckoutHelper
 
         try {
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
-        } catch (IllegalTransitionException $exception) {
+        } catch (IllegalTransitionException) {
+            $transaction = $this->getTransaction($orderTransactionId, $context);
+
+            $stateMachineState = $transaction->getStateMachineState();
+            $currentState = !is_null($stateMachineState) ? $stateMachineState->getName() : 'null';
+
+            $order = $transaction->getOrder();
+            $orderNumber = !is_null($order) ? $order->getOrderNumber() : 'null';
+
             $this->logger->warning(
                 'IllegalTransitionException',
                 [
                     'message' => 'An illegal transition exception occurred',
-                    'currentState' => $this->getTransaction($orderTransactionId, $context)->getStateMachineState()
-                        ->getName(),
-                    'orderNumber' => $this->getTransaction($orderTransactionId, $context)->getOrder()->getOrderNumber(),
+                    'currentState' => $currentState,
+                    'orderNumber' => $orderNumber,
                     'status' => $status
                 ]
             );
@@ -118,31 +136,26 @@ class CheckoutHelper
     }
 
     /**
+     *  Get the correct transition action
+     *
      * @param string $status
      * @return string|null
      */
     public function getCorrectTransitionAction(string $status): ?string
     {
-        switch ($status) {
-            case 'completed':
-                return StateMachineTransitionActions::ACTION_PAID;
-            case 'declined':
-            case 'cancelled':
-            case 'void':
-            case 'expired':
-                return StateMachineTransitionActions::ACTION_CANCEL;
-            case 'refunded':
-                return StateMachineTransitionActions::ACTION_REFUND;
-            case 'partial_refunded':
-                return StateMachineTransitionActions::ACTION_REFUND_PARTIALLY;
-            case 'initialized':
-                return StateMachineTransitionActions::ACTION_REOPEN;
-        }
-
-        return null;
+        return match ($status) {
+            'completed' => StateMachineTransitionActions::ACTION_PAID,
+            'declined', 'cancelled', 'void', 'expired' => StateMachineTransitionActions::ACTION_CANCEL,
+            'refunded' => StateMachineTransitionActions::ACTION_REFUND,
+            'partial_refunded' => StateMachineTransitionActions::ACTION_REFUND_PARTIALLY,
+            'initialized' => StateMachineTransitionActions::ACTION_REOPEN,
+            default => null,
+        };
     }
 
     /**
+     *  Get the transaction
+     *
      * @param string $transactionId
      * @param Context $context
      * @return OrderTransactionEntity
@@ -159,6 +172,8 @@ class CheckoutHelper
     }
 
     /**
+     *  Check if the state id is the same
+     *
      * @param string $actionName
      * @param string $orderTransactionId
      * @param Context $context
@@ -177,11 +192,18 @@ class CheckoutHelper
             return true;
         }
 
-        //note: DO THIS CHECK TO PREVENT ERRORS ON 6.3
-        return $transaction->getStateMachineState()->getTechnicalName() === $actionStatusTransition->getTechnicalName();
+        // Note: DO THIS CHECK TO PREVENT ERRORS ON 6.3
+        $getStateMachineState = $transaction->getStateMachineState();
+        if (!is_null($getStateMachineState)) {
+            return $getStateMachineState->getTechnicalName() === $actionStatusTransition->getTechnicalName();
+        }
+
+        return false;
     }
 
     /**
+     *  Get the transition from action name
+     *
      * @param string $actionName
      * @param Context $context
      * @return StateMachineStateEntity
@@ -197,22 +219,23 @@ class CheckoutHelper
     }
 
     /**
+     *  Get the order transaction states name from action
+     *
      * @param string $actionName
      * @return string
      */
     public function getOrderTransactionStatesNameFromAction(string $actionName): string
     {
-        switch ($actionName) {
-            case StateMachineTransitionActions::ACTION_PAID:
-                return OrderTransactionStates::STATE_PAID;
-            case StateMachineTransitionActions::ACTION_CANCEL:
-                return OrderTransactionStates::STATE_CANCELLED;
-        }
-
-        return OrderTransactionStates::STATE_OPEN;
+        return match ($actionName) {
+            StateMachineTransitionActions::ACTION_PAID => OrderTransactionStates::STATE_PAID,
+            StateMachineTransitionActions::ACTION_CANCEL => OrderTransactionStates::STATE_CANCELLED,
+            default => OrderTransactionStates::STATE_OPEN,
+        };
     }
 
     /**
+     *  Transition the payment method if needed
+     *
      * @param OrderTransactionEntity $transaction
      * @param Context $context
      * @param string $gatewayCode
@@ -248,7 +271,7 @@ class CheckoutHelper
     }
 
     /**
-     * Convert from snake_case to CamelCase.
+     * Convert from snake_case to CamelCase
      *
      * @param string $string
      * @return string

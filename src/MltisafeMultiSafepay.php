@@ -3,9 +3,9 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6;
 
+use Exception;
 use MultiSafepay\Shopware6\Installers\MediaInstaller;
 use MultiSafepay\Shopware6\Installers\PaymentMethodsInstaller;
 use Shopware\Core\Framework\Plugin;
@@ -18,10 +18,18 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
+/**
+ * Class MltisafeMultiSafepay
+ *
+ * @package MultiSafepay\Shopware6
+ */
 class MltisafeMultiSafepay extends Plugin
 {
     /**
+     *  Builds the plugin
+     *
      * @param ContainerBuilder $container
+     * @throws Exception
      */
     public function build(ContainerBuilder $container): void
     {
@@ -32,6 +40,8 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     *  Install the plugin
+     *
      * @param InstallContext $installContext
      */
     public function install(InstallContext $installContext): void
@@ -42,6 +52,8 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     *  Update the plugin
+     *
      * @param UpdateContext $updateContext
      */
     public function update(UpdateContext $updateContext): void
@@ -52,6 +64,8 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     *  Activate the plugin
+     *
      * @param ActivateContext $activateContext
      */
     public function activate(ActivateContext $activateContext): void
@@ -61,6 +75,8 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     *  Deactivate the plugin
+     *
      * @param DeactivateContext $deactivateContext
      */
     public function deactivate(DeactivateContext $deactivateContext): void
@@ -70,6 +86,8 @@ class MltisafeMultiSafepay extends Plugin
     }
 
     /**
+     *  Uninstall the plugin
+     *
      * @param UninstallContext $uninstallContext
      */
     public function uninstall(UninstallContext $uninstallContext): void

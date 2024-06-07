@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Handlers;
 
 use Exception;
@@ -12,33 +11,45 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use Psr\Http\Client\ClientExceptionInterface;
+use RuntimeException;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
-use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * Class AsyncPaymentHandler
+ *
+ * This class is the general model used to handle the payment process for MultiSafepay
+ *
+ * @package MultiSafepay\Shopware6\Handlers
+ */
 class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
     /**
      * @var SdkFactory
      */
-    private $sdkFactory;
+    private SdkFactory $sdkFactory;
 
     /**
      * @var OrderRequestBuilder
      */
-    private $orderRequestBuilder;
+    private OrderRequestBuilder $orderRequestBuilder;
 
     /**
      * @var EventDispatcherInterface
      */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
+
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private OrderTransactionStateHandler $transactionStateHandler;
 
     /**
      * AsyncPaymentHandler constructor
@@ -46,18 +57,23 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @param SdkFactory $sdkFactory
      * @param OrderRequestBuilder $orderRequestBuilder
      * @param EventDispatcherInterface $eventDispatcher
+     * @param OrderTransactionStateHandler $transactionStateHandler
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        OrderTransactionStateHandler $transactionStateHandler
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
         $this->eventDispatcher = $eventDispatcher;
+        $this->transactionStateHandler = $transactionStateHandler;
     }
 
     /**
+     *  Provide the necessary data to make the payment
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
@@ -74,6 +90,9 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
+        // Get the order transaction id
+        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+
         try {
             // Build the order request
             $orderRequest = $this->orderRequestBuilder->build(
@@ -101,21 +120,27 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             /**
              * @Todo improve log handling for better debugging
              */
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
+            $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
+            throw new PaymentException(
+                (int)$orderTransactionId,
+                'CHECKOUT__PAYMENT_ERROR',
                 $apiException->getMessage()
             );
         } catch (ClientExceptionInterface $clientException) {
             /**
              * @Todo improve log handling for better debugging
              */
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
+            $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
+            throw new PaymentException(
+                (int)$orderTransactionId,
+                'CHECKOUT__PAYMENT_ERROR',
                 $clientException->getMessage()
             );
         } catch (Exception $exception) {
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
+            $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
+            throw new PaymentException(
+                (int)$orderTransactionId,
+                'CHECKOUT__PAYMENT_ERROR',
                 $exception->getMessage()
             );
         }
@@ -124,11 +149,11 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     }
 
     /**
+     *  Finalize the payment process
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws AsyncPaymentFinalizeException
-     * @throws CustomerCanceledAsyncPaymentException
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -142,22 +167,37 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             $transactionId = $request->query->get('transactionid');
 
             if ($orderId !== (string)$transactionId) {
-                throw new Exception('Order number does not match order number known at MultiSafepay');
+                throw new RuntimeException('Order number does not match order number known at MultiSafepay');
             }
         } catch (Exception $exception) {
-            throw new AsyncPaymentFinalizeException($orderTransactionId, $exception->getMessage());
+            $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
+            throw new PaymentException(
+                (int)$orderTransactionId,
+                'CHECKOUT__PAYMENT_ERROR',
+                $exception->getMessage()
+            );
         }
 
         if ($request->query->getBoolean('cancel')) {
-            throw new CustomerCanceledAsyncPaymentException($orderTransactionId, 'Canceled at payment page');
+            // Alter the payment status to cancel
+            $this->transactionStateHandler->cancel($orderTransactionId, $salesChannelContext->getContext());
+            throw new PaymentException(
+                (int)$orderTransactionId,
+                'CHECKOUT__CUSTOMER_CANCELED_EXTERNAL_PAYMENT',
+                'Canceled at payment page'
+            );
         }
     }
 
     /**
-     * On the edit order page, we don't get a correct DataBag with the issuer data. Therefore we need to get this
-     * data from the $_POST/$_GET.
+     * On the edit order page, we don't get a correct DataBag with the issuer data.
+     * Therefore, we need to get this data from the $_POST/$_GET.
+     *
+     * @param string $name
+     * @param RequestDataBag $dataBag
+     * @return mixed
      */
-    protected function getDataBagItem(string $name, RequestDataBag $dataBag)
+    protected function getDataBagItem(string $name, RequestDataBag $dataBag): mixed
     {
         if ($dataBag->get($name)) {
             return $dataBag->get($name);

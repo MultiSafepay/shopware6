@@ -3,9 +3,9 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Tests\Integration\Handlers;
 
+use Exception;
 use MultiSafepay\Api\TransactionManager;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\TransactionResponse;
@@ -28,11 +28,13 @@ use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
-use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -40,14 +42,18 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException;
+use Shopware\Core\System\StateMachine\StateMachineException;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
+ *  Class PaymentMethodsHandlerTest
+ *
+ *  This class tests the payment methods handler
+ *
+ * @package MultiSafepay\Shopware6\Tests\Integration\Handlers
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class PaymentMethodsHandlerTest extends TestCase
@@ -64,97 +70,118 @@ class PaymentMethodsHandlerTest extends TestCase
         IntegrationTestBehaviour::getKernel insteadof Orders;
     }
 
+    /**
+     *  Order number
+     *
+     * @var string
+     */
     private const ORDER_NUMBER = '12345';
+
+    /**
+     *  Generic code
+     *
+     * @var string
+     */
     private const GENERIC_CODE = 'GENERIC';
 
     /**
      * @var object|null
      */
-    private $customerRepository;
+    private ?object $customerRepository;
 
     /**
      * @var EntityRepository|null
      */
-    private $orderRepository;
-
-    /**
-     * @var Context
-     */
-    private $context;
+    private EntityRepository|null $orderRepository;
 
     /**
      * @var EntityRepository|null
      */
-    private $orderTransactionRepository;
+    private EntityRepository|null $orderTransactionRepository;
 
     /**
      * @var EntityRepository|null
      */
-    private $paymentMethodRepository;
+    private EntityRepository|null $paymentMethodRepository;
 
     /**
      * @var StateMachineRegistry|null
      */
-    private $stateMachineRegistry;
+    private StateMachineRegistry|null $stateMachineRegistry;
 
     /**
-     * {@inheritDoc}
+     * Set up the test
+     *
+     * @return void
+     * @throws Exception
      */
     protected function setUp(): void
     {
         parent::setUp();
-        $this->customerRepository = $this->getContainer()->get('customer.repository');
+        $this->customerRepository = self::getContainer()->get('customer.repository');
         /** @var EntityRepository $orderRepository */
-        $this->orderRepository = $this->getContainer()->get('order.repository');
-        $this->orderTransactionRepository = $this->getContainer()->get('order_transaction.repository');
-        $this->paymentMethodRepository = $this->getContainer()->get('payment_method.repository');
-        $this->stateMachineRegistry = $this->getContainer()->get(StateMachineRegistry::class);
-        $this->context = Context::createDefaultContext();
+        $this->orderRepository = self::getContainer()->get('order.repository');
+        $this->orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
+        $this->paymentMethodRepository = self::getContainer()->get('payment_method.repository');
+        $this->stateMachineRegistry = self::getContainer()->get(StateMachineRegistry::class);
     }
 
     /**
-     * Check if all payment methods can successfully handle a payment.
+     * Test function pay for all payment methods
+     *
+     * @throws Exception
      */
-    public function testFunctionPayForAllPaymentMethods()
+    public function testFunctionPayForAllPaymentMethods(): void
     {
-        $paymentMethodId = $this->createPaymentMethod($this->context);
-        $customerId = $this->createCustomer($this->context);
+        $context = Context::createDefaultContext();
+        $paymentMethodId = $this->createPaymentMethod($context);
+        $customerId = $this->createCustomer($context);
 
         foreach (PaymentUtil::GATEWAYS as $gateway) {
-            $this->checkPay(new $gateway(), $paymentMethodId, $customerId);
+            $this->checkPay(new $gateway(), $context, $paymentMethodId, $customerId);
         }
     }
 
     /**
+     *  Check the pay function
+     *
      * @param PaymentMethodInterface $paymentMethod
+     * @param Context $context
      * @param string $paymentMethodId
      * @param string $customerId
-     * @throws AsyncPaymentProcessException
+     * @throws PaymentException
      * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineNotFoundException
-     * @throws StateMachineWithoutInitialStateException
+     * @throws StateMachineException
+     *@throws Exception|ReflectionException
      */
-    private function checkPay(PaymentMethodInterface $paymentMethod, string $paymentMethodId, string $customerId)
+    private function checkPay(PaymentMethodInterface $paymentMethod, Context $context, string $paymentMethodId, string $customerId): void
     {
-        $orderId = $this->createOrder($customerId, $this->context);
+        $orderId = $this->createOrder($customerId, $context);
 
-        $this->createPaymentHandlerMock($paymentMethod)->pay(
+        /** @var AsyncPaymentHandler $paymentHandler */
+        $paymentHandler = $this->createPaymentHandlerMock($paymentMethod);
+        $paymentHandler->pay(
             $this->initiateTransactionMock(
                 $orderId,
-                $this->createTransaction($orderId, $paymentMethodId, $this->context)
+                $this->createTransaction($orderId, $paymentMethodId, $context),
+                $context
             ),
             $this->initiateDataBagMock(),
-            $this->initiateSalesChannelContext($customerId, $this->context)
+            $this->initiateSalesChannelContext($customerId, $context)
         );
     }
 
     /**
+     *  Create a payment handler mock
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @return MockObject
+     * @throws ReflectionException
      */
     private function createPaymentHandlerMock(PaymentMethodInterface $paymentMethod): MockObject
     {
         $eventDispatcher = new EventDispatcher();
+        $transactionStateHandler = self::getContainer()->get(OrderTransactionStateHandler::class);
 
         $orderRequestBuilder = $this->getMockBuilder(OrderRequestBuilder::class)
             ->disableOriginalConstructor()
@@ -175,7 +202,7 @@ class PaymentMethodsHandlerTest extends TestCase
         $constructorArgs = [
             $this->setupSdkFactory(),
             $orderRequestBuilder,
-            $eventDispatcher,
+            $eventDispatcher
         ];
 
         if (in_array($paymentMethod->getPaymentHandler(), $genericPaymentHandlers)) {
@@ -192,14 +219,27 @@ class PaymentMethodsHandlerTest extends TestCase
             // Add the eventDispatcher as the last argument
             $constructorArgs[] = $eventDispatcher;
         }
+        $constructorArgs[] = $transactionStateHandler;
+
+        $reflection = new ReflectionClass($paymentMethod->getPaymentHandler());
+        $methods = $reflection->getMethods(ReflectionMethod::IS_PUBLIC);
+
+        $methodNames = array_map(static function ($method) {
+            return $method->name;
+        }, $methods);
+
+        // Remove 'pay' y 'finalize' from the method list
+        $methodNames = array_diff($methodNames, ['pay', 'finalize']);
 
         return $this->getMockBuilder($paymentMethod->getPaymentHandler())
             ->setConstructorArgs($constructorArgs)
-            ->setMethodsExcept(['pay', 'finalize'])
+            ->onlyMethods($methodNames)
             ->getMock();
     }
 
     /**
+     *  Set up the SDK factory
+     *
      * @return MockObject
      */
     private function setupSdkFactory(): MockObject
@@ -244,26 +284,24 @@ class PaymentMethodsHandlerTest extends TestCase
     }
 
     /**
+     *  Initiate a transaction mock
+     *
      * @param string $orderId
      * @param string $transactionId
-     * @return MockObject
+     * @param Context $context
+     * @return AsyncPaymentTransactionStruct
      * @throws InconsistentCriteriaIdsException
      */
-    private function initiateTransactionMock(string $orderId, string $transactionId): MockObject
+    private function initiateTransactionMock(string $orderId, string $transactionId, Context $context): AsyncPaymentTransactionStruct
     {
-        $OrderTransactionMock = $this->getMockBuilder(OrderTransactionEntity::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
+        $OrderTransactionMock = $this->createMock(OrderTransactionEntity::class);
         $OrderTransactionMock->method('getId')
             ->willReturn($transactionId);
 
-        $paymentTransactionMock = $this->getMockBuilder(AsyncPaymentTransactionStruct::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $paymentTransactionMock = $this->createMock(AsyncPaymentTransactionStruct::class);
 
         $paymentTransactionMock->method('getOrder')
-            ->willReturn($this->getOrder($orderId, $this->context));
+            ->willReturn($this->getOrder($orderId, $context));
 
         $paymentTransactionMock->method('getOrderTransaction')
             ->willReturn($OrderTransactionMock);
@@ -272,149 +310,125 @@ class PaymentMethodsHandlerTest extends TestCase
     }
 
     /**
-     * @return MockObject
+     *  Initiate a data bag mock
+     *
+     * @return RequestDataBag
      */
-    private function initiateDataBagMock(): MockObject
+    private function initiateDataBagMock(): RequestDataBag
     {
         return $this->createMock(RequestDataBag::class);
     }
 
     /**
+     *  Initiate the sales channel context
+     *
      * @param string $customerId
      * @param Context $context
-     * @return MockObject
-     * @throws InconsistentCriteriaIdsException
+     * @return SalesChannelContext
      */
-    private function initiateSalesChannelContext(string $customerId, Context $context): MockObject
+    private function initiateSalesChannelContext(string $customerId, Context $context): SalesChannelContext
     {
-        /** @var CustomerEntity $customer */
-        $customer = $this->getCustomer($customerId, $this->context);
+        $salesChannelContextMock = $this->createMock(SalesChannelContext::class);
 
-        $currencyMock = $this->getMockBuilder(CurrencyEntity::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
+        $currencyMock = $this->createMock(CurrencyEntity::class);
         $currencyMock->method('getIsoCode')
             ->willReturn('EUR');
 
-        $salesChannelMock = $this->getMockBuilder(SalesChannelContext::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $salesChannelMock->method('getCustomer')
+        $customer = $this->getCustomer($customerId, $context);
+        $salesChannelContextMock->method('getCustomer')
             ->willReturn($customer);
 
-        $salesChannelMock->method('getCurrency')
+        $salesChannelContextMock->method('getCurrency')
             ->willReturn($currencyMock);
 
-        $salesChannelMock->method('getContext')
+        $salesChannelContextMock->method('getContext')
             ->willReturn($context);
 
-        return $salesChannelMock;
+        return $salesChannelContextMock;
     }
 
     /**
-     * @throws CustomerCanceledAsyncPaymentException
-     * @throws AsyncPaymentFinalizeException
-     * @throws StateMachineWithoutInitialStateException
+     *  Test finalize with transaction state id should not change
+     *
+     * @throws PaymentException
+     * @throws StateMachineException
+     * @throws Exception
      */
-    public function testFinalizeWithTransactionStateIdShouldNotChange()
+    public function testFinalizeWithTransactionStateIdShouldNotChange(): void
     {
-        $paymentMethodId = $this->createPaymentMethod($this->context);
-        $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($customerId, $this->context);
-        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+        $context = Context::createDefaultContext();
+        $paymentMethodId = $this->createPaymentMethod($context);
+        $customerId = $this->createCustomer($context);
+        $orderId = $this->createOrder($customerId, $context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $context);
 
         /** @var AsyncPaymentHandler $paymentHandlerMock */
         $paymentHandlerMock = $this->createPaymentHandlerMock(new MultiSafepay());
-        /** @var AsyncPaymentTransactionStruct $transactionMock */
-        $transactionMock = $this->initiateTransactionMock($orderId, $transactionId);
-        /** @var Request $requestMock */
-        $requestMock = $this->initiateRequestMockForCompletedOrder($orderId);
-        /** @var SalesChannelContext $salesChannelMock */
-        $salesChannelMock = $this->initiateSalesChannelContext($customerId, $this->context);
+        $transactionMock = $this->initiateTransactionMock($orderId, $transactionId, $context);
+        $requestMock = $this->initiateRequestMockForCompletedOrder();
+        $salesChannelMock = $this->initiateSalesChannelContext($customerId, $context);
 
-        $transaction = $this->getTransaction($transactionId, $this->context);
+        $transaction = $this->getTransaction($transactionId, $context);
         $originalTransactionStateId = $transaction->getStateId();
 
         $paymentHandlerMock->finalize($transactionMock, $requestMock, $salesChannelMock);
 
-        $transaction = $this->getTransaction($transactionId, $this->context);
+        $transaction = $this->getTransaction($transactionId, $context);
         $changedTransactionStateId = $transaction->getStateId();
 
         $this->assertEquals($originalTransactionStateId, $changedTransactionStateId);
     }
 
     /**
-     * @param string $orderId
-     * @return MockObject
+     *  Initiates a request mock for a completed order
+     *
+     * @return Request
      */
-    private function initiateRequestMockForCompletedOrder(string $orderId): MockObject
+    private function initiateRequestMockForCompletedOrder(): Request
     {
-        $parameterMock = $this->getMockBuilder(ParameterBag::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $parameterMock->expects($this->once())
-            ->method('getBoolean')
-            ->with($this->equalTo('cancel'))
-            ->willReturn(false);
-        $parameterMock->expects($this->once())
-            ->method('get')
-            ->with($this->equalTo('transactionid'))
-            ->willReturn(self::ORDER_NUMBER);
-        $requestMock = $this->getMockBuilder(Request::class)
-            ->getMock();
-        $requestMock->query = $parameterMock;
+        $inputBag = new InputBag(['completed' => false, 'transactionid' => self::ORDER_NUMBER]);
+        $request = new Request();
+        $request->query = $inputBag;
 
-        return $requestMock;
+        return $request;
     }
 
     /**
-     * @throws CustomerCanceledAsyncPaymentException
-     * @throws AsyncPaymentFinalizeException
+     *  Test the cancel flow to finalize should throw exception
+     *
+     * @throws PaymentException
      * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineNotFoundException
-     * @throws StateMachineWithoutInitialStateException
+     * @throws StateMachineException
+     * @throws Exception
      */
-    public function testCancelFlowForFinalizeShouldThrowException()
+    public function testCancelFlowForFinalizeShouldThrowException(): void
     {
-        $paymentMethodId = $this->createPaymentMethod($this->context);
-        $customerId = $this->createCustomer($this->context);
-        $orderId = $this->createOrder($customerId, $this->context);
-        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $this->context);
+        $context = Context::createDefaultContext();
+        $paymentMethodId = $this->createPaymentMethod($context);
+        $customerId = $this->createCustomer($context);
+        $orderId = $this->createOrder($customerId, $context);
+        $transactionId = $this->createTransaction($orderId, $paymentMethodId, $context);
 
         /** @var AsyncPaymentHandler $paymentHandlerMock */
         $paymentHandlerMock = $this->createPaymentHandlerMock(new MultiSafepay());
-        /** @var AsyncPaymentTransactionStruct $transactionMock */
-        $transactionMock = $this->initiateTransactionMock($orderId, $transactionId);
-        /** @var Request $requestMock */
+        $transactionMock = $this->initiateTransactionMock($orderId, $transactionId, $context);
         $requestMock = $this->initiateRequestMockForCancelFlow();
-        /** @var SalesChannelContext $salesChannelMock */
-        $salesChannelMock = $this->initiateSalesChannelContext($customerId, $this->context);
-        $this->expectException(CustomerCanceledAsyncPaymentException::class);
+        $salesChannelMock = $this->initiateSalesChannelContext($customerId, $context);
+        $this->expectException(PaymentException::class);
         $paymentHandlerMock->finalize($transactionMock, $requestMock, $salesChannelMock);
     }
 
     /**
-     * @return MockObject
+     *  Initiates a request mock for the cancel flow
+     *
+     * @return Request
      */
-    private function initiateRequestMockForCancelFlow(): MockObject
+    private function initiateRequestMockForCancelFlow(): Request
     {
-        $parameterMock = $this->getMockBuilder(ParameterBag::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $parameterMock->expects($this->once())
-            ->method('getBoolean')
-            ->with($this->equalTo('cancel'))
-            ->willReturn(true);
-        $parameterMock->expects($this->once())
-            ->method('get')
-            ->with($this->equalTo('transactionid'))
-            ->willReturn(self::ORDER_NUMBER);
-        $requestMock = $this->getMockBuilder(Request::class)
-            ->getMock();
-        $requestMock->query = $parameterMock;
+        $inputBag = new InputBag(['cancel' => true, 'transactionid' => self::ORDER_NUMBER]);
+        $request = new Request();
+        $request->query = $inputBag;
 
-        return $requestMock;
+        return $request;
     }
 }

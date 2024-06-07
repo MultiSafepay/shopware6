@@ -5,13 +5,15 @@
  */
 namespace MultiSafepay\Shopware6\Controllers\StoreApi;
 
-use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\System\SalesChannel\StoreApiResponse;
 
+/**
+ * Class TokensResponse
+ *
+ * This class is responsible for the token response
+ *
+ * @package MultiSafepay\Shopware6\Controllers\StoreApi
+ */
 class TokensResponse extends StoreApiResponse
 {
-    public function __construct(Struct $object)
-    {
-        parent::__construct($object);
-    }
 }

@@ -7,20 +7,25 @@ namespace MultiSafepay\Shopware6\Storefront\Controller;
 
 use Exception;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * Class ApiController
+ *
+ * @package MultiSafepay\Shopware6\Storefront\Controller
+ */
 class ApiController extends AbstractController
 {
     /**
      * @var SdkFactory
      */
-    private $sdkFactory;
+    private SdkFactory $sdkFactory;
 
     /**
-     * ApiController constructor.
+     * ApiController constructor
      *
      * @param SdkFactory $sdkFactory
      */
@@ -30,28 +35,23 @@ class ApiController extends AbstractController
     }
 
     /**
-     * phpcs:ignore Generic.Files.LineLength
-     * @Route("/api/multisafepay/verify-api-key",
-     *     name="api.action.multisafepay.verify-api-key",
-     *     methods={"POST"},
-     *     defaults={"_routeScope"={"api"}}
-     * )
-     * @Route("/api/v{version}/multisafepay/verify-api-key",
-     *     name="api.action.multisafepay.verify-api-key-old",
-     *     methods={"POST"},
-     *     defaults={"_routeScope"={"api"}}
-     *   )
+     *  Verify the API key
+     *
+     * @param RequestDataBag $requestDataBag
+     * @return JsonResponse
      */
     public function verifyApiKey(RequestDataBag $requestDataBag): JsonResponse
     {
         $actualPluginConfig = $requestDataBag->get('actualPluginConfig');
-
-        if ($actualPluginConfig !== null) {
+        if (!is_null($actualPluginConfig)) {
             $channelApiKey = $actualPluginConfig->get('MltisafeMultiSafepay.config.apiKey');
             $channelEnv = $actualPluginConfig->get('MltisafeMultiSafepay.config.environment');
         }
 
         $globalPluginConfig = $requestDataBag->get('globalPluginConfig');
+        if (is_null($globalPluginConfig)) {
+            return new JsonResponse(['Cause' => 'globalPluginConfig is null', 'success' => false]);
+        }
         $globalApiKey = $globalPluginConfig->get('MltisafeMultiSafepay.config.apiKey');
         $globalEnv = $globalPluginConfig->get('MltisafeMultiSafepay.config.environment');
 
@@ -60,8 +60,8 @@ class ApiController extends AbstractController
                 $channelApiKey ?? $globalApiKey,
                 $channelEnv ?? $globalEnv
             )->getGatewayManager()->getGateways(false);
-        } catch (Exception $exception) {
-            return new JsonResponse(['success' => false]);
+        } catch (Exception | ClientExceptionInterface) {
+            return new JsonResponse(['Cause' => 'Exception', 'success' => false]);
         }
 
         return new JsonResponse(['success' => $response]);

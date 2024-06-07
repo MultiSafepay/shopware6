@@ -3,45 +3,56 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * Class GenericPaymentHandler
+ *
+ * This class is used to handle the payment process for Generic
+ *
+ * @package MultiSafepay\Shopware6\Handlers
+ */
 class GenericPaymentHandler extends AsyncPaymentHandler
 {
     /**
      * @var SettingsService
      */
-    private $settingsService;
+    private SettingsService $settingsService;
 
     /**
-     * GenericPaymentHandler constructor.
+     * GenericPaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
      * @param OrderRequestBuilder $orderRequestBuilder
      * @param SettingsService $settingsService
      * @param EventDispatcherInterface $eventDispatcher
+     * @param OrderTransactionStateHandler $transactionStateHandler
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
         SettingsService $settingsService,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        OrderTransactionStateHandler $transactionStateHandler
     ) {
         $this->settingsService = $settingsService;
-        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher);
+        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler);
     }
 
     /**
+     *  Provide the necessary data to make the payment
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext

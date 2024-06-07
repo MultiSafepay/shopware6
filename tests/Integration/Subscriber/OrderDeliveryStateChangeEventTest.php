@@ -3,9 +3,9 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 
+use Exception;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Subscriber\OrderDeliveryStateChangeEvent;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
@@ -13,27 +13,34 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
 use Shopware\Core\System\StateMachine\Transition;
 
+/**
+ * Class OrderDeliveryStateChangeEventTest
+ *
+ * This class tests the order delivery state change event
+ *
+ * @package MultiSafepay\Shopware6\Tests\Integration\Subscriber
+ */
 class OrderDeliveryStateChangeEventTest extends TestCase
 {
-    //    use IntegrationTestBehaviour, Orders, Customers {
-    //        IntegrationTestBehaviour::getContainer insteadof Customers;
-    //        IntegrationTestBehaviour::getContainer insteadof Orders;
-    //        IntegrationTestBehaviour::getKernel insteadof Customers;
-    //        IntegrationTestBehaviour::getKernel insteadof Orders;
-    //    }
     use IntegrationTestBehaviour, Orders, Customers;
 
     /**
-     * @throws \Exception
+     *  Test the event is not side enter
+     *
+     * @return void
+     * @throws Exception
      */
     public function testEventIsNotSideEnter(): void
     {
@@ -52,7 +59,10 @@ class OrderDeliveryStateChangeEventTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     *  Test the event transition is not shipped
+     *
+     * @return void
+     * @throws Exception
      */
     public function testEventTranssitionIsNotShipped(): void
     {
@@ -74,9 +84,13 @@ class OrderDeliveryStateChangeEventTest extends TestCase
     }
 
     /**
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     *  Test the event is not the multisafepay payment method
+     *
+     * @return void
+     * @throws InconsistentCriteriaIdsException
+     * @throws Exception
      */
-    public function testEventIsNotMultiSafepayPaymentMethod()
+    public function testEventIsNotMultiSafepayPaymentMethod(): void
     {
         $context = Context::createDefaultContext();
         $customerId = $this->createCustomer($context);
@@ -85,7 +99,7 @@ class OrderDeliveryStateChangeEventTest extends TestCase
         $critera = new Criteria();
         $critera->addFilter(new EqualsFilter('order_delivery.orderId', $orderId));
         $orderDeliveryRepository = $this->getContainer()->get('order_delivery.repository');
-        $deliveries = $orderDeliveryRepository->search($critera, Context::createDefaultContext());
+        $deliveries = $orderDeliveryRepository->search($critera, $context);
         /** @var OrderDeliveryEntity $delivery */
         $delivery = $deliveries->first();
 
@@ -112,7 +126,17 @@ class OrderDeliveryStateChangeEventTest extends TestCase
             ->willReturn($transition);
 
         $stateMachineStateChangeEvent->method('getContext')
-            ->willReturn(Context::createDefaultContext());
+            ->willReturn($context);
+
+        $reflection = new ReflectionClass(OrderDeliveryStateChangeEvent::class);
+        $methods = $reflection->getMethods(ReflectionMethod::IS_PUBLIC);
+
+        $methodNames = array_map(static function ($method) {
+            return $method->name;
+        }, $methods);
+
+        // Remove 'onOrderDeliveryStateChanged' from the method list
+        $methodNames = array_diff($methodNames, ['onOrderDeliveryStateChanged']);
 
         /** @var OrderDeliveryStateChangeEvent $orderDeliveryStateChangeEvent */
         $orderDeliveryStateChangeEvent = $this->getMockBuilder(OrderDeliveryStateChangeEvent::class)
@@ -122,7 +146,7 @@ class OrderDeliveryStateChangeEventTest extends TestCase
                 $this->getContainer()->get(PaymentUtil::class),
                 $this->getContainer()->get(OrderUtil::class),
             ])
-            ->setMethodsExcept(['onOrderDeliveryStateChanged'])
+            ->onlyMethods($methodNames)
             ->getMock();
 
         $orderDeliveryStateChangeEvent->onOrderDeliveryStateChanged($stateMachineStateChangeEvent);

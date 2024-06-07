@@ -1,5 +1,4 @@
 <?xml version="1.0" ?>
-
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
@@ -15,7 +14,6 @@
             </call>
         </service>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\RefundController" public="true">
-            <argument type="service" id="order.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>

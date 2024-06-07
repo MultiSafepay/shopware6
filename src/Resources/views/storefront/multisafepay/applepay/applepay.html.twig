@@ -1,7 +1,7 @@
-{# This is needed to not show Apple Pay in other browser than Safari for shopware 6.3 and lower#}
+{# This is needed to not show Apple Pay in other browser than Safari #}
 <div id="msp-applepay">
     <script>
-        var applePayPaymentMethod = document.getElementById('msp-applepay').parentElement;
+        const applePayPaymentMethod = document.getElementById('msp-applepay').parentElement;
         applePayPaymentMethod.style.display = 'none';
 
         try {

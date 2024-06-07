@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
@@ -14,6 +13,7 @@ use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -24,15 +24,28 @@ use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Class MediaInstaller
+ *
+ * This class is used to install the media files for the payment methods
+ *
+ * @package MultiSafepay\Shopware6\Installers
+ */
 class MediaInstaller implements InstallerInterface
 {
-    /** @var EntityRepository */
-    private $mediaRepository;
-    /** @var FileSaver */
-    private $fileSaver;
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $mediaRepository;
 
     /**
-     * MediaInstaller constructor.
+     * @var FileSaver
+     */
+    private FileSaver $fileSaver;
+
+    /**
+     * MediaInstaller constructor
+     *
      * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
@@ -42,6 +55,8 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Runs when plugin is installed
+     *
      * @param InstallContext $context
      */
     public function install(InstallContext $context): void
@@ -52,6 +67,8 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Runs when the plugin is updated
+     *
      * @param UpdateContext $context
      */
     public function update(UpdateContext $context): void
@@ -63,36 +80,37 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Run when plugin is uninstalled
+     *
      * @param UninstallContext $context
      */
     public function uninstall(UninstallContext $context): void
     {
-        return;
     }
 
     /**
+     *  Run when the plugin is activated
+     *
      * @param ActivateContext $context
      */
     public function activate(ActivateContext $context): void
     {
-        return;
     }
 
     /**
+     *  Run when plugin is deactivated
+     *
      * @param DeactivateContext $context
      */
     public function deactivate(DeactivateContext $context): void
     {
-        return;
     }
 
     /**
+     *  Add media to the payment method
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
-     * @throws \Shopware\Core\Content\Media\Exception\DuplicatedMediaFileNameException
-     * @throws \Shopware\Core\Content\Media\Exception\EmptyMediaFilenameException
-     * @throws \Shopware\Core\Content\Media\Exception\IllegalFileNameException
-     * @throws \Shopware\Core\Content\Media\Exception\MediaNotFoundException
      */
     private function addMedia(PaymentMethodInterface $paymentMethod, Context $context): void
     {
@@ -125,6 +143,8 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Create a media file
+     *
      * @param string $filePath
      * @return MediaFile
      */
@@ -139,10 +159,12 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Check if media is already installed
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @return bool
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException
      */
     private function hasMediaAlreadyInstalled(PaymentMethodInterface $paymentMethod, Context $context): bool
     {
@@ -156,10 +178,12 @@ class MediaInstaller implements InstallerInterface
         /** @var MediaEntity $media */
         $media = $this->mediaRepository->search($criteria, $context)->first();
 
-        return $media ? true : false;
+        return (bool)$media;
     }
 
     /**
+     *  Get the media name
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @return string
      */
@@ -172,6 +196,13 @@ class MediaInstaller implements InstallerInterface
         return 'msp_' . $paymentMethod->getName();
     }
 
+    /**
+     *  Update the media
+     *
+     * @param PaymentMethodInterface $paymentMethod
+     * @param Context $context
+     * @return void
+     */
     private function updateMedia(PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $media = $this->getMedia($paymentMethod, $context);
@@ -195,11 +226,13 @@ class MediaInstaller implements InstallerInterface
     }
 
     /**
+     *  Get the media
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @return MediaEntity|null
      */
-    private function getMedia(PaymentMethodInterface $paymentMethod, Context $context)
+    private function getMedia(PaymentMethodInterface $paymentMethod, Context $context): ?MediaEntity
     {
         $criteria = (new Criteria())->addFilter(
             new EqualsFilter(

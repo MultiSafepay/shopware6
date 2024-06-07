@@ -7,10 +7,17 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\TrustPayPaymentHandler;
 
+/**
+ * Class TrustPay
+ *
+ * This class is used to define the details of TrustPay payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class TrustPay implements PaymentMethodInterface
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -20,7 +27,7 @@ class TrustPay implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -30,7 +37,7 @@ class TrustPay implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
      * @return string
      */
@@ -40,7 +47,7 @@ class TrustPay implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -50,7 +57,7 @@ class TrustPay implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -60,7 +67,7 @@ class TrustPay implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

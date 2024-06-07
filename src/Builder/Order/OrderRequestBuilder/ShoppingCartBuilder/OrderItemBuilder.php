@@ -6,25 +6,34 @@
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as TransactionItem;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Util\PriceUtil;
 use MultiSafepay\Shopware6\Util\TaxUtil;
 use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 
+/**
+ * Class OrderItemBuilder
+ *
+ * This class is responsible for building the shopping cart for order items
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder
+ */
 class OrderItemBuilder implements ShoppingCartBuilderInterface
 {
     /**
      * @var PriceUtil
      */
-    private $priceUtil;
+    private PriceUtil $priceUtil;
     /**
      * @var TaxUtil
      */
-    private $taxUtil;
+    private TaxUtil $taxUtil;
 
     /**
-     * OrderItemBuilder constructor.
+     * OrderItemBuilder constructor
+     *
      * @param PriceUtil $priceUtil
      * @param TaxUtil $taxUtil
      */
@@ -35,9 +44,12 @@ class OrderItemBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Build the shopping cart
+     *
      * @param OrderEntity $order
      * @param string $currency
      * @return array
+     * @throws InvalidArgumentException
      */
     public function build(OrderEntity $order, string $currency): array
     {
@@ -53,10 +65,13 @@ class OrderItemBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Get the shopping cart item
+     *
      * @param OrderLineItemEntity $item
      * @param bool $hasNetPrices
      * @param string $currency
      * @return TransactionItem
+     * @throws InvalidArgumentException
      */
     public function getShoppingCartItem(
         OrderLineItemEntity $item,
@@ -65,10 +80,7 @@ class OrderItemBuilder implements ShoppingCartBuilderInterface
     ): TransactionItem {
         $taxRate = $this->taxUtil->getTaxRate($item->getPrice());
 
-        $options = [];
-        if (isset($item->getPayload()['options'])) {
-            $options = $item->getPayload()['options'];
-        }
+        $options = $item->getPayload()['options'] ?? [];
 
         $label = $item->getLabel();
         foreach ($options as $option) {
@@ -89,6 +101,8 @@ class OrderItemBuilder implements ShoppingCartBuilderInterface
     }
 
     /**
+     *  Get the merchant item id
+     *
      * @param OrderLineItemEntity $item
      * @return string
      */

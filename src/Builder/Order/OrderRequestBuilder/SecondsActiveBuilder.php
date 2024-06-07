@@ -11,19 +11,36 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class SecondsActiveBuilder
+ *
+ * This class is responsible for building the seconds active
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class SecondsActiveBuilder implements OrderRequestBuilderInterface
 {
-    public const TIME_ACTIVE_DAY = 3;
-    public const TIME_ACTIVE_HOURS = 2;
-    public const TIME_ACTIVE_MINUTES = 1;
+    /**
+     * Time active hours
+     *
+     * @var int
+     */
+    public const TIME_ACTIVE_HOURS = "2";
+
+    /**
+     * Time active minutes
+     *
+     * @var int
+     */
+    public const TIME_ACTIVE_MINUTES = "1";
 
     /**
      * @var SettingsService
      */
-    private $settingsService;
+    private SettingsService $settingsService;
 
     /**
-     * SecondsActiveBuilder constructor.
+     * SecondsActiveBuilder constructor
      *
      * @param SettingsService $settingsService
      */
@@ -34,6 +51,8 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Build the seconds active
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
@@ -49,21 +68,19 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Get the seconds active
+     *
      * @return int
      */
     public function getSecondsActive(): int
     {
-        $timeActive = (int)$this->settingsService->getTimeActive();
+        $timeActive = $this->settingsService->getTimeActive();
         $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;
 
-        switch ($this->settingsService->getTimeActiveLabel()) {
-            case self::TIME_ACTIVE_MINUTES:
-                return $timeActive * 60;
-            case self::TIME_ACTIVE_HOURS:
-                return $timeActive * 60 * 60;
-            case self::TIME_ACTIVE_DAY:
-            default:
-                return $timeActive * 24 * 60 * 60;
-        }
+        return match ($this->settingsService->getTimeActiveLabel()) {
+            self::TIME_ACTIVE_MINUTES => $timeActive * 60,
+            self::TIME_ACTIVE_HOURS => $timeActive * 60 * 60,
+            default => $timeActive * 24 * 60 * 60,
+        };
     }
 }

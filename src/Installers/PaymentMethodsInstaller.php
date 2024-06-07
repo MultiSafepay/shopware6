@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
@@ -14,6 +13,7 @@ use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -24,20 +24,46 @@ use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Class PaymentMethodsInstaller
+ *
+ * This class is used to install the payment methods
+ *
+ * @package MultiSafepay\Shopware6\Installers
+ */
 class PaymentMethodsInstaller implements InstallerInterface
 {
+    /**
+     *  Is MultiSafepay
+     *
+     * @var string
+     */
     public const IS_MULTISAFEPAY = 'is_multisafepay';
-    public const TEMPLATE = 'template';
-
-    /** @var PluginIdProvider */
-    public $pluginIdProvider;
-    /** @var EntityRepository */
-    public $paymentMethodRepository;
-    /** @var EntityRepository */
-    public $mediaRepository;
 
     /**
-     * PaymentMethodsInstaller constructor.
+     *  Template name
+     *
+     * @var string
+     */
+    public const TEMPLATE = 'template';
+
+    /**
+     * @var PluginIdProvider
+     */
+    public PluginIdProvider $pluginIdProvider;
+
+    /**
+     * @var EntityRepository
+     */
+    public EntityRepository $paymentMethodRepository;
+
+    /**
+     * @var EntityRepository
+     */
+    public EntityRepository $mediaRepository;
+
+    /**
+     * PaymentMethodsInstaller constructor
      *
      * @param ContainerInterface $container
      */
@@ -49,6 +75,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Runs when plugin is installed
+     *
      * @param InstallContext $context
      */
     public function install(InstallContext $context): void
@@ -61,6 +89,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Runs when the plugin is updated
+     *
      * @param UpdateContext $context
      */
     public function update(UpdateContext $context): void
@@ -75,6 +105,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Run when plugin is uninstalled
+     *
      * @param UninstallContext $context
      */
     public function uninstall(UninstallContext $context): void
@@ -85,6 +117,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Run when the plugin is activated
+     *
      * @param ActivateContext $context
      */
     public function activate(ActivateContext $context): void
@@ -95,6 +129,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Run when plugin is deactivated
+     *
      * @param DeactivateContext $context
      */
     public function deactivate(DeactivateContext $context): void
@@ -105,6 +141,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Add media to the payment method
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @param bool $isActive
@@ -113,9 +151,7 @@ class PaymentMethodsInstaller implements InstallerInterface
     public function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context, bool $isActive, bool $isInstall): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod, $context);
-
         $pluginId = $this->pluginIdProvider->getPluginIdByBaseClass(MltisafeMultiSafepay::class, $context);
-
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
         if ($paymentMethodId && $isInstall) {
@@ -135,7 +171,7 @@ class PaymentMethodsInstaller implements InstallerInterface
             ]
         ];
 
-        if ($isActive && $paymentMethodId === null) {
+        if ($isActive && is_null($paymentMethodId)) {
             $paymentData['active'] = true;
         }
 
@@ -143,6 +179,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Get the payment method id
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @return string|null
@@ -169,10 +207,12 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Set the payment method active
+     *
      * @param bool $active
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException
      */
     public function setPaymentMethodActive(bool $active, PaymentMethodInterface $paymentMethod, Context $context): void
     {
@@ -191,10 +231,12 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Get the media id
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @param Context $context
      * @return string|null
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException
      */
     private function getMediaId(PaymentMethodInterface $paymentMethod, Context $context): ?string
     {
@@ -208,16 +250,14 @@ class PaymentMethodsInstaller implements InstallerInterface
         /** @var MediaEntity $media */
         $media = $this->mediaRepository->search($criteria, $context)->first();
 
-        if (!$media) {
-            return null;
-        }
-
-        return $media->getId();
+        return $media?->getId();
     }
 
     /**
+     *  Update the MultiSafepay payment method
+     *
      * @param Context $context
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException
      */
     private function updateMultiSafepayPaymentMethod(Context $context): void
     {
@@ -246,6 +286,8 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Get the media name
+     *
      * @param PaymentMethodInterface $paymentMethod
      * @return string
      */
@@ -259,9 +301,11 @@ class PaymentMethodsInstaller implements InstallerInterface
     }
 
     /**
+     *  Disable gateways
+     *
      * @param UpdateContext $context
      */
-    private function disableGateways(UpdateContext $context)
+    private function disableGateways(UpdateContext $context): void
     {
         foreach (PaymentUtil::DELETED_GATEWAYS as $gateway) {
             $this->setPaymentMethodActive(false, new $gateway(), $context->getContext());

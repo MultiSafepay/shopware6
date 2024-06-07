@@ -2,7 +2,7 @@
 <ruleset name="MultiSafepay">
     <description>MultiSafepay coding styles rules</description>
     <arg name="extensions" value="php" />
-    <rule ref="./vendor/multisafepay/coding-standards/php72.phpcs.xml">
+    <rule ref="./vendor/multisafepay/coding-standards/php82.phpcs.xml">
         <exclude name="SlevomatCodingStandard.ControlStructures.AssignmentInCondition.AssignmentInCondition"/>
     </rule>
     <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
@@ -11,7 +11,7 @@
         </properties>
     </rule>
     <exclude-pattern>*/vendor/*</exclude-pattern>
-    <exclude-pattern>*/tests/bootstrap.php</exclude-pattern>
+    <exclude-pattern>*/tests/TestBootstrap.php</exclude-pattern>
     <exclude-pattern>*/src/Resources/public/*</exclude-pattern>
     <exclude-pattern>*/src/Resources/app/storefront/dist/storefront/*</exclude-pattern>
 </ruleset>

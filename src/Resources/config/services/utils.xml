@@ -1,5 +1,4 @@
 <?xml version="1.0" ?>
-
 <container xmlns="http://symfony.com/schema/dic/services"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
@@ -7,16 +6,13 @@
         <service id="MultiSafepay\Shopware6\Util\PriceUtil">
             <argument type="service" id="MultiSafepay\Shopware6\Util\TaxUtil"/>
         </service>
-
         <service id="MultiSafepay\Shopware6\Util\PaymentUtil">
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
         </service>
-
         <service id="MultiSafepay\Shopware6\Util\OrderUtil">
             <argument type="service" id="order.repository"/>
             <argument type="service" id="country_state.repository"/>
         </service>
-
         <service id="MultiSafepay\Shopware6\Util\TaxUtil"/>
         <service id="MultiSafepay\Shopware6\Util\RequestUtil"/>
     </services>

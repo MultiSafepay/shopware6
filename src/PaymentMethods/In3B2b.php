@@ -10,7 +10,7 @@ use MultiSafepay\Shopware6\Handlers\In3B2bPaymentHandler;
 class In3B2b implements PaymentMethodInterface
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -20,7 +20,7 @@ class In3B2b implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -30,7 +30,7 @@ class In3B2b implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
      * @return string
      */
@@ -40,7 +40,7 @@ class In3B2b implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -50,7 +50,7 @@ class In3B2b implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -60,7 +60,7 @@ class In3B2b implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

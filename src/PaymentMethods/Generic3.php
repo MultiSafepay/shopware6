@@ -3,15 +3,21 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\GenericPaymentHandler3;
 
+/**
+ * Class Generic3
+ *
+ * This class is used to define the details of Generic3 payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class Generic3 extends Generic
 {
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -20,6 +26,11 @@ class Generic3 extends Generic
         return 'Generic gateway 3';
     }
 
+    /**
+     * Get the payment method handler
+     *
+     * @return string
+     */
     public function getPaymentHandler(): string
     {
         return GenericPaymentHandler3::class;

@@ -3,13 +3,11 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Builder\Order;
 
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder;
-use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\OrderRequestBuilderInterface;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder;
@@ -18,60 +16,67 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilde
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 use MultiSafepay\Shopware6\Service\SettingsService;
 
+/**
+ * Class OrderRequestBuilderPool
+ *
+ * This class is responsible for building the order request builder pool
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order
+ */
 class OrderRequestBuilderPool
 {
     /**
      * @var ShoppingCartBuilder
      */
-    private $shoppingCartBuilder;
+    private ShoppingCartBuilder $shoppingCartBuilder;
 
     /**
      * @var RecurringBuilder
      */
-    private $recurringBuilder;
+    private RecurringBuilder $recurringBuilder;
 
     /**
      * @var DescriptionBuilder
      */
-    private $descriptionBuilder;
+    private DescriptionBuilder $descriptionBuilder;
 
     /**
      * @var PaymentOptionsBuilder
      */
-    private $paymentOptionsBuilder;
+    private PaymentOptionsBuilder $paymentOptionsBuilder;
 
     /**
      * @var CustomerBuilder
      */
-    private $customerBuilder;
+    private CustomerBuilder $customerBuilder;
 
     /**
      * @var DeliveryBuilder
      */
-    private $deliveryBuilder;
+    private DeliveryBuilder $deliveryBuilder;
 
     /**
      * @var SecondsActiveBuilder
      */
-    private $secondsActiveBuilder;
+    private SecondsActiveBuilder $secondsActiveBuilder;
 
     /**
      * @var PluginDataBuilder
      */
-    private $pluginDataBuilder;
+    private PluginDataBuilder $pluginDataBuilder;
 
     /**
      * @var SecondChanceBuilder
      */
-    private $secondChanceBuilder;
+    private SecondChanceBuilder $secondChanceBuilder;
 
     /**
      * @var SettingsService
      */
-    private $settingService;
+    private SettingsService $settingService;
 
     /**
-     * OrderRequestBuilderPool constructor.
+     * OrderRequestBuilderPool constructor
      *
      * @param ShoppingCartBuilder $shoppingCartBuilder
      * @param RecurringBuilder $recurringBuilder
@@ -109,6 +114,8 @@ class OrderRequestBuilderPool
     }
 
     /**
+     *  Get the order request builders
+     *
      * @return array
      */
     public function getOrderRequestBuilders(): array
@@ -129,14 +136,5 @@ class OrderRequestBuilderPool
         }
 
         return $builderPool;
-    }
-
-    /**
-     * @param string $builderCode
-     * @return OrderRequestBuilderInterface|null
-     */
-    public function getOrderRequestBuilderByCode(string $builderCode): ?OrderRequestBuilderInterface
-    {
-        return $this->getOrderRequestBuilders()[$builderCode] ?? null;
     }
 }

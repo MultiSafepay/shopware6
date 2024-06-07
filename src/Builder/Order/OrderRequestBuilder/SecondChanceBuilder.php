@@ -10,9 +10,18 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class SecondChanceBuilder
+ *
+ * This class is responsible for building the second chance
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class SecondChanceBuilder implements OrderRequestBuilderInterface
 {
     /**
+     *  Build the second chance
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag

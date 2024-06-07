@@ -7,81 +7,76 @@ namespace MultiSafepay\Shopware6\Controllers\StoreApi;
 
 use MultiSafepay\Api\Tokens\Token;
 use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
-use OpenApi\Annotations as OA;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
-use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * Class TokensRoute
+ *
+ * This class is responsible for the token route
+ *
+ * @package MultiSafepay\Shopware6\Controllers\StoreApi
+ */
 class TokensRoute extends AbstractRoute
 {
-    private $sdkFactory;
-    /** @var EntityRepository */
-    private $paymentMethodRepository;
+    /**
+     * @var SdkFactory
+     */
+    private SdkFactory $sdkFactory;
 
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $paymentMethodRepository;
+
+    /**
+     *  TokensRoute constructor
+     *
+     * @param SdkFactory $sdkFactory
+     * @param $paymentMethodRepository
+     */
     public function __construct(SdkFactory $sdkFactory, $paymentMethodRepository)
     {
         $this->sdkFactory = $sdkFactory;
         $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
+    /**
+     *  Get the decorated route
+     *
+     * @return AbstractRoute
+     */
     public function getDecorated(): AbstractRoute
     {
         throw new DecorationPatternException(self::class);
     }
 
     /**
-     * @Entity("multisafepay")
-     * @OA\Post(
-     *      path="/multisafepay/tokenization/tokens",
-     *      summary="Fetch tokens from a user",
-     *      description="Get the list of registered tokens for this user
-     **Important constraints**
-     * Anonymous (not logged-in) customers can not have tokens.",
-     *      operationId="MultiSafepayTokens",
-     *      tags={"Store API", "Payment & Shipping", "MultiSafepay"},
-     * @OA\RequestBody(
-     *          @OA\JsonContent(
-     *              @OA\Property(property="paymentMethodId", description="Payment method id", type="string"),
-     *          )
-     *      ),
-     * @OA\Response(
-     *          response="200",
-     *          description="Get a list of the tokens from the user",
-     *          @OA\JsonContent(
-     *             @OA\Schema(
-     *                 type="object",
-     *                 @OA\Property(
-     *                     property="tokens",
-     *                     description="Tokens from the user",
-     *                     type="array",
-     *                 )
-     *             )
-     *         )
-     *     )
-     * )
+     *  Load the route
      *
-     * @Route("/store-api/multisafepay/tokenization/tokens", name="store-api.multisafepay.tokens",
-     *     methods={"GET", "POST"},defaults={"_routeScope"={"store-api"},"_loginRequired"=true})
-     * @Route("/store-api/v{version}/multisafepay/tokenization/tokens", name="store-api.multisafepay.tokens.old",
-     *     methods={"GET", "POST"}, defaults={"_routeScope"={"store-api"},"_loginRequired"=true})
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @param CustomerEntity $customer
+     * @return TokensResponse
      */
-    public function load(Request $request, SalesChannelContext $context, CustomerEntity $customer)
+    public function load(Request $request, SalesChannelContext $context, CustomerEntity $customer): TokensResponse
     {
         if ($request->request->get('paymentMethodId')) {
             $tokens = $this->getFilteredTokens(
                 $request->request->get('paymentMethodId'),
-                $request->request->get('paymentMethods'),
+                (array)$request->request->get('paymentMethods'),
                 $context->getContext(),
                 $customer
             );
@@ -94,6 +89,13 @@ class TokensRoute extends AbstractRoute
         return new TokensResponse(new ArrayStruct(['tokens' => $tokens]));
     }
 
+    /**
+     *  Get the payment method
+     *
+     * @param string $paymentMethodId
+     * @param Context $context
+     * @return PaymentMethodEntity
+     */
     private function getPaymentMethod(string $paymentMethodId, Context $context): PaymentMethodEntity
     {
         $criteria = new Criteria([$paymentMethodId]);
@@ -101,12 +103,18 @@ class TokensRoute extends AbstractRoute
         return $this->paymentMethodRepository->search($criteria, $context)->first();
     }
 
+    /**
+     *  Get the tokens
+     *
+     * @param CustomerEntity $customer
+     * @return array
+     */
     private function getTokens(CustomerEntity $customer): array
     {
         $tokens = [];
         try {
             $multiSafepayTokens = $this->sdkFactory->create()->getTokenManager()->getList($customer->getId());
-        } catch (ApiException $exception) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
             return [];
         }
 
@@ -123,10 +131,23 @@ class TokensRoute extends AbstractRoute
         return $tokens;
     }
 
-    private function getFilteredTokens(string $paymentMethodId, array $paymentMethods, Context $context, CustomerEntity
-    $customer): array
-    {
+    /**
+     *  Get the filtered tokens
+     *
+     * @param string $paymentMethodId
+     * @param array $paymentMethods
+     * @param Context $context
+     * @param CustomerEntity $customer
+     * @return array
+     */
+    private function getFilteredTokens(
+        string $paymentMethodId,
+        array $paymentMethods,
+        Context $context,
+        CustomerEntity  $customer
+    ): array {
         $tokens = [];
+        $gatewayCode = '';
         $paymentMethod = $this->getPaymentMethod($paymentMethodId, $context);
         foreach (PaymentUtil::GATEWAYS as $gateway) {
             /** @var PaymentMethodInterface $multiSafepayGateway */
@@ -141,7 +162,7 @@ class TokensRoute extends AbstractRoute
             $multiSafepayTokens = $this->sdkFactory->create()
                 ->getTokenManager()
                 ->getListByGatewayCode($customer->getId(), $gatewayCode);
-        } catch (ApiException $exception) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
             return [];
         }
 
@@ -171,7 +192,7 @@ class TokensRoute extends AbstractRoute
         }
 
         foreach ($multiSafepayTokens as $token) {
-            if (!in_array($token->getGatewayCode(), $allowedGateways)) {
+            if (!in_array($token->getGatewayCode(), $allowedGateways, true)) {
                 continue;
             }
             $tokens[] = [

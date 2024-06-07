@@ -31,10 +31,10 @@ rm "$FILENAME_PREFIX""$RELEASE_VERSION".zip
 composer remove phpro/grumphp --working-dir="$FOLDER_PREFIX" --update-no-dev --dev --no-update
 
 # Remove shopware temporary so we don't have all the Shopware requirements in the plugin
-composer remove shopware/administration  shopware/storefront shopware/core --working-dir="$FOLDER_PREFIX" --update-no-dev
+composer remove shopware/administration shopware/storefront shopware/core --working-dir="$FOLDER_PREFIX" --update-no-dev
 
 # Add shopware back in the composer.json but not in the vendor folder
-composer require shopware/administration:"6.4.* | 6.5.*" shopware/storefront:"6.4.* | 6.5.*" shopware/core:"6.4.* | 6.5.*" --working-dir="$FOLDER_PREFIX" --no-update
+composer require shopware/administration:"6.6.*" shopware/storefront:"6.6.*" shopware/core:"6.6.*" --working-dir="$FOLDER_PREFIX" --no-update
 
 # zip everything
 zip -9 -r "$FILENAME_PREFIX""$RELEASE_VERSION".zip "$FOLDER_PREFIX" -x "$FOLDER_PREFIX""/composer.lock"

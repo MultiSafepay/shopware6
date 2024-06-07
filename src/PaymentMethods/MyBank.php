@@ -8,13 +8,31 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 
+/**
+ * Class MyBank
+ *
+ * This class is used to define the details of MyBank payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class MyBank implements PaymentMethodInterface
 {
+    /**
+     * Gateway name
+     *
+     * @var string
+     */
     public const GATEWAY_NAME = 'MyBank - Bonifico Immediato';
+
+    /**
+     * Gateway code
+     *
+     * @var string
+     */
     public const GATEWAY_CODE = 'MYBANK';
 
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -24,7 +42,7 @@ class MyBank implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -34,7 +52,7 @@ class MyBank implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
      * @return string
      */
@@ -44,9 +62,9 @@ class MyBank implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
-     * @return string|null
+     * @return string
      */
     public function getTemplate(): string
     {
@@ -54,7 +72,7 @@ class MyBank implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -64,7 +82,7 @@ class MyBank implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

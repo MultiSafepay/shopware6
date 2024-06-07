@@ -5,6 +5,13 @@
  */
 namespace MultiSafepay\Shopware6\Handlers;
 
+/**
+ * Class MultiSafepayPaymentHandler
+ *
+ * This class is used to handle the payment process for MultiSafepay
+ *
+ * @package MultiSafepay\Shopware6\Handlers
+ */
 class MultiSafepayPaymentHandler extends AsyncPaymentHandler
 {
 

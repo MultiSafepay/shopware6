@@ -1,62 +1,64 @@
+# This is the name of the workflow
 name: Build
+
+# This defines when the workflow will run
 on:
+  # Scheduled to run weekly on Sundays at 02:00
   schedule:
-    - cron: '0 2 * * 0' # Weekly on Sundays at 02:00
+    - cron: '0 2 * * 0'
+  # Triggers the workflow on push or pull request events for master and develop branches
   push:
     branches:
       - master
-      - develop
   pull_request:
     branches:
       - master
-      - develop
+
+# This defines the jobs that will run in the workflow
 jobs:
-  integration_tests:
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: shopware
-        ports:
-          - 3306
-        options: --tmpfs /tmp:rw --tmpfs /var/lib/mysql:rw --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+  # This is the job for running the unit tests
+  phpunit:
+    # This defines the environment in which the job will run
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php-version: [ '7.4' ]
-        shopware_version: [ 'v6.4.8.1' ]
-    name: Integration test - Php version ${{ matrix.php-version }} with Shopware ${{ matrix.shopware_version }}
     steps:
-      - name: Install php
-        uses: shivammathur/setup-php@master
+      # Step to set up Shopware
+      - name: Setup Shopware
+        uses: shopware/setup-shopware@main
         with:
-          php-version: ${{ matrix.php-version }}
-          extensions: intl
-      - name: Disable mysqldump column statistics
-        run: echo 'column-statistics=0' | sudo tee -a /etc/mysql/conf.d/mysqldump.cnf
-      - name: Checkout Shopware 6 code
-        uses: actions/checkout@v2
+          # Shopware version to use
+          shopware-version: 'v6.6.2.0'
+          # PHP version to use
+          php-version: 8.2
+          # Environment in which Shopware will run
+          env: test
+          # Required PHP extensions
+          php-extensions: pcov
+          # Install Shopware
+          install: true
+
+      # Step to check out the code
+      - name: Checkout MultiSafepay Shopware 6 module
+        uses: actions/checkout@v3
         with:
-          repository: shopware/development
-          ref: ${{ matrix.shopware_version }}
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
+          # This needs to be placed in this location, so when addActivePlugins() in the
+          # custom ./tests/TestBootstrap.php is called, it will be able to find the plugin
+          # as this is the usual path for them
           path: custom/plugins/MltisafeMultiSafepay
-      - name: Install Shopware
-        run: ./psh.phar init --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
-      - name: Install Multisafepay dependencies
-        working-directory: ./custom/plugins/MltisafeMultiSafepay
-        #TODO: Add github/cache here
-        run: composer install --no-dev
-      - name: Install Multisafepay
-        run: bin/console plugin:refresh && bin/console plugin:install -c --activate  MltisafeMultiSafepay
-      - name: Initialize test databases
-        run: ./psh.phar init-test-databases --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="password" --DB_PORT=${{ job.services.mysql.ports['3306'] }}
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist --coverage-clover=./custom/plugins/MltisafeMultiSafepay/coverage.xml
+
+      # Step to install the dependencies, matching the repository with the usual plugin location,
+      - name: Install Shopware 6 MultiSafepay module
+        run: |
+          composer config repositories.multisafepay.shopware6 "path" "custom/plugins/MltisafeMultiSafepay"
+          composer config allow-plugins.php-http/discovery false
+          composer require multisafepay/shopware6
+          bin/console plugin:refresh
+          bin/console plugin:install -c -a MltisafeMultiSafepay
+
+      # Run PHPUnit to execute the tests and generate a coverage report
+      - name: Run Tests
+        run: |
+          cd custom/plugins/MltisafeMultiSafepay/
+          php -d pcov.enabled=1 ../../../vendor/bin/phpunit --coverage-clover clover.xml
       - name: Send clover to codecov
         if: ${{ always() }}
         working-directory: ./custom/plugins/MltisafeMultiSafepay

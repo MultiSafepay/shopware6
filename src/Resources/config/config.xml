@@ -5,7 +5,6 @@
         <title>API credentials</title>
         <title lang="de-DE">API credentials</title>
         <title lang="nl-NL">API gegevens</title>
-
         <input-field type="single-select">
             <name>environment</name>
             <label>Test or Live:</label>
@@ -23,14 +22,12 @@
             </options>
             <defaultValue>live</defaultValue>
         </input-field>
-
         <input-field>
             <name>apiKey</name>
             <label>API Key:</label>
             <label lang="de-DE">API Schlüssel</label>
             <label lang="nl-NL">API sleutel</label>
         </input-field>
-
         <component name="multisafepay-verify-api-key">
             <name>apiTest</name>
         </component>
@@ -39,7 +36,6 @@
         <title>Configuration</title>
         <title lang="de-DE">Konfiguration</title>
         <title lang="nl-NL">Instellingen</title>
-
         <input-field type="int">
             <name>timeActive</name>
             <label>Time an order stays active</label>
@@ -50,7 +46,6 @@
             <placeholder lang="nl-NL">Standaard: 30</placeholder>
             <defaultValue>30</defaultValue>
         </input-field>
-
         <input-field type="single-select">
             <name>timeActiveLabel</name>
             <placeholder>Default: Days</placeholder>
@@ -82,7 +77,6 @@
             <label>Payment component Template ID</label>
         </input-field>
     </card>
-
     <card>
         <title>Generic Gateway</title>
         <title lang="de-DE">Generic Gateway</title>
@@ -142,7 +136,6 @@
             </helpText>
         </input-field>
     </card>
-
     <card>
         <title>Support</title>
         <component name="multisafepay-support">

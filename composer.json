@@ -6,13 +6,12 @@
     "license": "MIT",
     "minimum-stability": "stable",
     "require": {
-        "php": "^7.2 || ^8.0",
+        "php": "^8.2",
         "multisafepay/php-sdk": "^5.12",
-        "nyholm/psr7": "^1.1",
-        "shopware/core": "6.4.* | 6.5.*",
-        "shopware/storefront": "6.4.* | 6.5.*",
-        "shopware/administration": "6.4.* | 6.5.*",
-        "kriswallsmith/buzz" : "^1.2",
+        "nyholm/psr7": "^1.8",
+        "shopware/core": "6.6.*",
+        "shopware/storefront": "6.6.*",
+        "shopware/administration": "6.6.*",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-pcre": "*",
@@ -37,8 +36,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Buzz\\": "vendor/kriswallsmith/buzz/lib",
-            "Http\\Client\\": "vendor/php-http/httplug/src/",
+            "Http\\Client\\": "vendor/php-http/discovery/src/",
             "Psr\\Http\\Client\\": "vendor/psr/http-client/src/",
             "MultiSafepay\\Shopware6\\": "src/",
             "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/",
@@ -65,8 +63,13 @@
         }
     },
     "require-dev": {
+        "roave/security-advisories": "dev-latest",
         "multisafepay/coding-standards": "dev-master",
-        "phpunit/phpunit": "^9.5 || 8.3.4",
-        "phpro/grumphp": "^1.3"
+        "phpunit/phpunit": "^10.5",
+        "phpro/grumphp": "^2.5",
+        "predis/predis": "^2.2"
+    },
+    "scripts": {
+        "phpunit": "@php vendor/bin/phpunit"
     }
 }

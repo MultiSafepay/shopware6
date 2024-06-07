@@ -7,16 +7,24 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
+use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class ShoppingCartBuilder
+ *
+ * This class is responsible for building the shopping cart
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class ShoppingCartBuilder implements OrderRequestBuilderInterface
 {
     /**
      * @var array
      */
-    private $shoppingCartBuilders;
+    private array $shoppingCartBuilders;
 
     /**
      * ShoppingCartBuilder constructor.
@@ -29,10 +37,13 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Build the shopping cart
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     * @throws InvalidArgumentException
      */
     public function build(
         OrderRequest $orderRequest,

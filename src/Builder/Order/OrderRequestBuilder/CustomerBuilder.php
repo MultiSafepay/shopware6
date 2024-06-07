@@ -7,6 +7,7 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\CustomerDetails;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\Customer\Address;
@@ -23,20 +24,38 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class CustomerBuilder
+ *
+ * This class is responsible for building the customer details
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class CustomerBuilder implements OrderRequestBuilderInterface
 {
     /**
      * @var RequestUtil
      */
-    private $requestUtil;
+    private RequestUtil $requestUtil;
 
-    private $languageRepository;
+    private EntityRepository $languageRepository;
     /**
      * @var EntityRepository
      */
-    private $addressRepository;
-    private $orderUtil;
+    private EntityRepository $addressRepository;
+    /**
+     * @var OrderUtil
+     */
+    private OrderUtil $orderUtil;
 
+    /**
+     *  CustomerBuilder constructor
+     *
+     * @param RequestUtil $requestUtil
+     * @param EntityRepository $languageRepository
+     * @param EntityRepository $addressRepository
+     * @param OrderUtil $orderUtil
+     */
     public function __construct(
         RequestUtil $requestUtil,
         EntityRepository $languageRepository,
@@ -50,10 +69,13 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Build the customer details
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     * @throws InvalidArgumentException
      */
     public function build(
         OrderRequest $orderRequest,
@@ -79,10 +101,9 @@ class CustomerBuilder implements OrderRequestBuilderInterface
 
         $state = $this->orderUtil->getState($billingAddress, $salesChannelContext->getContext());
 
-        if ($state !== null) {
+        if (!is_null($state)) {
             $orderRequestAddress->addState($state);
         }
-
 
         $customerDetails = (new CustomerDetails())
             ->addLocale($this->getLocale($salesChannelContext))
@@ -90,7 +111,7 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             ->addLastName($billingAddress->getLastName())
             ->addAddress($orderRequestAddress)
             ->addPhoneNumber(new PhoneNumber($billingAddress->getPhoneNumber() ?? ''))
-            ->addEmailAddress(new EmailAddress($customer->getEmail()))
+            ->addEmailAddress(new EmailAddress($customer ? $customer->getEmail() : ''))
             ->addUserAgent($request->headers->get('User-Agent') ?? '')
             ->addReferrer($request->server->get('HTTP_REFERER') ?? '');
 
@@ -102,25 +123,33 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Get the locale
+     *
      * @param SalesChannelContext $salesChannelContext
      * @return array|string|string[]
      */
-    private function getLocale(SalesChannelContext $salesChannelContext)
+    private function getLocale(SalesChannelContext $salesChannelContext): array|string
     {
         $criteria = new Criteria([$salesChannelContext->getContext()->getLanguageId()]);
         $criteria->addAssociation('locale');
         $language = $this->languageRepository->search($criteria, $salesChannelContext->getContext())->first();
 
-        if ($language === null || $language->getLocale() === null) {
+        if (is_null($language) || is_null($language->getLocale())) {
             return 'en_GB';
         }
         return str_replace('-', '_', $language->getLocale()->getCode());
     }
 
-
+    /**
+     *  Get the billing address
+     *
+     * @param OrderEntity $order
+     * @param Context $context
+     * @return OrderAddressEntity
+     */
     private function getBillingAddress(OrderEntity $order, Context $context): OrderAddressEntity
     {
-        if ($order->getBillingAddress() !== null) {
+        if (!is_null($order->getBillingAddress())) {
             return $order->getBillingAddress();
         }
 

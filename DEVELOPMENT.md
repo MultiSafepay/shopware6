@@ -20,7 +20,7 @@ cp .env.example .env
 ```
 docker-compose up
 ```
-The above command will start the container and show you some logs, this helps when you start for the first time
+The above command will start the container and show you some logs, this helps when you start for the first time,
 so you'll see any error message that might happen. You can shut down the containers by opening another terminal,
 access this project directory and execute `docker-compose down`. The next time you want to start the containers
 you can execute `docker-compose up -d`.

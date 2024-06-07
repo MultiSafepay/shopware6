@@ -1,6 +1,5 @@
-
 <p align="center">
-  <img src="https://www.multisafepay.com/img/multisafepaylogo.svg" width="400px" position="center">
+  <img src="https://raw.githubusercontent.com/MultiSafepay/MultiSafepay-logos/master/MultiSafepay-logo-color.svg" width="400px">
 </p>
 
 # MultiSafepay plugin Shopware 6
@@ -49,7 +48,7 @@ For more information, see MultiSafepay Docs – [Shopware](https://docs.multisaf
 
 If you see an opportunity to make an improvement, we invite you to create a pull request, create an issue, or email <integration@multisafepay.com>
 
-As a thank you for your contribution, we'll send you a MultiSafepay t-shirt, making you part of the team!
+As a "thank you" for your contribution, we'll send you a MultiSafepay t-shirt, making you part of the team!
 
 ## Testing
 To try out a working version of a Shopware 6 webshop, email <integration@multisafepay.com>

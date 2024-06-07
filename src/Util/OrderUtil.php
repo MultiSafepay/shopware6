@@ -3,9 +3,9 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Util;
 
+use InvalidArgumentException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -21,14 +21,18 @@ class OrderUtil
     /**
      * @var EntityRepository
      */
-    private $orderRepository;
-    /** @var EntityRepository */
-    private $countryStateRepository;
+    private EntityRepository $orderRepository;
+
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $countryStateRepository;
 
     /**
      * OrderUtil constructor.
      *
      * @param EntityRepository $orderRepository
+     * @param EntityRepository $countryStateRepository
      */
     public function __construct(
         EntityRepository $orderRepository,
@@ -39,9 +43,10 @@ class OrderUtil
     }
 
     /**
+     *  Get the order from the order number
+     *
      * @param string $orderNumber
      * @return OrderEntity
-     * @throws InconsistentCriteriaIdsException
      */
     public function getOrderFromNumber(string $orderNumber): OrderEntity
     {
@@ -74,7 +79,7 @@ class OrderUtil
     public function getState($address, Context $context): ?string
     {
         if (!in_array(get_class($address), [OrderAddressEntity::class, OrderDeliveryEntity::class])) {
-            throw new \InvalidArgumentException('Argument 1 passed to '.get_class($this).'::getState() must be an instance of '.OrderDeliveryEntity::class.' or '.OrderAddressEntity::class.', instace of '.get_class($address).' given.');
+            throw new InvalidArgumentException('Argument 1 passed to '.get_class($this).'::getState() must be an instance of '.OrderDeliveryEntity::class.' or '.OrderAddressEntity::class.', instance of '.get_class($address).' given.');
         }
 
         /** OrderDeliveryEntity|OrderAddressEntity $address */
@@ -82,7 +87,7 @@ class OrderUtil
             return null;
         }
 
-        if ($address->getCountryState() === null) {
+        if (is_null($address->getCountryState())) {
             $criteria = new Criteria([$address->getCountryStateId()]);
             /** @var CountryStateEntity $countryState */
             $countryState = $this->countryStateRepository->search($criteria, $context)->first();

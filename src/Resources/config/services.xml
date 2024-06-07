@@ -1,20 +1,19 @@
 <?xml version="1.0" ?>
-
 <container xmlns="http://symfony.com/schema/dic/services"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <imports>
-        <import resource="services/giftcards.xml" />
-        <import resource="services/subscribers.xml"/>
-        <import resource="services/payments.xml"/>
-        <import resource="services/snippets.xml"/>
-        <import resource="services/controllers.xml"/>
-        <import resource="services/logger.xml"/>
-        <import resource="services/helpers.xml"/>
-        <import resource="services/utils.xml"/>
+        <import resource="services/alias.xml"/>
         <import resource="services/builders.xml"/>
+        <import resource="services/controllers.xml"/>
+        <import resource="services/giftcards.xml" />
         <import resource="services/handlers.xml"/>
-        <import resource="services/services.xml"/>
+        <import resource="services/helpers.xml"/>
+        <import resource="services/logger.xml"/>
+        <import resource="services/payments.xml"/>
         <import resource="services/sdk.xml"/>
+        <import resource="services/services.xml"/>
+        <import resource="services/subscribers.xml"/>
+        <import resource="services/utils.xml"/>
     </imports>
 </container>

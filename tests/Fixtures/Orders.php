@@ -3,9 +3,11 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Tests\Fixtures;
 
+use DateTimeImmutable;
+use Exception;
+use RuntimeException;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
@@ -13,33 +15,47 @@ use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
-use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Checkout\Order\OrderStates;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\Test\TestDefaults;
+use const JSON_THROW_ON_ERROR;
 
+/**
+ * Trait Orders
+ *
+ * @package MultiSafepay\Shopware6\Tests\Fixtures
+ */
 trait Orders
 {
     use KernelTestBehaviour;
+
     /**
+     *  Create an order
+     *
      * @param string $customerId
      * @param Context $context
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     public function createOrder(string $customerId, Context $context): string
     {
-        $orderRepository = $this->getContainer()->get('order.repository');
-        $orderStateRegistry = $this->getContainer()->get(StateMachineRegistry::class);
+        $orderRepository = self::getContainer()->get('order.repository');
         $orderId = Uuid::randomHex();
-        $stateId = $orderStateRegistry->getInitialState(OrderStates::STATE_MACHINE, $context)->getId();
+
+        $stateMachineStateRepository = self::getContainer()->get('state_machine_state.repository');
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('technicalName', 'open'));
+        $stateId = $stateMachineStateRepository->searchIds($criteria, $context)->firstId();
+        if (!$stateId) {
+            throw new RuntimeException('Initial state does not exist.');
+        }
         $countryStateId = Uuid::randomHex();
         $addressId = Uuid::randomHex();
         $salutationId = $this->getValidSalutationId();
@@ -48,7 +64,7 @@ trait Orders
         $order = [
             'id' => $orderId,
             'orderNumber' => '12345',
-            'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'orderDateTime' => (new DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             'price' => new CartPrice(
                 10,
                 10,
@@ -81,7 +97,7 @@ trait Orders
                     'guest' => true,
                     'group' => ['name' => 'testse2323'],
                     'defaultPaymentMethodId' => $this->getValidPaymentMethodId(),
-                    'salesChannelId' => Defaults::SALES_CHANNEL,
+                    'salesChannelId' => TestDefaults::SALES_CHANNEL,
                     'defaultBillingAddressId' => $addressId,
                     'defaultShippingAddressId' => $addressId,
                     'addresses' => [
@@ -113,11 +129,10 @@ trait Orders
             'paymentMethodId' => $this->getValidPaymentMethodId(),
             'currencyId' => Defaults::CURRENCY,
             'currencyFactor' => 1,
-            'salesChannelId' => Defaults::SALES_CHANNEL,
+            'salesChannelId' => TestDefaults::SALES_CHANNEL,
             'deliveries' => [
                 [
-                    'stateId' => $orderStateRegistry->getInitialState(OrderDeliveryStates::STATE_MACHINE, $context)
-                        ->getId(),
+                    'stateId' => $stateId,
                     'shippingMethodId' => $this->getValidShippingMethodId(),
                     'shippingCosts' => new CalculatedPrice(
                         10,
@@ -125,8 +140,8 @@ trait Orders
                         new CalculatedTaxCollection(),
                         new TaxRuleCollection()
                     ),
-                    'shippingDateEarliest' => date(DATE_ISO8601),
-                    'shippingDateLatest' => date(DATE_ISO8601),
+                    'shippingDateEarliest' => date(DATE_ATOM),
+                    'shippingDateLatest' => date(DATE_ATOM),
                     'shippingOrderAddress' => [
                         'salutationId' => $salutationId,
                         'firstName' => 'Floy',
@@ -186,6 +201,8 @@ trait Orders
                     'id' => $addressId,
                 ],
             ],
+            'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR),
+            'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR),
         ];
 
         $orderRepository->upsert([$order], $context);
@@ -194,6 +211,8 @@ trait Orders
     }
 
     /**
+     *  Get an order
+     *
      * @param string $orderId
      * @param Context $context
      * @return OrderEntity
@@ -202,7 +221,7 @@ trait Orders
     public function getOrder(string $orderId, Context $context): OrderEntity
     {
         /** @var EntityRepository $orderRepo */
-        $orderRepo = $this->getContainer()->get('order.repository');
+        $orderRepo = self::getContainer()->get('order.repository');
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('transactions');
         $criteria->addAssociation('lineItems');

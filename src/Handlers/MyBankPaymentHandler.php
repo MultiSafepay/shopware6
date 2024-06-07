@@ -3,18 +3,27 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
+/**
+ * Class MyBankPaymentHandler
+ *
+ * This class is used to handle the payment process for MyBank
+ *
+ * @package MultiSafepay\Shopware6\Handlers
+ */
 class MyBankPaymentHandler extends AsyncPaymentHandler
 {
     /**
+     *  Provide the necessary data to make the payment
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
@@ -22,7 +31,7 @@ class MyBankPaymentHandler extends AsyncPaymentHandler
      * @param string $type
      * @param array $gatewayInfo
      * @return RedirectResponse
-     * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException
+     * @throws PaymentException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -33,9 +42,7 @@ class MyBankPaymentHandler extends AsyncPaymentHandler
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new MyBank();
-
         $code = $gateway ?? $paymentMethod->getGatewayCode();
-
         $issuerCode = $this->getDataBagItem('issuer', $dataBag);
 
         if ($issuerCode) {

@@ -1,22 +1,38 @@
+# This is the name of the workflow
 name: Code sniffer
+
+# This workflow is triggered on pull requests to the master and develop branches
 on:
   pull_request:
     branches:
       - master
-      - develop
+
+# This workflow consists of one job named 'phpcs'
 jobs:
   phpcs:
+    # The job runs on the latest version of Ubuntu
     runs-on: ubuntu-latest
+
+    # This is the name of the job, displayed on GitHub
     name: Code sniffer
+
+    # The job consists of several steps
     steps:
+      # This step installs the PHP dependencies needed for the job
       - name: Install php dependencies
         uses: shivammathur/setup-php@master
         with:
-          php-version: '7.4'
+          php-version: '8.2'
           extensions: intl
+
+      # This step checks out the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
+
+      # This step installs the dependencies defined in the composer.json file
       - name: Install dependencies
         run: composer install
+
+      # This step runs the PHP Code Sniffer tool to check the code for coding standard violations
       - name: Run Code sniffer
         run: vendor/bin/phpcs --standard=phpcs.ruleset.xml .

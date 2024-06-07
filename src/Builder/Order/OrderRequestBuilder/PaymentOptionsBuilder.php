@@ -7,6 +7,7 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\PaymentOptions;
+use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\Token\TokenFactoryInterfaceV2;
 use Shopware\Core\Checkout\Payment\Cart\Token\TokenStruct;
@@ -14,20 +15,32 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * Class PaymentOptionsBuilder
+ *
+ * This class is responsible for building the payment options
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class PaymentOptionsBuilder implements OrderRequestBuilderInterface
 {
     /**
      * @var UrlGeneratorInterface
      */
-    private $router;
+    private UrlGeneratorInterface $router;
+
     /**
      * @var TokenFactoryInterfaceV2
      */
-    private $tokenFactory;
-    private $secondsActiveBuilder;
+    private TokenFactoryInterfaceV2 $tokenFactory;
 
     /**
-     * PaymentOptionsBuilder constructor.
+     * @var SecondsActiveBuilder
+     */
+    private SecondsActiveBuilder $secondsActiveBuilder;
+
+    /**
+     * PaymentOptionsBuilder constructor
      *
      * @param UrlGeneratorInterface $router
      * @param TokenFactoryInterfaceV2 $tokenFactory
@@ -44,10 +57,13 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Build the payment options
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     * @throws InvalidArgumentException
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -73,6 +89,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Get the return URL
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @return string
      */
@@ -89,6 +107,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
 
     /**
      * Generate a new payment token with extended expiry time
+     *
      * @param string $oldPaymentToken
      * @return string
      */
@@ -110,6 +129,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
     }
 
     /**
+     *  Assemble the return URL
+     *
      * @param string $token
      * @return string
      */

@@ -3,27 +3,54 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Service;
 
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * Class SettingsService
+ *
+ * @package MultiSafepay\Shopware6\Service
+ */
 class SettingsService
 {
+    /**
+     * API environment config name
+     *
+     * @var string
+     */
     public const API_ENVIRONMENT_CONFIG_NAME = 'environment';
+
+    /**
+     * API key config name
+     *
+     * @var string
+     */
     public const API_KEY_CONFIG_NAME = 'apiKey';
+
+    /**
+     * Time active config name
+     *
+     * @var string
+     */
     public const TIME_ACTIVE_CONFIG_NAME = 'timeActive';
+
+    /**
+     * Time active label config name
+     *
+     * @var string
+     */
     public const TIME_ACTIVE_LABEL_CONFIG_NAME = 'timeActiveLabel';
 
     /**
      * @var SystemConfigService
      */
-    public $systemConfigService;
+    public SystemConfigService $systemConfigService;
 
     /**
-     * SettingsService constructor.
+     * SettingsService constructor
      *
      * @param SystemConfigService $systemConfigService
      */
@@ -33,16 +60,20 @@ class SettingsService
     }
 
     /**
+     *  Get the setting value
+     *
      * @param string $setting
      * @param string|null $salesChannelId
-     * @return mixed|null
+     * @return bool|float|int|array|string|null
      */
-    public function getSetting(string $setting, ?string $salesChannelId = null)
+    public function getSetting(string $setting, ?string $salesChannelId = null): mixed
     {
         return $this->systemConfigService->get('MltisafeMultiSafepay.config.' . $setting, $salesChannelId);
     }
 
     /**
+     *  Get the API key
+     *
      * @param string|null $salesChannelId
      * @return string
      */
@@ -52,6 +83,8 @@ class SettingsService
     }
 
     /**
+     *  Check if the plugin is in live mode
+     *
      * @param string|null $salesChannelId
      * @return bool
      */
@@ -63,6 +96,8 @@ class SettingsService
     }
 
     /**
+     *  Get the time active
+     *
      * @param string|null $salesChannelId
      * @return int
      */
@@ -72,6 +107,8 @@ class SettingsService
     }
 
     /**
+     *  Get the time active label
+     *
      * @param string|null $salesChannelId
      * @return string
      */
@@ -81,20 +118,25 @@ class SettingsService
     }
 
     /**
+     *  Get the gateway setting
+     *
      * @param PaymentMethodEntity $paymentMethod
      * @param string $key
      * @param mixed|null $default
      * @return mixed|null
      */
-    public function getGatewaySetting(PaymentMethodEntity $paymentMethod, string $key, $default = null)
+    public function getGatewaySetting(PaymentMethodEntity $paymentMethod, string $key, mixed $default = null): mixed
     {
         $customFields = $paymentMethod->getCustomFields();
-        if (isset($customFields[$key])) {
-            return $customFields[$key];
-        }
-        return $default;
+
+        return $customFields[$key] ?? $default;
     }
 
+    /**
+     *  Check if the shopping cart is excluded
+     *
+     * @return bool
+     */
     public function isShoppingCartExcluded(): bool
     {
         return (bool) $this->getSetting('excludeShoppingCart');

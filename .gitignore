@@ -1,6 +1,9 @@
 .DS_Store
-/.idea
-/vendor/
-/composer.lock
-/.dist/
 .env
+.phpunit.result.cache
+/.dist/
+/.idea
+/composer.lock
+/node_modules/
+/var/
+/vendor/

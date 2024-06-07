@@ -3,26 +3,32 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Factory;
 
-use Buzz\Client\Curl as CurlClient;
 use GuzzleHttp\Client;
+use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Sources\Settings\EnvironmentSource;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 
+/**
+ * Class SdkFactory
+ *
+ * This class is responsible for the SDK factory
+ *
+ * @package MultiSafepay\Shopware6\Factory
+ */
 class SdkFactory
 {
     /**
      * @var SettingsService
      */
-    private $config;
+    private SettingsService $config;
 
     /**
-     * SdkFactory constructor.
+     * SdkFactory constructor
      *
      * @param SettingsService $config
      */
@@ -33,8 +39,11 @@ class SdkFactory
     }
 
     /**
+     *  Create the SDK
+     *
      * @param string|null $salesChannelId
      * @return Sdk
+     * @throws InvalidApiKeyException
      */
     public function create(?string $salesChannelId = null): Sdk
     {
@@ -42,9 +51,12 @@ class SdkFactory
     }
 
     /**
+     *  Create the SDK with data
+     *
      * @param string $apiKey
      * @param string $environment
      * @return Sdk
+     * @throws InvalidApiKeyException
      */
     public function createWithData(string $apiKey, string $environment): Sdk
     {
@@ -58,8 +70,11 @@ class SdkFactory
     }
 
     /**
+     *  Get the SDK
+     *
      * @param string|null $salesChannelId
      * @return Sdk
+     * @throws InvalidApiKeyException
      */
     private function get(?string $salesChannelId = null): Sdk
     {
@@ -73,17 +88,14 @@ class SdkFactory
     }
 
     /**
+     *  Get the client
+     *
      * Added in 2.5.1 because Shopware 6.4 uses Guzzle7 (with PSR18) and in <6.4 it is using 6.5.2 without PSR18
      *
      * @return ClientInterface
      */
     private function getClient(): ClientInterface
     {
-        $client = new Client();
-        if (!$client instanceof ClientInterface) {
-            $client = new CurlClient(new Psr17Factory());
-        }
-
-        return $client;
+        return new Client();
     }
 }

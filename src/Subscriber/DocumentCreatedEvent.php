@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
@@ -13,33 +12,38 @@ use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
-use Shopware\Core\Checkout\Order\OrderEvents;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
+/**
+ * Class DocumentCreatedEvent
+ *
+ * @package MultiSafepay\Shopware6\Subscriber
+ */
 class DocumentCreatedEvent implements EventSubscriberInterface
 {
     /**
      * @var SdkFactory
      */
-    private $sdkFactory;
+    private SdkFactory $sdkFactory;
 
     /**
      * @var PaymentUtil
      */
-    private $paymentUtil;
+    private PaymentUtil $paymentUtil;
 
     /**
      * @var OrderUtil
      */
-    private $orderUtil;
+    private OrderUtil $orderUtil;
 
     /**
-     * DocumentCreatedEvent constructor.
+     * DocumentCreatedEvent constructor
      *
-     * @param EntityRepository $orderRepository
      * @param SdkFactory $sdkFactory
+     * @param PaymentUtil $paymentUtil
+     * @param OrderUtil $orderUtil
      */
     public function __construct(
         SdkFactory $sdkFactory,
@@ -52,12 +56,14 @@ class DocumentCreatedEvent implements EventSubscriberInterface
     }
 
     /**
-     * {@inheritDoc}
+     *  Get subscribed events
+     *
+     * @return array
      */
     public static function getSubscribedEvents(): array
     {
         return [
-            OrderEvents::ORDER_WRITTEN_EVENT => 'sendInvoiceToMultiSafepay',
+            'document.written' => 'sendInvoiceToMultiSafepay'
         ];
     }
 
@@ -65,8 +71,9 @@ class DocumentCreatedEvent implements EventSubscriberInterface
      * Send invoice to MultiSafepay when an order contains an invoice
      *
      * @param EntityWrittenEvent $event
+     * @throws ClientExceptionInterface
      */
-    public function sendInvoiceToMultiSafepay(EntityWrittenEvent $event)
+    public function sendInvoiceToMultiSafepay(EntityWrittenEvent $event): void
     {
         try {
             $context = $event->getContext();
@@ -74,16 +81,16 @@ class DocumentCreatedEvent implements EventSubscriberInterface
             foreach ($event->getWriteResults() as $writeResult) {
                 $payload = $writeResult->getPayload();
 
-                if (empty($payload) || !$this->paymentUtil->isMultiSafepayPaymentMethod($payload['id'], $context)) {
+                if (empty($payload) || !$this->paymentUtil->isMultiSafepayPaymentMethod($payload['orderId'], $context)) {
                     continue;
                 }
 
                 try {
-                    $order = $this->orderUtil->getOrder($payload['id'], $context);
+                    $order = $this->orderUtil->getOrder($payload['orderId'], $context);
 
                     foreach ($order->getDocuments() as $document) {
                         if ($document->getConfig()['name'] !== 'invoice') {
-                            continue 2;
+                            continue;
                         }
 
                         $this->sdkFactory->create($order->getSalesChannelId())
@@ -91,21 +98,16 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                             ->update(
                                 $order->getOrderNumber(),
                                 (new UpdateRequest())->addData([
-                                    'invoice_id' => $order->getDocuments()
-                                                        ->first()
-                                                        ->getConfig()['custom']['invoiceNumber'],
+                                    'invoice_id' => $document->getConfig()['custom']['invoiceNumber']
                                 ])
                             );
-
-                        break 2;
+                        break;
                     }
-                } catch (InvalidApiKeyException $invalidApiKeyException) {
-                    return;
-                } catch (ApiException $apiException) {
+                } catch (ApiException | InvalidApiKeyException) {
                     return;
                 }
             }
-        } catch (Exception $exception) {
+        } catch (Exception) {
             return;
         }
     }

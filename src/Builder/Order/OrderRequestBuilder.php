@@ -3,11 +3,11 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Builder\Order;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
 use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -15,15 +15,22 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Class OrderRequestBuilder
+ *
+ * This class is responsible for building the order request
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order
+ */
 class OrderRequestBuilder
 {
     /**
      * @var OrderRequestBuilderPool
      */
-    private $orderRequestBuilderPool;
+    private OrderRequestBuilderPool $orderRequestBuilderPool;
 
     /**
-     * OrderRequestBuilder constructor.
+     * OrderRequestBuilder constructor
      *
      * @param OrderRequestBuilderPool $orderRequestBuilderPool
      */
@@ -34,13 +41,17 @@ class OrderRequestBuilder
     }
 
     /**
+     *  Build the order request
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @param string $gateway
      * @param string $type
      * @param array $gatewayInfo
+     *
      * @return OrderRequest
+     * @throws InvalidArgumentException
      */
     public function build(
         AsyncPaymentTransactionStruct $transaction,
@@ -82,6 +93,12 @@ class OrderRequestBuilder
         return $orderRequest;
     }
 
+    /**
+     *  Get the payload
+     *
+     * @param RequestDataBag $dataBag
+     * @return string|null
+     */
     private function getPayload(RequestDataBag $dataBag): ?string
     {
         if ($dataBag->get('payload')) {
@@ -89,6 +106,6 @@ class OrderRequestBuilder
         }
 
         $request = (new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER))->request;
-        return $request->get('payload') ? $request->get('payload') : null;
+        return $request->get('payload') ?: null;
     }
 }

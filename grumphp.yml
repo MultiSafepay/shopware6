@@ -3,9 +3,6 @@ grumphp:
     EXEC_GRUMPHP_COMMAND: 'docker-compose exec -T --workdir /var/www/html/custom/plugins/MltisafeMultiSafepay app'
   hooks_dir: ~
   tasks:
-    phpcs:
-      standard: phpcs.ruleset.xml
-      ignore_patterns: ['tests/Bootstrap.php']
     phpunit:
-      config_file: unittest.phpunit.xml
+      config_file: phpunit.xml.dist
       testsuite: MultiSafepay Unit tests

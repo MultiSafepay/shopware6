@@ -3,26 +3,35 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\WeChatPay;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
+/**
+ * Class WeChatPayPaymentHandler
+ *
+ * This class is used to handle the payment process for WeChatPay
+ *
+ * @package MultiSafepay\Shopware6\Handlers
+ */
 class WeChatPayPaymentHandler extends AsyncPaymentHandler
 {
     /**
+     *  Provide the necessary data to make the payment
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @param string|null $gateway
-     * @param string $type
+     * @param string|null $type
      * @param array $gatewayInfo
      * @return RedirectResponse
-     * @throws \Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException
+     * @throws PaymentException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -33,6 +42,7 @@ class WeChatPayPaymentHandler extends AsyncPaymentHandler
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new WeChatPay();
+
         return parent::pay(
             $transaction,
             $dataBag,

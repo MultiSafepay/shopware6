@@ -7,38 +7,51 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\PluginDetails;
+use MultiSafepay\Shopware6\Util\VersionUtil;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Framework\Plugin\PluginService;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class PluginDataBuilder
+ *
+ * This class is responsible for building the plugin data
+ *
+ * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
+ */
 class PluginDataBuilder implements OrderRequestBuilderInterface
 {
     /**
-     * @var PluginService
+     *  MultiSafepay version utility
+     *
+     * @var VersionUtil
      */
-    private $pluginService;
+    private VersionUtil $versionUtil;
 
     /**
+     *  Shopware version
+     *
      * @var string
      */
-    private $shopwareVersion;
+    private string $shopwareVersion;
 
     /**
-     * PluginDataBuilder constructor.
+     * PluginDataBuilder constructor
      *
-     * @param PluginService $pluginService
+     * @param VersionUtil $versionUtil
      * @param string $shopwareVersion
      */
     public function __construct(
-        PluginService $pluginService,
+        VersionUtil $versionUtil,
         string $shopwareVersion
     ) {
-        $this->pluginService = $pluginService;
+        $this->versionUtil = $versionUtil;
         $this->shopwareVersion = $shopwareVersion;
     }
 
     /**
+     *  Build the plugin data
+     *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
@@ -57,12 +70,7 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
                 'Shopware6 ' . $this->shopwareVersion
             )
                 ->addApplicationVersion('MultiSafepay')
-                ->addPluginVersion(
-                    $this->pluginService->getPluginByName(
-                        'MltisafeMultiSafepay',
-                        $salesChannelContext->getContext()
-                    )->getVersion()
-                )
+                ->addPluginVersion($this->versionUtil::PLUGIN_VERSION ?? '')
         );
     }
 }

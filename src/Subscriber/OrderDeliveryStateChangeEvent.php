@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Subscriber;
 
 use Exception;
@@ -13,6 +12,7 @@ use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
+use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -21,30 +21,35 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
+/**
+ * Class OrderDeliveryStateChangeEvent
+ *
+ * @package MultiSafepay\Shopware6\Subscriber
+ */
 class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
 {
     /**
      * @var EntityRepository
      */
-    private $orderDeliveryRepository;
+    private EntityRepository $orderDeliveryRepository;
 
     /**
      * @var SdkFactory
      */
-    private $sdkFactory;
+    private SdkFactory $sdkFactory;
 
     /**
      * @var PaymentUtil
      */
-    private $paymentUtil;
+    private PaymentUtil $paymentUtil;
 
     /**
      * @var OrderUtil
      */
-    private $orderUtil;
+    private OrderUtil $orderUtil;
 
     /**
-     * OrderDeliveryStateChangeEvent constructor.
+     * OrderDeliveryStateChangeEvent constructor
      *
      * @param EntityRepository $orderDeliveryRepository
      * @param SdkFactory $sdkFactory
@@ -64,16 +69,18 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get subscribed events
      */
     public static function getSubscribedEvents(): array
     {
         return [
-            'state_machine.order_delivery.state_changed' => 'onOrderDeliveryStateChanged',
+            'state_machine.order_delivery.state_changed' => 'onOrderDeliveryStateChanged'
         ];
     }
 
     /**
+     *  Send the order delivery state to MultiSafepay
+     *
      * @param StateMachineStateChangeEvent $event
      * @throws Exception
      */
@@ -107,9 +114,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
                         'reason' => 'Shipped',
                     ])
                 );
-        } catch (InvalidApiKeyException $invalidApiKeyException) {
-            return;
-        } catch (ApiException $apiException) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
             return;
         }
     }
@@ -118,16 +123,14 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
      * Get Order delivery data
      *
      * @param StateMachineStateChangeEvent $event
-     * @return mixed|null
+     * @return OrderDeliveryEntity
      * @throws InconsistentCriteriaIdsException
      */
     private function getOrderDeliveryData(StateMachineStateChangeEvent $event): OrderDeliveryEntity
     {
-        $orderDelivery = $this->orderDeliveryRepository->search(
+        return $this->orderDeliveryRepository->search(
             new Criteria([$event->getTransition()->getEntityId()]),
             $event->getContext()
         )->first();
-
-        return $orderDelivery;
     }
 }

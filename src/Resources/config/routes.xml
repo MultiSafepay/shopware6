@@ -3,8 +3,40 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/routing
         https://symfony.com/schema/routing/routing-1.0.xsd">
-
-    <import resource="../../**/Storefront/Controller/*Controller.php" type="annotation" />
-    <import resource="../../**/Controllers/**/*Controller.php" type="annotation" />
-    <import resource="../../**/Controllers/**/*Route.php" type="annotation" />
+    <route id="api.action.multisafepay.component-allowed" path="/api/multisafepay/component-allowed" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\ComponentController::componentAllowed</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.tokenization-allowed" path="/api/multisafepay/tokenization-allowed" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\TokenizationController::componentAllowed</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.verify-api-key" path="/api/multisafepay/verify-api-key" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\ApiController::verifyApiKey</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.get-refund-data" path="/api/multisafepay/get-refund-data" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\RefundController::getRefundData</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.refund" path="/api/multisafepay/refund" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\RefundController::refund</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="frontend.multisafepay.notification" path="/multisafepay/notification" methods="GET">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\NotificationController::notification</default>
+        <default key="_routeScope"><list><string>storefront</string></list></default>
+        <option key="seo">false</option>
+    </route>
+    <route id="frontend.multisafepay.postnotification" path="/multisafepay/notification" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\NotificationController::postNotification</default>
+        <default key="_routeScope"><list><string>storefront</string></list></default>
+        <default key="csrf_protected"><list><bool>false</bool></list></default>
+        <option key="seo">false</option>
+    </route>
+    <route id="store-api.multisafepay.tokens" path="/store-api/multisafepay/tokenization/tokens" methods="GET POST">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\StoreApi\TokensRoute::load</default>
+        <default key="_routeScope"><list><string>store-api</string></list></default>
+        <default key="_loginRequired"><list><bool>true</bool></list></default>
+    </route>
 </routes>

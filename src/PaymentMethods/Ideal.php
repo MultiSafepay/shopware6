@@ -7,13 +7,31 @@ namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 
+/**
+ * Class Ideal
+ *
+ * This class is used to define the details of iDEAL payment method
+ *
+ * @package MultiSafepay\Shopware6\PaymentMethods
+ */
 class Ideal implements PaymentMethodInterface
 {
+    /**
+     * Gateway name
+     *
+     * @var string
+     */
     public const GATEWAY_NAME = 'iDEAL';
+
+    /**
+     * Gateway code
+     *
+     * @var string
+     */
     public const GATEWAY_CODE = 'IDEAL';
 
     /**
-     * {@inheritDoc}
+     * Get the payment method name
      *
      * @return string
      */
@@ -23,7 +41,7 @@ class Ideal implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method handler
      *
      * @return string
      */
@@ -33,9 +51,9 @@ class Ideal implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method code name
      *
-     * @return string|null
+     * @return string
      */
     public function getGatewayCode(): string
     {
@@ -43,7 +61,7 @@ class Ideal implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method template
      *
      * @return string|null
      */
@@ -53,7 +71,7 @@ class Ideal implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method media
      *
      * @return string
      */
@@ -63,7 +81,7 @@ class Ideal implements PaymentMethodInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get the payment method type
      *
      * @return string
      */

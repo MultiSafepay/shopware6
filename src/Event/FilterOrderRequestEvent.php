@@ -3,7 +3,6 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
-
 namespace MultiSafepay\Shopware6\Event;
 
 use Shopware\Core\Framework\Context;
@@ -11,6 +10,8 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 /**
  * Class FilterOrderRequestEvent
+ *
+ * This class is responsible for the filter order request event
  *
  * @package MultiSafepay\Shopware6\Event
  */
@@ -26,12 +27,12 @@ class FilterOrderRequestEvent extends Event
     /**
      * @var mixed
      */
-    private $orderRequest;
+    private mixed $orderRequest;
 
     /**
      * @var Context $context
      */
-    private $context;
+    private Context $context;
 
     /**
      * FilterOrderRequestEvent constructor
@@ -50,20 +51,9 @@ class FilterOrderRequestEvent extends Event
      *
      * @return mixed
      */
-    public function getOrderRequest()
+    public function getOrderRequest(): mixed
     {
         return $this->orderRequest;
-    }
-
-    /**
-     * Set the order request
-     *
-     * @param $orderRequest
-     * @return void
-     */
-    public function setOrderRequest($orderRequest): void
-    {
-        $this->orderRequest = $orderRequest;
     }
 
     /**
