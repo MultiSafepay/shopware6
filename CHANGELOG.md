@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2024-06-10
+### Added
++ PLGSHPS6-349: Add support for Shopware 6.6
+
 ## [2.11.0] - 2024-05-22
 ### Added
 + PLGSHPS6-358: Add Payment Component for iDEAL
