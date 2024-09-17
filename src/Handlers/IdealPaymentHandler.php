@@ -6,7 +6,6 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\Ideal;
-use MultiSafepay\Shopware6\Support\PaymentComponent;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -23,18 +22,13 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class IdealPaymentHandler extends AsyncPaymentHandler
 {
     /**
-     * Enable the payment component
-     */
-    use PaymentComponent;
-
-    /**
      *  Provide the necessary data to make the payment
      *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @param string|null $gateway
-     * @param string $type
+     * @param string|null $type
      * @param array $gatewayInfo
      * @return RedirectResponse
      * @throws PaymentException
@@ -44,24 +38,17 @@ class IdealPaymentHandler extends AsyncPaymentHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
         string $gateway = null,
-        string $type = 'redirect', // Last chance if everything fails (direct and component)
+        string $type = null,
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new Ideal();
-        $code = $gateway ?? $paymentMethod->getGatewayCode();
-        $issuerCode = $this->getDataBagItem('issuer', $dataBag);
-
-        if ($issuerCode) {
-            $gatewayInfo['issuer_id'] = $issuerCode;
-            $type = $paymentMethod->getType();
-        }
 
         return parent::pay(
             $transaction,
             $dataBag,
             $salesChannelContext,
-            $code,
-            $type,
+            $paymentMethod->getGatewayCode(),
+            $paymentMethod->getType(),
             $gatewayInfo
         );
     }

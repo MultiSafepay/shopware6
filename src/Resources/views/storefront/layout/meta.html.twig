@@ -10,7 +10,7 @@
         {% if component == true %}
             <link href="https://pay.multisafepay.com/sdk/components/v2/components.css" rel="stylesheet" />
         {% endif %}
-        {% if (paymentName == 'ideal' and component == false) or ('mybank' in paymentName and direct == true) %}
+        {% if 'mybank' in paymentName and direct == true %}
             <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" />
         {% endif %}
     {% endif %}

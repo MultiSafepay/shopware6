@@ -3,7 +3,7 @@
 {% block page_checkout_confirm_payment_current_text %}
     {% set paymentName = context.paymentMethod.name|lower %}
 
-    {% if paymentName == 'ideal' or 'mybank' in paymentName %}
+    {% if 'mybank' in paymentName %}
         <strong>{{ "checkout.confirmCurrentPaymentShipping"|trans }}</strong>
         {{ page.extensions.multisafepay.payment_method_name }}
     {% else %}
