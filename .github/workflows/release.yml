@@ -35,7 +35,7 @@ jobs:
 
       # This step gets the version from the tag
       - name: Get Release Version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
         id: version
 
       # This step reads the changelog for the current version
