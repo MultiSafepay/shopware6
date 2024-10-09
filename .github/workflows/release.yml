@@ -44,12 +44,12 @@ jobs:
         uses: mindsers/changelog-reader-action@v2
         with:
           validation_depth: 10
-          version: ${{steps.version.outputs.version}}
+          version: ${{ env.VERSION }}
           path: ./CHANGELOG.md
 
       # This step builds the project
       - name: Build project
-        run: ./bin/release.sh ${{steps.version.outputs.version}}
+        run: ./bin/release.sh ${{ env.VERSION }}
 
       # This step creates a draft release on GitHub
       - name: Create Release
@@ -58,8 +58,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.version.outputs.version}}
-          release_name: ${{steps.version.outputs.version}}
+          tag_name: ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }}
           body: ${{steps.changelog_reader.outputs.changes}}
           draft: true
           prerelease: false
@@ -72,6 +72,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./.dist/Plugin_Shopware6_${{steps.version.outputs.version}}.zip
-          asset_name: Plugin_Shopware6_${{steps.version.outputs.version}}.zip
+          asset_path: ./.dist/Plugin_Shopware6_${{ env.VERSION }}.zip
+          asset_name: Plugin_Shopware6_${{ env.VERSION }}.zip
           asset_content_type: application/zip
