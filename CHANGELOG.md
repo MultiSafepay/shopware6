@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2024-11-28
+### Changed
++ DAVAMS-801: Rebrand Afterpay - Riverty Logo
+
+### Removed
++ PLGSHPS6-367: Remove iDEAL issuer dropdown
+
 ## [3.0.0] - 2024-06-10
 ### Added
 + PLGSHPS6-349: Add support for Shopware 6.6
