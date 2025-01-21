@@ -17,6 +17,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Banktransfer;
 use MultiSafepay\Shopware6\PaymentMethods\BeautyAndWellness;
 use MultiSafepay\Shopware6\PaymentMethods\Belfius;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
+use MultiSafepay\Shopware6\PaymentMethods\Billink;
 use MultiSafepay\Shopware6\PaymentMethods\Bizum;
 use MultiSafepay\Shopware6\PaymentMethods\Boekenbon;
 use MultiSafepay\Shopware6\PaymentMethods\Cbc;
@@ -100,6 +101,7 @@ class PaymentUtil
         Banktransfer::class,
         BeautyAndWellness::class,
         Belfius::class,
+        Billink::class,
         Bizum::class,
         Boekenbon::class,
         Cbc::class,
