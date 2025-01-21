@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class Visa
@@ -16,6 +17,8 @@ use MultiSafepay\Shopware6\Handlers\VisaPaymentHandler;
  */
 class Visa implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *

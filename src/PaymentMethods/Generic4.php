@@ -35,4 +35,14 @@ class Generic4 extends Generic
     {
         return GenericPaymentHandler4::class;
     }
+
+    /**
+     * Get the payment method technical name
+     *
+     * @return string
+     */
+    public function getTechnicalName(): string
+    {
+        return 'payment_multisafepay_generic4';
+    }
 }

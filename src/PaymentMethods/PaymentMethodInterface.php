@@ -55,4 +55,11 @@ interface PaymentMethodInterface
      * @return string
      */
     public function getType(): string;
+
+    /**
+     * Get the payment method technical name
+     *
+     * @return string
+     */
+    public function getTechnicalName(): string;
 }

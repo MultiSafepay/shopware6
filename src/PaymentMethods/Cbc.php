@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\CbcPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class Cbc
@@ -16,6 +17,8 @@ use MultiSafepay\Shopware6\Handlers\CbcPaymentHandler;
  */
 class Cbc implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      *  Get the payment method name
      *

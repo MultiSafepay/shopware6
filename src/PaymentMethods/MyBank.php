@@ -7,6 +7,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class MyBank
@@ -17,6 +18,8 @@ use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
  */
 class MyBank implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Gateway name
      *

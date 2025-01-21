@@ -6,9 +6,12 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\In3B2bPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 class In3B2b implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *

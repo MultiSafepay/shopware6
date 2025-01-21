@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class AfterPay
@@ -16,6 +17,8 @@ use MultiSafepay\Shopware6\Handlers\AfterPayPaymentHandler;
  */
 class AfterPay implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *

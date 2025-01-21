@@ -75,4 +75,14 @@ class MultiSafepay implements PaymentMethodInterface
     {
         return 'redirect';
     }
+
+    /**
+     * Get the payment method technical name
+     *
+     * @return string
+     */
+    public function getTechnicalName(): string
+    {
+        return 'payment_multisafepay';
+    }
 }

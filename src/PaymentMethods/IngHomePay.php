@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\IngHomePayPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class IngHomePay
@@ -17,6 +18,8 @@ use MultiSafepay\Shopware6\Handlers\IngHomePayPaymentHandler;
  */
 class IngHomePay implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *

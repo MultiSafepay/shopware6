@@ -154,8 +154,17 @@ class PaymentMethodsInstaller implements InstallerInterface
         $pluginId = $this->pluginIdProvider->getPluginIdByBaseClass(MltisafeMultiSafepay::class, $context);
         $mediaId = $this->getMediaId($paymentMethod, $context);
 
-        if ($paymentMethodId && $isInstall) {
-            return;
+        if ($paymentMethodId) {
+            $criteria = new Criteria([$paymentMethodId]);
+            $criteria->addFilter(new EqualsFilter('technicalName', $paymentMethod->getTechnicalName()));
+
+            $hasValidTechnicalName = $this->paymentMethodRepository->searchIds($criteria, $context)->getTotal() > 0;
+
+            // So the technicalName can be updated if missing in
+            // the database even during plugin installation
+            if ($isInstall && $hasValidTechnicalName) {
+                return;
+            }
         }
 
         $paymentData = [
@@ -164,6 +173,7 @@ class PaymentMethodsInstaller implements InstallerInterface
             'name' => $paymentMethod->getName(),
             'pluginId' => $pluginId,
             'mediaId' => $mediaId,
+            'technicalName' => $paymentMethod->getTechnicalName(),
             'afterOrderEnabled' => true,
             'customFields' => [
                 self::IS_MULTISAFEPAY => true,

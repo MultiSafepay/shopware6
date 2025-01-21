@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\WellnessGiftcardPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class WellnessGiftcard
@@ -16,6 +17,8 @@ use MultiSafepay\Shopware6\Handlers\WellnessGiftcardPaymentHandler;
  */
 class WellnessGiftcard implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *

@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\PaymentMethods;
 
 use MultiSafepay\Shopware6\Handlers\BetaalplanPaymentHandler;
+use MultiSafepay\Shopware6\Support\TechnicalName;
 
 /**
  * Class Betaalplan
@@ -17,6 +18,8 @@ use MultiSafepay\Shopware6\Handlers\BetaalplanPaymentHandler;
  */
 class Betaalplan implements PaymentMethodInterface
 {
+    use TechnicalName;
+
     /**
      * Get the payment method name
      *
