@@ -36,34 +36,9 @@
         <title>Configuration</title>
         <title lang="de-DE">Konfiguration</title>
         <title lang="nl-NL">Instellingen</title>
-        <input-field type="int">
-            <name>timeActive</name>
-            <label>Time an order stays active</label>
-            <label lang="de-DE">Zeit, in der eine Bestellung aktiv bleibt</label>
-            <label lang="nl-NL">Tijd dat een bestelling actief blijft</label>
-            <placeholder>Default: 30</placeholder>
-            <placeholder lang="de-DE">Standard: 30</placeholder>
-            <placeholder lang="nl-NL">Standaard: 30</placeholder>
-            <defaultValue>30</defaultValue>
-        </input-field>
-        <input-field type="single-select">
-            <name>timeActiveLabel</name>
-            <placeholder>Default: Days</placeholder>
-            <options>
-                <option>
-                    <id>1</id>
-                    <name>Minutes</name>
-                </option>
-                <option>
-                    <id>2</id>
-                    <name>Hours</name>
-                </option>
-                <option>
-                    <id>3</id>
-                    <name>Days</name>
-                </option>
-            </options>
-            <defaultValue>3</defaultValue>
+        <input-field>
+            <name>templateId</name>
+            <label>Payment component Template ID</label>
         </input-field>
         <input-field type="bool">
             <name>excludeShoppingCart</name>
@@ -71,10 +46,6 @@
             <label lang="de-DE">Warenkorb auf der Zahlungsseite ausschließen</label>
             <label lang="nl-NL">Sluit winkelwagen uit op de betaalpagina</label>
             <defaultValue>false</defaultValue>
-        </input-field>
-        <input-field>
-            <name>templateId</name>
-            <label>Payment component Template ID</label>
         </input-field>
     </card>
     <card>

@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\SecondChance;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -13,14 +14,14 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 /**
  * Class SecondChanceBuilder
  *
- * This class is responsible for building the second chance
+ * This class is responsible for disabling the second chance
  *
  * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
  */
 class SecondChanceBuilder implements OrderRequestBuilderInterface
 {
     /**
-     *  Build the second chance
+     *  Disable Second Chance
      *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
@@ -33,8 +34,8 @@ class SecondChanceBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        /**
-         * @ToDo check if order was created in admin panel then disable second chance feature
-         */
+        $orderRequest->addSecondChance(
+            (new SecondChance())->addSendEmail(false)
+        );
     }
 }
