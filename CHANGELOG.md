@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2025-01-27
+### Added
++ PLGSHPS6-351: Add technical name for each payment method
++ DAVAMS-851: Add Billink
++ DAVAMS-805: Add BIZUM
+
+### Removed
++ PLGSHPS6-371: Remove support for Second Chance
+
 ## [3.1.0] - 2024-11-28
 ### Changed
 + DAVAMS-801: Rebrand Afterpay - Riverty Logo
