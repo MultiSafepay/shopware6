@@ -47,6 +47,17 @@ class FilterOrderRequestEvent extends Event
     }
 
     /**
+     * Set the order request
+     *
+     * @param $orderRequest
+     * @return void
+     */
+    public function setOrderRequest($orderRequest): void
+    {
+        $this->orderRequest = $orderRequest;
+    }
+
+    /**
      * Get the order request
      *
      * @return mixed
