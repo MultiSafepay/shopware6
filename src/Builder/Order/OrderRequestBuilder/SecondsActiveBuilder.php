@@ -6,21 +6,33 @@
 namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
-use MultiSafepay\Api\Transactions\OrderRequest\Arguments\SecondChance;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 /**
- * Class SecondChanceBuilder
+ * Class SecondsActiveBuilder
  *
- * This class is responsible for building the second chance
+ * This class is responsible for building the seconds active
  *
  * @package MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder
  */
-class SecondChanceBuilder implements OrderRequestBuilderInterface
+class SecondsActiveBuilder implements OrderRequestBuilderInterface
 {
+    /**
+     * Time active hours
+     *
+     * @var int
+     */
+    public const TIME_ACTIVE_HOURS = "2";
+
+    /**
+     * Time active minutes
+     *
+     * @var int
+     */
+    public const TIME_ACTIVE_MINUTES = "1";
 
     /**
      * @var SettingsService
@@ -38,9 +50,8 @@ class SecondChanceBuilder implements OrderRequestBuilderInterface
         $this->settingsService = $settingsService;
     }
 
-
     /**
-     *  Build the second chance
+     *  Build the seconds active
      *
      * @param OrderRequest $orderRequest
      * @param AsyncPaymentTransactionStruct $transaction
@@ -53,9 +64,23 @@ class SecondChanceBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $secondChance = $this->settingsService->isSecondChanceEnable($salesChannelContext->getSalesChannel()->getId());
-        $orderRequest->addSecondChance(
-            (new SecondChance())->addSendEmail($secondChance)
-        );
+        $orderRequest->addSecondsActive($this->getSecondsActive());
+    }
+
+    /**
+     *  Get the seconds active
+     *
+     * @return int
+     */
+    public function getSecondsActive(): int
+    {
+        $timeActive = $this->settingsService->getTimeActive();
+        $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;
+
+        return match ($this->settingsService->getTimeActiveLabel()) {
+            self::TIME_ACTIVE_MINUTES => $timeActive * 60,
+            self::TIME_ACTIVE_HOURS => $timeActive * 60 * 60,
+            default => $timeActive * 24 * 60 * 60,
+        };
     }
 }

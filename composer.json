@@ -7,7 +7,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^8.2",
-        "multisafepay/php-sdk": "^5.12",
+        "multisafepay/php-sdk": "^5.16",
         "nyholm/psr7": "^1.8",
         "shopware/core": "6.6.*",
         "shopware/storefront": "6.6.*",

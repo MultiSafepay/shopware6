@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use Exception;
+use MultiSafepay\Api\Transactions\UpdateRequest;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
@@ -149,11 +150,10 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     }
 
     /**
-     *  Finalize the payment process
-     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     * @return void
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -162,6 +162,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $orderId = $transaction->getOrder()->getOrderNumber();
+
 
         try {
             $transactionId = $request->query->get('transactionid');
@@ -179,13 +180,39 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         }
 
         if ($request->query->getBoolean('cancel')) {
+            // Cancel pre-transaction preventing issues related to Second Chance
+            $this->cancelPreTransaction($salesChannelContext, $orderId);
+
             // Alter the payment status to cancel
             $this->transactionStateHandler->cancel($orderTransactionId, $salesChannelContext->getContext());
+
             throw new PaymentException(
                 (int)$orderTransactionId,
                 'CHECKOUT__CUSTOMER_CANCELED_EXTERNAL_PAYMENT',
                 'Canceled at payment page'
             );
+        }
+    }
+
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param string $orderId
+     * @return void
+     */
+    public function cancelPreTransaction(SalesChannelContext $salesChannelContext, string $orderId): void
+    {
+        try {
+            $updateRequest = (new UpdateRequest())
+                ->addStatus('cancelled')
+                ->excludeOrder(true);
+
+            $this->sdkFactory->create(
+                $salesChannelContext->getSalesChannel()->getId()
+            )->getTransactionManager()->update($orderId, $updateRequest);
+        } catch (ClientExceptionInterface|Exception $exception) {
+            /**
+             * @Todo improve log handling for better debugging
+             */
         }
     }
 

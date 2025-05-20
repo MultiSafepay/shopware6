@@ -4,8 +4,13 @@
         xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <defaults autowire="true"/>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder">
             <argument type="service" id="Symfony\Component\Routing\Generator\UrlGeneratorInterface"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\Token\JWTFactoryV2"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder"/>
         </service>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\CustomerBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
@@ -33,7 +38,9 @@
             <argument type="service" id="order.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
         </service>
-        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder"/>
+        <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>

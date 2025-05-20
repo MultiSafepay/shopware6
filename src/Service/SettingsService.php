@@ -31,6 +31,27 @@ class SettingsService
     public const API_KEY_CONFIG_NAME = 'apiKey';
 
     /**
+     * Time active config name
+     *
+     * @var string
+     */
+    public const TIME_ACTIVE_CONFIG_NAME = 'timeActive';
+
+    /**
+     * Time active label config name
+     *
+     * @var string
+     */
+    public const TIME_ACTIVE_LABEL_CONFIG_NAME = 'timeActiveLabel';
+
+    /**
+     * Second Chance config name
+     *
+     * @var string
+     */
+    public const SECOND_CHANCE_CONFIG_NAME = 'secondChance';
+
+    /**
      * @var SystemConfigService
      */
     public SystemConfigService $systemConfigService;
@@ -79,6 +100,39 @@ class SettingsService
         return ((string)$this->getSetting(self::API_ENVIRONMENT_CONFIG_NAME, $salesChannelId)
                 === EnvironmentSource::LIVE_ENVIRONMENT
         );
+    }
+
+    /**
+     *  Get the time active
+     *
+     * @param string|null $salesChannelId
+     * @return int
+     */
+    public function getTimeActive(?string $salesChannelId = null): int
+    {
+        return (int)$this->getSetting(self::TIME_ACTIVE_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     *  Get the time active label
+     *
+     * @param string|null $salesChannelId
+     * @return string
+     */
+    public function getTimeActiveLabel(?string $salesChannelId = null): string
+    {
+        return (string)$this->getSetting(self::TIME_ACTIVE_LABEL_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     *  Get the time active label
+     *
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function isSecondChanceEnable(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->getSetting(self::SECOND_CHANCE_CONFIG_NAME, $salesChannelId);
     }
 
     /**

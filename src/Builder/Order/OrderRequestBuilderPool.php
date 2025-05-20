@@ -12,6 +12,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuild
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder;
+use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 use MultiSafepay\Shopware6\Service\SettingsService;
 
@@ -55,6 +56,11 @@ class OrderRequestBuilderPool
     private DeliveryBuilder $deliveryBuilder;
 
     /**
+     * @var SecondsActiveBuilder
+     */
+    private SecondsActiveBuilder $secondsActiveBuilder;
+
+    /**
      * @var PluginDataBuilder
      */
     private PluginDataBuilder $pluginDataBuilder;
@@ -78,6 +84,7 @@ class OrderRequestBuilderPool
      * @param PaymentOptionsBuilder $paymentOptionsBuilder
      * @param CustomerBuilder $customerBuilder
      * @param DeliveryBuilder $deliveryBuilder
+     * @param SecondsActiveBuilder $secondsActiveBuilder
      * @param PluginDataBuilder $pluginDataBuilder
      * @param SecondChanceBuilder $secondChanceBuilder
      * @param SettingsService $service
@@ -89,6 +96,7 @@ class OrderRequestBuilderPool
         PaymentOptionsBuilder $paymentOptionsBuilder,
         CustomerBuilder $customerBuilder,
         DeliveryBuilder $deliveryBuilder,
+        SecondsActiveBuilder $secondsActiveBuilder,
         PluginDataBuilder $pluginDataBuilder,
         SecondChanceBuilder $secondChanceBuilder,
         SettingsService $service
@@ -99,6 +107,7 @@ class OrderRequestBuilderPool
         $this->paymentOptionsBuilder = $paymentOptionsBuilder;
         $this->customerBuilder = $customerBuilder;
         $this->deliveryBuilder = $deliveryBuilder;
+        $this->secondsActiveBuilder = $secondsActiveBuilder;
         $this->pluginDataBuilder = $pluginDataBuilder;
         $this->secondChanceBuilder = $secondChanceBuilder;
         $this->settingService = $service;
@@ -117,6 +126,7 @@ class OrderRequestBuilderPool
             'payment_options' => $this->paymentOptionsBuilder,
             'customer' => $this->customerBuilder,
             'delivery' => $this->deliveryBuilder,
+            'seconds_active' => $this->secondsActiveBuilder,
             'plugin_data' => $this->pluginDataBuilder,
             'second_chance' => $this->secondChanceBuilder,
         ];

@@ -9,6 +9,8 @@ use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\PaymentOptions;
 use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\Token\TokenFactoryInterfaceV2;
+use Shopware\Core\Checkout\Payment\Cart\Token\TokenStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -27,16 +29,32 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      */
     private UrlGeneratorInterface $router;
 
+    /**
+     * @var TokenFactoryInterfaceV2
+     */
+    private TokenFactoryInterfaceV2 $tokenFactory;
+
+    /**
+     * @var SecondsActiveBuilder
+     */
+    private SecondsActiveBuilder $secondsActiveBuilder;
+
 
     /**
      * PaymentOptionsBuilder constructor
      *
      * @param UrlGeneratorInterface $router
+     * @param TokenFactoryInterfaceV2 $tokenFactory
+     * @param SecondsActiveBuilder $secondsActive
      */
     public function __construct(
-        UrlGeneratorInterface $router
+        UrlGeneratorInterface $router,
+        TokenFactoryInterfaceV2 $tokenFactory,
+        SecondsActiveBuilder $secondsActive
     ) {
         $this->router = $router;
+        $this->tokenFactory = $tokenFactory;
+        $this->secondsActiveBuilder = $secondsActive;
     }
 
     /**
@@ -56,7 +74,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $returnUrl = $transaction->getReturnUrl();
+        $returnUrl = $this->getReturnUrl($transaction);
         $orderRequest->addPaymentOptions(
             (new PaymentOptions())->addNotificationUrl(
                 $this->router->generate(
@@ -69,5 +87,58 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
                 ->addCloseWindow(false)
                 ->addNotificationMethod()
         );
+    }
+
+
+    /**
+     *  Get the return URL
+     *
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @return string
+     */
+    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    {
+        $parameter = parse_url($transaction->getReturnUrl())['query'];
+        $paymentToken = explode('=', $parameter)[1];
+
+        $newToken = $this->generateNewToken($paymentToken);
+        $this->tokenFactory->invalidateToken($paymentToken);
+
+        return $this->assembleReturnUrl($newToken);
+    }
+
+    /**
+     * Generate a new payment token with extended expiry time
+     *
+     * @param string $oldPaymentToken
+     * @return string
+     */
+    private function generateNewToken(string $oldPaymentToken): string
+    {
+        $tokenStruct = $this->tokenFactory->parseToken($oldPaymentToken);
+
+        $newTokenStruct = new TokenStruct(
+            $tokenStruct->getId(),
+            $tokenStruct->getToken(),
+            $tokenStruct->getPaymentMethodId(),
+            $tokenStruct->getTransactionId(),
+            $tokenStruct->getFinishUrl(),
+            $this->secondsActiveBuilder->getSecondsActive(),
+            $tokenStruct->getErrorUrl()
+        );
+
+        return $this->tokenFactory->generateToken($newTokenStruct);
+    }
+
+    /**
+     *  Assemble the return URL
+     *
+     * @param string $token
+     * @return string
+     */
+    private function assembleReturnUrl(string $token): string
+    {
+        $parameter = ['_sw_payment_token' => $token];
+        return $this->router->generate('payment.finalize.transaction', $parameter, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 }
