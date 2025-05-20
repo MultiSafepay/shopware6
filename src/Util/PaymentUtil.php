@@ -92,7 +92,6 @@ class PaymentUtil
      */
     public const GATEWAYS = [
         AfterPay::class,
-        Alipay::class,
         AlipayPlus::class,
         AmazonPay::class,
         AmericanExpress::class,
@@ -166,6 +165,7 @@ class PaymentUtil
      * @var array
      */
     public const DELETED_GATEWAYS = [
+        Alipay::class,
         IngHomePay::class,
         NationaleVerwenCadeaubon::class,
         Betaalplan::class
