@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.3.0] - 2025-05-21
+### Added
++ PLGSHPS6-379: Add support for Second Chance
++ PLGSHPS6-378: Add setOrderRequest() method to FilterOrderRequestEvent class
+
+### Removed
++ DAVAMS-894: Remove ALIPAY payment method
+
 ## [3.2.0] - 2025-01-27
 ### Added
 + PLGSHPS6-351: Add technical name for each payment method
