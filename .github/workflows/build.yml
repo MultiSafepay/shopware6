@@ -10,9 +10,11 @@ on:
   push:
     branches:
       - master
+      - 6.6.x
   pull_request:
     branches:
       - master
+      - 6.6.x
 
 # This defines the jobs that will run in the workflow
 jobs:

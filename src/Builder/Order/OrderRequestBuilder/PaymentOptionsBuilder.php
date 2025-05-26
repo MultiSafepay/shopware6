@@ -98,7 +98,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * @param string|null $salesChannelId
      * @return string
      */
-    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction, ?string $salesChannelId): string {
+    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction, ?string $salesChannelId): string
+    {
         $parameter = parse_url($transaction->getReturnUrl())['query'];
         $paymentToken = explode('=', $parameter)[1];
 
@@ -115,7 +116,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * @param string|null $salesChannelId
      * @return string
      */
-    private function generateNewToken(string $oldPaymentToken, ?string $salesChannelId): string {
+    private function generateNewToken(string $oldPaymentToken, ?string $salesChannelId): string
+    {
         $tokenStruct = $this->tokenFactory->parseToken($oldPaymentToken);
 
         $newTokenStruct = new TokenStruct(

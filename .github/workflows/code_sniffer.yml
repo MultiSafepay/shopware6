@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - master
+      - 6.6.x
 
 # This workflow consists of one job named 'phpcs'
 jobs:
