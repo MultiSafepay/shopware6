@@ -74,7 +74,8 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $returnUrl = $this->getReturnUrl($transaction);
+        $salesChannelId = $salesChannelContext->getSalesChannel()->getId() ?? null;
+        $returnUrl = $this->getReturnUrl($transaction, $salesChannelId);
         $orderRequest->addPaymentOptions(
             (new PaymentOptions())->addNotificationUrl(
                 $this->router->generate(
@@ -94,14 +95,14 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      *  Get the return URL
      *
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param string|null $salesChannelId
      * @return string
      */
-    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
-    {
+    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction, ?string $salesChannelId): string {
         $parameter = parse_url($transaction->getReturnUrl())['query'];
         $paymentToken = explode('=', $parameter)[1];
 
-        $newToken = $this->generateNewToken($paymentToken);
+        $newToken = $this->generateNewToken($paymentToken, $salesChannelId);
         $this->tokenFactory->invalidateToken($paymentToken);
 
         return $this->assembleReturnUrl($newToken);
@@ -111,10 +112,10 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * Generate a new payment token with extended expiry time
      *
      * @param string $oldPaymentToken
+     * @param string|null $salesChannelId
      * @return string
      */
-    private function generateNewToken(string $oldPaymentToken): string
-    {
+    private function generateNewToken(string $oldPaymentToken, ?string $salesChannelId): string {
         $tokenStruct = $this->tokenFactory->parseToken($oldPaymentToken);
 
         $newTokenStruct = new TokenStruct(
@@ -123,7 +124,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
             $tokenStruct->getPaymentMethodId(),
             $tokenStruct->getTransactionId(),
             $tokenStruct->getFinishUrl(),
-            $this->secondsActiveBuilder->getSecondsActive(),
+            $this->secondsActiveBuilder->getSecondsActive($salesChannelId),
             $tokenStruct->getErrorUrl()
         );
 
@@ -139,6 +140,10 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
     private function assembleReturnUrl(string $token): string
     {
         $parameter = ['_sw_payment_token' => $token];
-        return $this->router->generate('payment.finalize.transaction', $parameter, UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->router->generate(
+            'payment.finalize.transaction',
+            $parameter,
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
     }
 }

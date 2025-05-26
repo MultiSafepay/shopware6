@@ -64,20 +64,25 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $orderRequest->addSecondsActive($this->getSecondsActive());
+        $orderRequest->addSecondsActive(
+            $this->getSecondsActive(
+                $salesChannelContext->getSalesChannel()->getId() ?? null
+            )
+        );
     }
 
     /**
      *  Get the seconds active
      *
+     * @param string|null $salesChannelId
      * @return int
      */
-    public function getSecondsActive(): int
+    public function getSecondsActive(?string $salesChannelId = null): int
     {
-        $timeActive = $this->settingsService->getTimeActive();
+        $timeActive = $this->settingsService->getTimeActive($salesChannelId);
         $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;
 
-        return match ($this->settingsService->getTimeActiveLabel()) {
+        return match ($this->settingsService->getTimeActiveLabel($salesChannelId)) {
             self::TIME_ACTIVE_MINUTES => $timeActive * 60,
             self::TIME_ACTIVE_HOURS => $timeActive * 60 * 60,
             default => $timeActive * 24 * 60 * 60,
