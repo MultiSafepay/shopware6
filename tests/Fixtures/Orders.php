@@ -80,7 +80,7 @@ trait Orders
                 new TaxRuleCollection([new TaxRule(0)])
             ),
             'orderCustomer' => [
-                'email' => 'test@example.com',
+                'email' => 'test@multisafepay.io',
                 'firstName' => 'Noe',
                 'lastName' => 'Hill',
                 'salutationId' => $salutationId,
@@ -88,7 +88,7 @@ trait Orders
                 'customerNumber' => 'Test',
                 'customer' => [
                     'id' => $customerId,
-                    'email' => 'test@example.com',
+                    'email' => 'test@multisafepay.io',
                     'firstName' => 'Noe',
                     'lastName' => 'Hill',
                     'salutationId' => $salutationId,

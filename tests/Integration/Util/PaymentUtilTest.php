@@ -6,6 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Tests\Integration\Util;
 
+use Exception;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
@@ -16,9 +17,12 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException;
-use Shopware\Core\System\StateMachine\Exception\StateMachineWithoutInitialStateException;
 
+/**
+ * Class PaymentUtilTest
+ *
+ * @package MultiSafepay\Shopware6\Tests\Integration\Util
+ */
 class PaymentUtilTest extends TestCase
 {
     use IntegrationTestBehaviour, Orders, Transactions, Customers, PaymentMethods {
@@ -35,18 +39,22 @@ class PaymentUtilTest extends TestCase
     /**
      * @var object|null
      */
-    private $orderRepository;
+    private ?object $orderRepository;
 
     /**
      * @var Context
      */
-    private $context;
-
-    /** @var PaymentUtil */
-    private $paymentUtil;
+    private Context $context;
 
     /**
-     * Initialize test
+     * @var PaymentUtil
+     */
+    private PaymentUtil $paymentUtil;
+
+    /**
+     * Set up the test case
+     *
+     * @return void
      */
     protected function setUp(): void
     {
@@ -59,9 +67,10 @@ class PaymentUtilTest extends TestCase
     }
 
     /**
+     * Test IsMultisafepayPaymentMethod
+     *
      * @throws InconsistentCriteriaIdsException
-     * @throws StateMachineNotFoundException
-     * @throws StateMachineWithoutInitialStateException
+     * @throws Exception
      */
     public function testIsMultisafepayPaymentMethod()
     {

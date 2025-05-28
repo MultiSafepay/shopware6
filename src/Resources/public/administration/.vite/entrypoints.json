@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/mltisafemultisafepay/administration/",
+  "entryPoints": {
+    "mltisafe-multi-safepay": {
+      "css": [
+        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-B0_LvpLd.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-oT-E5_72.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

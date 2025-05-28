@@ -5,6 +5,8 @@
  */
 namespace MultiSafepay\Shopware6\Handlers;
 
+use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
+
 /**
  * Class MultiSafepayPaymentHandler
  *
@@ -12,7 +14,15 @@ namespace MultiSafepay\Shopware6\Handlers;
  *
  * @package MultiSafepay\Shopware6\Handlers
  */
-class MultiSafepayPaymentHandler extends AsyncPaymentHandler
+class MultiSafepayPaymentHandler extends PaymentHandler
 {
-
+    /**
+     * Helper method to get the class name
+     *
+     * @return string
+     */
+    protected function getClassName(): string
+    {
+        return MultiSafepay::class;
+    }
 }

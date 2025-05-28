@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/mltisafe-multi-safepay-oT-E5_72.js",
+    "name": "mltisafe-multi-safepay",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/mltisafe-multi-safepay-B0_LvpLd.css"
+    ]
+  }
+}

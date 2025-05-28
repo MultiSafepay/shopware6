@@ -10,7 +10,8 @@ use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
 use MultiSafepay\ValueObject\Money;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,26 +44,28 @@ class OrderRequestBuilder
     /**
      *  Build the order request
      *
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
+     * @param OrderEntity $order
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @param string $gateway
-     * @param string $type
+     * @param string|null $type
      * @param array $gatewayInfo
      *
      * @return OrderRequest
      * @throws InvalidArgumentException
      */
     public function build(
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
+        OrderEntity $order,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
         string $gateway,
-        string $type,
+        ?string $type = 'redirect',
         array $gatewayInfo = []
     ): OrderRequest {
         $orderRequest = new OrderRequest();
-        $order = $transaction->getOrder();
+
         $meta = new Meta();
         $orderRequest->addOrderId($order->getOrderNumber())
             ->addMoney(
@@ -87,7 +90,7 @@ class OrderRequestBuilder
         }
 
         foreach ($this->orderRequestBuilderPool->getOrderRequestBuilders() as $orderRequestBuilder) {
-            $orderRequestBuilder->build($orderRequest, $transaction, $dataBag, $salesChannelContext);
+            $orderRequestBuilder->build($order, $orderRequest, $transaction, $dataBag, $salesChannelContext);
         }
 
         return $orderRequest;

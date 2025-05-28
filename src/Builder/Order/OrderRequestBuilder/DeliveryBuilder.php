@@ -16,7 +16,7 @@ use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -48,8 +48,10 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
      * @param EntityRepository $orderRepository
      * @param OrderUtil $orderUtil
      */
-    public function __construct(EntityRepository $orderRepository, OrderUtil $orderUtil)
-    {
+    public function __construct(
+        EntityRepository $orderRepository,
+        OrderUtil $orderUtil
+    ) {
         $this->orderRepository = $orderRepository;
         $this->orderUtil = $orderUtil;
     }
@@ -57,21 +59,23 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the delivery details
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @throws InvalidArgumentException
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
         $customer = $salesChannelContext->getCustomer();
 
-        $shippingOrderAddress = $this->getShippingOrderAddress($transaction, $salesChannelContext);
+        $shippingOrderAddress = $this->getShippingOrderAddress($order, $transaction, $salesChannelContext);
 
         if (is_null($shippingOrderAddress)) {
             return;
@@ -85,7 +89,7 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
 
         $orderRequestAddress = (new Address())->addCity($shippingOrderAddress->getCity())
             ->addCountry(new Country(
-                $shippingOrderAddress->getCountry() ? $shippingOrderAddress->getCountry()->getIso() : ''
+                $shippingOrderAddress->getCountry() && $shippingOrderAddress->getCountry()->getIso() ? $shippingOrderAddress->getCountry()->getIso() : ''
             ))
             ->addHouseNumber($shippingHouseNumber)
             ->addStreetName($shippingStreet)
@@ -109,19 +113,29 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
     /**
      *  Get the shipping order address
      *
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderEntity $order
+     * @param PaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @return OrderAddressEntity|null
      */
-    private function getShippingOrderAddress(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext): ?OrderAddressEntity
-    {
-        $deliveries = $transaction->getOrder()->getDeliveries();
+    private function getShippingOrderAddress(
+        OrderEntity $order,
+        PaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext,
+    ): ?OrderAddressEntity {
+        $deliveries = $order->getDeliveries();
 
         if (is_null($deliveries)) {
-            $deliveries = $this->getOrderFromDatabase(
-                $transaction->getOrder()->getId(),
+            $orderFromDatabase = $this->getOrderFromDatabase(
+                $transaction->getOrderTransactionId(),
                 $salesChannelContext->getContext()
-            )->getDeliveries();
+            );
+
+            if (is_null($orderFromDatabase)) {
+                return null;
+            }
+
+            $deliveries = $orderFromDatabase->getDeliveries();
         }
 
         if (is_null($deliveries)) {
@@ -140,9 +154,9 @@ class DeliveryBuilder implements OrderRequestBuilderInterface
      *
      * @param string $orderId
      * @param Context $context
-     * @return OrderEntity
+     * @return OrderEntity|null
      */
-    private function getOrderFromDatabase(string $orderId, Context $context): OrderEntity
+    private function getOrderFromDatabase(string $orderId, Context $context): ?OrderEntity
     {
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('deliveries');

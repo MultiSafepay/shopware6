@@ -7,11 +7,8 @@ namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\Klarna;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\PaymentException;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 
 /**
  * Class KlarnaPaymentHandler
@@ -20,41 +17,46 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
  *
  * @package MultiSafepay\Shopware6\Handlers
  */
-class KlarnaPaymentHandler extends AsyncPaymentHandler
+class KlarnaPaymentHandler extends PaymentHandler
 {
     /**
-     *  Provide the necessary data to make the payment
+     * Helper method to get the class name
      *
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
-     * @param string|null $gateway
-     * @param string|null $type
-     * @param array $gatewayInfo
-     * @return RedirectResponse
-     * @throws PaymentException
+     * @return string
      */
-    public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = null,
-        array $gatewayInfo = []
-    ): RedirectResponse {
-        $paymentMethod = new Klarna();
-
-        return parent::pay(
-            $transaction,
-            $dataBag,
-            $salesChannelContext,
-            $paymentMethod->getGatewayCode(),
-            $paymentMethod->getType(),
-            ['gender' => $this->getGenderFromSalutation($salesChannelContext->getCustomer())]
-        );
+    protected function getClassName(): string
+    {
+        return Klarna::class;
     }
 
     /**
+     * Determine if the payment handler requires gender
+     *
+     * @return bool
+     */
+    public function requiresGender(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Helper method to get the gender
+     *
+     * @param PaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $orderTransaction
+     * @return null|string
+     */
+    protected function getGender(
+        PaymentTransactionStruct $transaction,
+        OrderTransactionEntity $orderTransaction
+    ): ?string {
+        $salesChannelContext = $this->createSalesChannelContext($transaction, $orderTransaction);
+        return $this->getGenderFromSalutation($salesChannelContext->getCustomer());
+    }
+
+    /**
+     * Get gender from salutation
+     *
      * @param CustomerEntity $customer
      * @return string|null
      */

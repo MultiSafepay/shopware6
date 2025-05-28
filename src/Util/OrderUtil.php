@@ -5,6 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\Util;
 
+use Exception;
 use InvalidArgumentException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
@@ -78,23 +79,42 @@ class OrderUtil
 
     public function getState($address, Context $context): ?string
     {
-        if (!in_array(get_class($address), [OrderAddressEntity::class, OrderDeliveryEntity::class])) {
-            throw new InvalidArgumentException('Argument 1 passed to '.get_class($this).'::getState() must be an instance of '.OrderDeliveryEntity::class.' or '.OrderAddressEntity::class.', instance of '.get_class($address).' given.');
+        if (!($address instanceof OrderAddressEntity) && !($address instanceof OrderDeliveryEntity)) {
+            $message = sprintf(
+                'Argument 1 passed to %s::getState() must be an instance of %s or %s, instance of %s given.',
+                get_class($this),
+                OrderDeliveryEntity::class,
+                OrderAddressEntity::class,
+                get_class($address)
+            );
+            throw new InvalidArgumentException($message);
         }
 
         /** OrderDeliveryEntity|OrderAddressEntity $address */
-        if (!$address->getCountryStateId()) {
+        if ($address instanceof OrderDeliveryEntity) {
+            try {
+                $countryStateId = $address->getStateId();
+            } catch (Exception) {
+                return null;
+            }
+        } else {
+            $countryStateId = $address->getCountryStateId();
+        }
+
+        if (!$countryStateId) {
             return null;
         }
 
-        if (is_null($address->getCountryState())) {
-            $criteria = new Criteria([$address->getCountryStateId()]);
-            /** @var CountryStateEntity $countryState */
-            $countryState = $this->countryStateRepository->search($criteria, $context)->first();
-
-            return $countryState->getName();
+        // Use the state name directly if available for OrderAddressEntity
+        if ($address instanceof OrderAddressEntity && !is_null($address->getCountryState())) {
+            return $address->getCountryState()->getName();
         }
 
-        return $address->getCountryState()->getName();
+        // Otherwise search the repository
+        $criteria = new Criteria([$countryStateId]);
+        /** @var CountryStateEntity $countryState */
+        $countryState = $this->countryStateRepository->search($criteria, $context)->first();
+
+        return $countryState?->getName();
     }
 }

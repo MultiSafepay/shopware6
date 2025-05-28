@@ -3,12 +3,15 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler">
+        <service id="MultiSafepay\Shopware6\Handlers\PaymentHandler">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <tag name="shopware.payment.method.async"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="order.repository"/>
         </service>
     </services>
 </container>

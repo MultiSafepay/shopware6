@@ -17,7 +17,7 @@ use MultiSafepay\ValueObject\Customer\EmailAddress;
 use MultiSafepay\ValueObject\Customer\PhoneNumber;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -71,21 +71,24 @@ class CustomerBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the customer details
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @throws InvalidArgumentException
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
         $request = $this->requestUtil->getGlobals();
         $customer = $salesChannelContext->getCustomer();
-        $billingAddress = $this->getBillingAddress($transaction->getOrder(), $salesChannelContext->getContext());
+
+        $billingAddress = $this->getBillingAddress($order, $salesChannelContext->getContext());
         $additionalAddress = $billingAddress->getAdditionalAddressLine1() .' ' .
                              $billingAddress->getAdditionalAddressLine2();
         [$billingStreet, $billingHouseNumber] =
@@ -93,11 +96,11 @@ class CustomerBuilder implements OrderRequestBuilderInterface
 
         $orderRequestAddress = (new Address())->addCity($billingAddress->getCity())
             ->addCountry(new Country(
-                $billingAddress->getCountry() ? $billingAddress->getCountry()->getIso() : ''
+                $billingAddress->getCountry() && $billingAddress->getCountry()->getIso() ? $billingAddress->getCountry()->getIso() : ''
             ))
             ->addHouseNumber($billingHouseNumber)
             ->addStreetName($billingStreet)
-            ->addZipCode(trim($billingAddress->getZipcode()));
+            ->addZipCode(trim($billingAddress->getZipcode() ?? ''));
 
         $state = $this->orderUtil->getState($billingAddress, $salesChannelContext->getContext());
 
@@ -130,7 +133,14 @@ class CustomerBuilder implements OrderRequestBuilderInterface
      */
     private function getLocale(SalesChannelContext $salesChannelContext): array|string
     {
-        $criteria = new Criteria([$salesChannelContext->getContext()->getLanguageId()]);
+        $languageId = $salesChannelContext->getContext()->getLanguageId();
+
+        // Return default if language ID is not available
+        if (!$languageId) {
+            return 'en_GB';
+        }
+
+        $criteria = new Criteria([$languageId]);
         $criteria->addAssociation('locale');
         $language = $this->languageRepository->search($criteria, $salesChannelContext->getContext())->first();
 

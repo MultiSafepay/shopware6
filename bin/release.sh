@@ -34,7 +34,7 @@ composer remove phpro/grumphp --working-dir="$FOLDER_PREFIX" --update-no-dev --d
 composer remove shopware/administration shopware/storefront shopware/core --working-dir="$FOLDER_PREFIX" --update-no-dev
 
 # Add shopware back in the composer.json but not in the vendor folder
-composer require shopware/administration:"6.6.*" shopware/storefront:"6.6.*" shopware/core:"6.6.*" --working-dir="$FOLDER_PREFIX" --no-update
+composer require shopware/administration:"6.7.*" shopware/storefront:"6.7.*" shopware/core:"6.7.*" --working-dir="$FOLDER_PREFIX" --no-update
 
 # zip everything
 zip -9 -r "$FILENAME_PREFIX""$RELEASE_VERSION".zip "$FOLDER_PREFIX" -x "$FOLDER_PREFIX""/composer.lock"

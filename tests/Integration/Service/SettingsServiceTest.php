@@ -13,18 +13,22 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * Class SettingsServiceTest
+ *
  * @package MultiSafepay\Shopware6\Service
  */
 class SettingsServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
+
     /**
      * @var SettingsService $mspSettings
      */
-    public $mspSettings;
+    public SettingsService $mspSettings;
 
     /**
-     * {@inheritDoc}
+     * Set up the test case
+     *
+     * @return void
      */
     public function setUp(): void
     {
@@ -37,6 +41,8 @@ class SettingsServiceTest extends TestCase
     /**
      * Test the function getSettings environment with Default installation settings.
      * So the value will be null.
+     *
+     * @return void
      */
     public function testGetSettingEnvironmentLiveWithDefaultSettings(): void
     {

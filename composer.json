@@ -1,17 +1,17 @@
 {
     "name": "multisafepay/shopware6",
-    "description": "MultiSafepay module for Shopware 6.6.x",
+    "description": "MultiSafepay module for Shopware 6",
     "type": "shopware-platform-plugin",
     "version": "3.3.0",
     "license": "MIT",
-    "minimum-stability": "stable",
+    "minimum-stability": "RC",
     "require": {
         "php": "^8.2",
         "multisafepay/php-sdk": "^5.16",
         "nyholm/psr7": "^1.8",
-        "shopware/core": "6.6.*",
-        "shopware/storefront": "6.6.*",
-        "shopware/administration": "6.6.*",
+        "shopware/core": "6.7.*",
+        "shopware/storefront": "6.7.*",
+        "shopware/administration": "6.7.*",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-pcre": "*",
@@ -63,9 +63,8 @@
         }
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
         "multisafepay/coding-standards": "dev-master",
-        "phpunit/phpunit": "^10.5",
+        "phpunit/phpunit": "^11.5",
         "phpro/grumphp": "^2.5",
         "predis/predis": "^2.2"
     },

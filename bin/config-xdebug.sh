@@ -12,6 +12,12 @@ counter=1
 # Find all Xdebug configuration files in the /etc/php directory, excluding those with the pattern 'cli' in the path, and loop over each one of them
 find /etc/php -name '*-xdebug.ini' | while read -r xdebug_config_file
 do
+    # Create numbered backup before modification
+    cp "$xdebug_config_file" "${xdebug_config_file}.back"
+
+    echo;
+    echo "Creating backup: ${xdebug_config_file}.back"
+
     # Change the permissions of the Xdebug configuration file to 644 (read and write for the owner, and read for the group and others)
     chmod 644 "$xdebug_config_file"
 
@@ -23,23 +29,37 @@ do
         echo "As follows ..."
         echo;
 
-        # Loop over each Xdebug configuration variable
-        for var in 'xdebug.mode=debug' 'xdebug.start_with_request=trigger' 'xdebug.client_host=host.docker.internal' 'xdebug.idekey=PHPSTORM' 'xdebug.client_port=9000'
-        do
-            # Split the variable into name and value
-            IFS='=' read -ra VAR <<< "$var"
+        # Save the zend_extension line and other settings we want to keep
+        ZEND_EXT=$(grep "^zend_extension=" "$xdebug_config_file" || echo "")
 
-            # Remove any of the above-mentioned existing Xdebug values to avoid duplicates
-            sed -i "/^${VAR[0]}/d" "$xdebug_config_file"
+        # If we don't find the zend_extension line, look in the backup
+        if [ -z "$ZEND_EXT" ] && [ -f "${xdebug_config_file}.back" ]; then
+            ZEND_EXT=$(grep "^zend_extension=" "${xdebug_config_file}.back" || echo "")
+        fi
 
-            # Check if the Xdebug configuration variable with the specific value already exists in the Xdebug configuration file
-            if ! grep -qE "^${VAR[0]}\\s*=\\s*\"?${VAR[1]}\"?\\s*$" "$xdebug_config_file"; then
+        # Make sure we have the zend_extension line
+        if [ -z "$ZEND_EXT" ]; then
+            echo "WARNING: zend_extension not found in file or backup."
+        else
+            echo "Preserving: $ZEND_EXT"
+        fi
 
-                # If the Xdebug configuration variable does not exist, append it to the Xdebug configuration file
-                echo "Key: ${VAR[0]}. Value: ${VAR[1]}"
-                echo $var | tee -a "$xdebug_config_file" > /dev/null
-            fi
-        done
+        # Create the new content of the configuration file
+        {
+            # First the zend_extension line if it exists
+            [ -n "$ZEND_EXT" ] && echo "$ZEND_EXT"
+
+            # Then the Xdebug settings
+            echo "xdebug.mode=debug"
+            echo "xdebug.start_with_request=trigger"
+            echo "xdebug.client_host=host.docker.internal"
+            echo "xdebug.discover_client_host=true"
+            echo "xdebug.idekey=PHPSTORM"
+            echo "xdebug.client_port=9000"
+        } > "$xdebug_config_file"
+
+        echo "New configuration:"
+        cat "$xdebug_config_file"
 
         # Increment the counter
         counter=$((counter+1))

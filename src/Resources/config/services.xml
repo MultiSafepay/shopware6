@@ -6,7 +6,6 @@
         <import resource="services/alias.xml"/>
         <import resource="services/builders.xml"/>
         <import resource="services/controllers.xml"/>
-        <import resource="services/giftcards.xml" />
         <import resource="services/handlers.xml"/>
         <import resource="services/helpers.xml"/>
         <import resource="services/logger.xml"/>

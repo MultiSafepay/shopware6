@@ -3,8 +3,19 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
+
+use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\TestBootstrapper;
 
-require __DIR__ . '/../../../../vendor/autoload.php';
+$loader = require __DIR__ . '/../../../../vendor/autoload.php';
 
-(new TestBootstrapper())->addActivePlugins('MltisafeMultiSafepay')->bootstrap();
+// Initialize the test environment
+$bootstrapper = new TestBootstrapper();
+$bootstrapper
+    ->addActivePlugins('MltisafeMultiSafepay')
+    ->setForceInstallPlugins(true)
+    ->bootstrap();
+
+// Ensure the kernel is available for all test cases
+KernelLifecycleManager::ensureKernelShutdown();
+KernelLifecycleManager::bootKernel();

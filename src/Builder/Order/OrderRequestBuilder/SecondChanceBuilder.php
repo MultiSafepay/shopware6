@@ -8,7 +8,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\SecondChance;
 use MultiSafepay\Shopware6\Service\SettingsService;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -38,22 +39,23 @@ class SecondChanceBuilder implements OrderRequestBuilderInterface
         $this->settingsService = $settingsService;
     }
 
-
     /**
-     *  Build the second chance
+     *  Disable Second Chance
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $secondChance = $this->settingsService->isSecondChanceEnable($salesChannelContext->getSalesChannel()->getId());
+        $secondChance = $this->settingsService->isSecondChanceEnable($order->getSalesChannelId());
         $orderRequest->addSecondChance(
             (new SecondChance())->addSendEmail($secondChance)
         );

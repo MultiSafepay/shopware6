@@ -8,7 +8,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -31,15 +32,17 @@ class RecurringBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the recurring
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @throws InvalidArgumentException
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {

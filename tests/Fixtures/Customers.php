@@ -34,7 +34,7 @@ trait Customers
             'salutationId' => $this->getValidSalutationId(),
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
-            'email' => Uuid::randomHex() . '@example.com',
+            'email' => Uuid::randomHex() . '@multisafepay.io',
             'password' => 'shopware',
             'defaultPaymentMethodId' => $this->getValidPaymentMethodId(),
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,

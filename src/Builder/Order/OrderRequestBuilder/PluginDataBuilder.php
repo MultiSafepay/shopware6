@@ -8,7 +8,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\PluginDetails;
 use MultiSafepay\Shopware6\Util\VersionUtil;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -52,16 +53,18 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the plugin data
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
@@ -69,8 +72,8 @@ class PluginDataBuilder implements OrderRequestBuilderInterface
             (new PluginDetails())->addApplicationName(
                 'Shopware6 ' . $this->shopwareVersion
             )
-                ->addApplicationVersion('MultiSafepay')
-                ->addPluginVersion($this->versionUtil::PLUGIN_VERSION ?? '')
+            ->addApplicationVersion('MultiSafepay')
+            ->addPluginVersion($this->versionUtil::PLUGIN_VERSION ?? '')
         );
     }
 }

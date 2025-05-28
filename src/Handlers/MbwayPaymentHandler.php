@@ -8,11 +8,6 @@ namespace MultiSafepay\Shopware6\Handlers;
 use MultiSafepay\Shopware6\PaymentMethods\Mbway;
 use MultiSafepay\Shopware6\Support\PaymentComponent;
 use MultiSafepay\Shopware6\Support\Tokenization;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\PaymentException;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Class MbwayPaymentHandler
@@ -21,7 +16,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
  *
  * @package MultiSafepay\Shopware6\Handlers
  */
-class MbwayPaymentHandler extends AsyncPaymentHandler
+class MbwayPaymentHandler extends PaymentHandler
 {
     /**
      * Enable the tokenization feature
@@ -34,34 +29,12 @@ class MbwayPaymentHandler extends AsyncPaymentHandler
     use PaymentComponent;
 
     /**
-     *  Provide the necessary data to make the payment
+     * Helper method to get the class name
      *
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
-     * @param string|null $gateway
-     * @param string|null $type
-     * @param array $gatewayInfo
-     * @return RedirectResponse
-     * @throws PaymentException
+     * @return string
      */
-    public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = null,
-        array $gatewayInfo = []
-    ): RedirectResponse {
-        $paymentMethod = new Mbway();
-
-        return parent::pay(
-            $transaction,
-            $dataBag,
-            $salesChannelContext,
-            $paymentMethod->getGatewayCode(),
-            $paymentMethod->getType(),
-            $gatewayInfo
-        );
+    protected function getClassName(): string
+    {
+        return Mbway::class;
     }
 }

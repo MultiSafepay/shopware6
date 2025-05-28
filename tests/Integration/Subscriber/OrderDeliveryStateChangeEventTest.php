@@ -28,8 +28,6 @@ use Shopware\Core\System\StateMachine\Transition;
 /**
  * Class OrderDeliveryStateChangeEventTest
  *
- * This class tests the order delivery state change event
- *
  * @package MultiSafepay\Shopware6\Tests\Integration\Subscriber
  */
 class OrderDeliveryStateChangeEventTest extends TestCase
@@ -64,7 +62,7 @@ class OrderDeliveryStateChangeEventTest extends TestCase
      * @return void
      * @throws Exception
      */
-    public function testEventTranssitionIsNotShipped(): void
+    public function testEventTransitionIsNotShipped(): void
     {
         /** @var OrderDeliveryStateChangeEvent $orderDeliveryStateChangeEvent */
         $orderDeliveryStateChangeEvent = $this->getContainer()->get(OrderDeliveryStateChangeEvent::class);
@@ -96,10 +94,10 @@ class OrderDeliveryStateChangeEventTest extends TestCase
         $customerId = $this->createCustomer($context);
         $orderId = $this->createOrder($customerId, $context);
 
-        $critera = new Criteria();
-        $critera->addFilter(new EqualsFilter('order_delivery.orderId', $orderId));
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('order_delivery.orderId', $orderId));
         $orderDeliveryRepository = $this->getContainer()->get('order_delivery.repository');
-        $deliveries = $orderDeliveryRepository->search($critera, $context);
+        $deliveries = $orderDeliveryRepository->search($criteria, $context);
         /** @var OrderDeliveryEntity $delivery */
         $delivery = $deliveries->first();
 

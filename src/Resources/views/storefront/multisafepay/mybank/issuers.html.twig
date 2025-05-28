@@ -1,11 +1,7 @@
 {% if page.extensions.multisafepay.issuers|length > 0 %}
 
-    {% if page.extensions.multisafepay.shopware_compare %}
-        <input type="hidden" form="confirmOrderForm" name="issuer" value="{{ page.extensions.multisafepay.last_used_issuer }}">
-    {% endif %}
     <label for="issuers-mybank">
-        <select id="issuers-mybank" {% if page.extensions.multisafepay.shopware_compare %} form="confirmPaymentForm" {% else %} form="confirmOrderForm" {% endif%}
-                name="issuer" class="custom-select" style="margin-top:-3rem;margin-bottom:1rem;width:300px;margin-left:1.5rem;">
+        <select id="issuers-mybank" form="confirmOrderForm" name="issuer" class="custom-select" style="margin-top:-3rem;margin-bottom:1rem;width:300px;margin-left:1.5rem;">
             <option value="">{{ "msp-mybank.selectBankIssuer"|trans }}</option>
             {% for issuer in page.extensions.multisafepay.issuers %}
                 <option {% if page.extensions.multisafepay.last_used_issuer == issuer.code %} selected="selected" {% endif %} value="{{ issuer.code }}">{{ issuer.description }}</option>

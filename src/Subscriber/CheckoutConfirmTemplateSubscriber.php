@@ -118,7 +118,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             }
 
             try {
-                $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId());
+                $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannelId());
             } catch (InvalidApiKeyException) {
                 return;
             }
@@ -152,7 +152,6 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 'show_tokenization' => $this->showTokenization($salesChannelContext),
                 'issuers' => $isMyBankWithDirect ? $issuers : [],
                 'last_used_issuer' => $lastUsedIssuer,
-                'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
                 'payment_method_name' => $activeName,
                 'current_payment_method_id' => $paymentMethodEntity->getId(),
             ]);
@@ -188,7 +187,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
-     *  Get the components token
+     *  Get the component token
      *
      * @param SalesChannelContext $salesChannelContext
      * @return string|null
@@ -200,7 +199,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         }
 
         try {
-            return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())->getApiTokenManager()
+            return $this->sdkFactory->create($salesChannelContext->getSalesChannelId())->getApiTokenManager()
                 ->get()->getApiToken();
         } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface | InvalidDataInitializationException) {
             return null;
@@ -208,7 +207,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     }
 
     /**
-     *  Get the components environment
+     *  Get the component environment
      *
      * @param SalesChannelContext $salesChannelContext
      * @return string|null
@@ -304,7 +303,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             if (is_null($customer)) {
                 return [];
             }
-            return $this->sdkFactory->create($salesChannelContext->getSalesChannel()->getId())
+            return $this->sdkFactory->create($salesChannelContext->getSalesChannelId())
                 ->getTokenManager()
                 ->getListByGatewayCodeAsArray($customer->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
         } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {

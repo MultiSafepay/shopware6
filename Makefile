@@ -15,16 +15,55 @@ install:
 
 .PHONY: phpunit
 phpunit:
-	docker-compose exec --workdir=/var/www/html app vendor/bin/phpunit --configuration=./custom/plugins/MltisafeMultiSafepay/phpunit.xml.dist
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app vendor/bin/phpunit --configuration=./phpunit.xml.dist
 
-administration-build:
-	docker-compose exec app php psh.phar administration:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
-	mv ./src/Resources/public/administration/js/mltisafemultisafepay.js ./src/Resources/public/administration/js/mltisafe-multi-safepay.js
-	docker-compose exec app php psh.phar cache --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
+.PHONY: phpunit-cov
+phpunit-cov:
+	@echo ""
+	@echo "Cleaning previous test artifacts..."
+	@$(MAKE) phpunit-cov-clean
+	@echo ""
+	@echo "Running unit tests with coverage..."
+	@$(MAKE) phpunit-cov-run
+	@echo ""
+	@echo "Copying coverage report to local system..."
+	@$(MAKE) phpunit-cov-copy
+	@echo ""
+	@echo "Process completed: coverage report is available at ./coverage.xml"
+	@echo ""
+
+.PHONY: phpunit-cov-clean
+phpunit-cov-clean:
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app rm -rf ./coverage.xml ./.phpunit.result.cache
+
+.PHONY: phpunit-cov-run
+phpunit-cov-run:
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app vendor/bin/phpunit --configuration=./phpunit.xml.dist --coverage-clover=./coverage.xml
+
+.PHONY: phpunit-cov-copy
+phpunit-cov-copy:
+	docker cp $(shell docker-compose ps -q app):/var/www/html/custom/plugins/MltisafeMultiSafepay/coverage.xml ./coverage.xml
+
+.PHONY: phpcs
+phpcs:
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app vendor/bin/phpcs --standard=phpcs.ruleset.xml src/ tests/
+
+.PHONY: phpcbf
+phpcbf:
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app vendor/bin/phpcbf --standard=phpcs.ruleset.xml src/ tests/
 
 .PHONY: storefront-build
 storefront-build:
-	docker-compose exec app php psh.phar storefront:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
+	docker-compose exec app bin/build-storefront.sh
+
+.PHONY: administration-build
+administration-build:
+	docker-compose exec app bin/build-administration.sh
+
+.PHONY: full-build
+full-build:
+	docker-compose exec app bin/build-js.sh
+
 # ------------------------------------------------------------------------------------------------------------
 
 .PHONY: composer-production

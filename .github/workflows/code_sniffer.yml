@@ -1,11 +1,12 @@
 # This is the name of the workflow
 name: Code sniffer
 
-# This workflow is triggered on pull requests to the master and develop branches
+# This workflow is triggered on pull requests to the 'master' branch
 on:
   pull_request:
     branches:
       - master
+      - 6.6.x
 
 # This workflow consists of one job named 'phpcs'
 jobs:

@@ -1,8 +1,8 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-method.html.twig' %}
 
-{% block component_payment_fieldset_template %}
+{% block component_payment_method_field %}
+    {{ parent() }}
     {% if payment.translated.customFields.is_multisafepay and payment.translated.customFields.template and page.extensions.multisafepay.current_payment_method_id == payment.id %}
         {% include payment.translated.customFields.template %}
     {% endif %}
-    {{ parent() }}
 {% endblock %}

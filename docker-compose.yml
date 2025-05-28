@@ -20,7 +20,7 @@ services:
   expose:
     depends_on:
       - app
-    build: https://github.com/beyondcode/expose.git
+    build: https://github.com/multisafepay/expose.git#multisafepay
     entrypoint: [ "/bin/sh", "-c" , "/src/expose token ${EXPOSE_TOKEN} && sed -i -E \"s/'dns'\\s?=>\\s?'.*'/'dns' => true/g\" /root/.expose/config.php  && /src/expose share app --server-host=${EXPOSE_HOST} --subdomain=${APP_SUBDOMAIN}" ]
     ports:
       - "4040:4040"

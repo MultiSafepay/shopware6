@@ -8,7 +8,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\PaymentOptions;
 use MultiSafepay\Exception\InvalidArgumentException;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\Token\TokenFactoryInterfaceV2;
 use Shopware\Core\Checkout\Payment\Cart\Token\TokenStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -39,7 +40,6 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      */
     private SecondsActiveBuilder $secondsActiveBuilder;
 
-
     /**
      * PaymentOptionsBuilder constructor
      *
@@ -60,8 +60,9 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the payment options
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @throws InvalidArgumentException
@@ -69,12 +70,13 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $returnUrl = $this->getReturnUrl($transaction);
+        $returnUrl = $this->getReturnUrl($transaction, $order->getSalesChannelId());
         $orderRequest->addPaymentOptions(
             (new PaymentOptions())->addNotificationUrl(
                 $this->router->generate(
@@ -89,19 +91,19 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
         );
     }
 
-
     /**
      *  Get the return URL
      *
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
+     * @param string $salesChannelId
      * @return string
      */
-    public function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    public function getReturnUrl(PaymentTransactionStruct $transaction, string $salesChannelId): string
     {
         $parameter = parse_url($transaction->getReturnUrl())['query'];
         $paymentToken = explode('=', $parameter)[1];
 
-        $newToken = $this->generateNewToken($paymentToken);
+        $newToken = $this->generateNewToken($paymentToken, $salesChannelId);
         $this->tokenFactory->invalidateToken($paymentToken);
 
         return $this->assembleReturnUrl($newToken);
@@ -111,9 +113,10 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
      * Generate a new payment token with extended expiry time
      *
      * @param string $oldPaymentToken
+     * @param string $salesChannelId
      * @return string
      */
-    private function generateNewToken(string $oldPaymentToken): string
+    private function generateNewToken(string $oldPaymentToken, string $salesChannelId): string
     {
         $tokenStruct = $this->tokenFactory->parseToken($oldPaymentToken);
 
@@ -123,7 +126,7 @@ class PaymentOptionsBuilder implements OrderRequestBuilderInterface
             $tokenStruct->getPaymentMethodId(),
             $tokenStruct->getTransactionId(),
             $tokenStruct->getFinishUrl(),
-            $this->secondsActiveBuilder->getSecondsActive(),
+            $this->secondsActiveBuilder->getSecondsActive($salesChannelId),
             $tokenStruct->getErrorUrl()
         );
 

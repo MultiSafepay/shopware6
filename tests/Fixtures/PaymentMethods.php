@@ -6,7 +6,7 @@
 
 namespace MultiSafepay\Shopware6\Tests\Fixtures;
 
-use Shopware\Core\Checkout\Test\Payment\Handler\AsyncTestPaymentHandler;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -22,13 +22,14 @@ trait PaymentMethods
      */
     public function createPaymentMethod(
         Context $context,
-        string $handlerIdentifier = AsyncTestPaymentHandler::class
+        string $handlerIdentifier = AbstractPaymentHandler::class
     ): string {
         $id = Uuid::randomHex();
         $payment = [
             'id' => $id,
             'handlerIdentifier' => $handlerIdentifier,
             'name' => 'Test Payment',
+            'technicalName' => 'test_payment_'.Uuid::randomHex(),
             'description' => 'Test payment handler',
             'active' => true,
         ];

@@ -6,11 +6,7 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\PaymentException;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class MyBankPaymentHandler
@@ -19,44 +15,53 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
  *
  * @package MultiSafepay\Shopware6\Handlers
  */
-class MyBankPaymentHandler extends AsyncPaymentHandler
+class MyBankPaymentHandler extends PaymentHandler
 {
     /**
-     *  Provide the necessary data to make the payment
-     *
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
-     * @param string|null $gateway
-     * @param string $type
-     * @param array $gatewayInfo
-     * @return RedirectResponse
-     * @throws PaymentException
+     * @var array|null
      */
-    public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = 'redirect',
-        array $gatewayInfo = []
-    ): RedirectResponse {
-        $paymentMethod = new MyBank();
-        $code = $gateway ?? $paymentMethod->getGatewayCode();
-        $issuerCode = $this->getDataBagItem('issuer', $dataBag);
+    private ?array $gatewayInfo = null;
 
+    /**
+     * Helper method to get the class name
+     *
+     * @return string
+     */
+    protected function getClassName(): string
+    {
+        return MyBank::class;
+    }
+
+    /**
+     * Get issuer information from the request
+     *
+     * @param Request $request
+     * @return array
+     */
+    protected function getIssuers(Request $request): array
+    {
+        $gatewayInfo = [];
+        $dataBag = $this->getRequestDataBag($request);
+        $issuerCode = $this->getDataBagItem('issuer', $dataBag);
         if ($issuerCode) {
             $gatewayInfo['issuer_id'] = $issuerCode;
-            $type = $paymentMethod->getType();
         }
 
-        return parent::pay(
-            $transaction,
-            $dataBag,
-            $salesChannelContext,
-            $code,
-            $type,
-            $gatewayInfo
-        );
+        $this->gatewayInfo = $gatewayInfo;
+        return $gatewayInfo;
+    }
+
+    /**
+     * Determine the payment type based on whether issuers are selected
+     *
+     * @return string|null
+     */
+    protected function getTypeFromPaymentMethod(): ?string
+    {
+        if (empty($this->gatewayInfo)) {
+            return 'redirect';
+        }
+
+        return parent::getTypeFromPaymentMethod();
     }
 }

@@ -118,7 +118,11 @@ class CheckoutHelper
             $stateMachineState = $transaction->getStateMachineState();
             $currentState = !is_null($stateMachineState) ? $stateMachineState->getName() : 'null';
 
-            $order = $transaction->getOrder();
+            // Check if order is available through associations
+            $criteria = new Criteria([$transaction->getId()]);
+            $criteria->addAssociation('order');
+            $loadedTransaction = $this->transactionRepository->search($criteria, $context)->first();
+            $order = $loadedTransaction ? $loadedTransaction->getOrder() : null;
             $orderNumber = !is_null($order) ? $order->getOrderNumber() : 'null';
 
             $this->logger->warning(

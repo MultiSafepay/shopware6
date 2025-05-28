@@ -1,28 +1,36 @@
-<template>
-    <sw-card title="Refund"
-             v-show="isRefundAllowed"
+<template v-if="isRefundAllowed">
+    <mt-card title="Refund"
              :isLoading="isLoading"
              class="sw-order-detail-base__line-item-grid-card">
-        <sw-number-field label="Amount" v-model:value="amount"
-                         placeholder="0.00" numberType="float" :step="0.01"
-                         :max="maxRefundableAmount" :disabled="isRefundDisabled" />
-        <sw-button variant="primary" @click="showRefundModal()" :disabled="isRefundDisabled">Refund</sw-button>
+        <mt-number-field
+            label="Amount"
+            name="sw-field--amount"
+            v-model="amount"
+            placeholder="0.00"
+            number-type="float"
+            :step="0.01"
+            :max="maxRefundableAmount"
+            :disabled="isRefundDisabled">
+        </mt-number-field>
+        <mt-button variant="primary" @click="showRefundModal()" :disabled="isRefundDisabled">Refund</mt-button>
         <span class="float-right">
             <strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmount }}</strong>
         </span>
         <sw-modal v-show="showModal" title="MultiSafepay refund" variant="small" @modal-close="closeModal()">
-            Are you sure you want to refund {{ order ? order.currency.symbol : 'currency' }}{{ this.amount }}?
-            <br/>
+            <template #default>
+                Are you sure you want to refund {{ order ? order.currency.symbol : 'currency' }}{{ this.amount }}?
+                <br/>
+            </template>
             <template #modal-footer>
-                <sw-button @click="closeModal()" size="small">
-                    {{ $tc('global.default.cancel') }}
-                </sw-button>
-                <sw-button @click="applyRefund()"
+                <mt-button @click="closeModal()" size="small">
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button @click="applyRefund()"
                            size="small"
                            variant="primary">
-                    {{ $tc('global.default.apply') }}
-                </sw-button>
+                    {{ $t('global.default.apply') }}
+                </mt-button>
             </template>
         </sw-modal>
-    </sw-card>
+    </mt-card>
 </template>

@@ -85,7 +85,7 @@ Component.register('multisafepay-verify-api-key', {
                 if (ApiResponse.success === false) {
                     this.createNotificationWarning({
                         title: 'MultiSafepay',
-                        message: this.$tc('multisafepay-verify-api-key.error')
+                        message: this.$t('multisafepay-verify-api-key.error')
                     })
                     // Set the loading state to false
                     this.isLoading = false;
@@ -94,7 +94,7 @@ Component.register('multisafepay-verify-api-key', {
                 // If the API response is successful, show a success notification
                 this.createNotificationSuccess({
                     title: 'MultiSafepay',
-                    message: this.$tc('multisafepay-verify-api-key.success')
+                    message: this.$t('multisafepay-verify-api-key.success')
                 });
                 // Set the loading state to false
                 this.isLoading = false;

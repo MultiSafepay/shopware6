@@ -22,10 +22,10 @@
         "multisafepay_live_account": "If you would like to set up a live account, feel free to create a <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> or contact the MultiSafepay Sales department:"
     },
     "multisafepay-tokenization": {
-        "help_text": "Check out our <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about tokenization."
+        "help_text": "Check out our documentation center to found more about tokenization at https://docs.multisafepay.com/docs/recurring-payments"
     },
     "multisafepay-component": {
-        "help_text": "Check out our <a href=\"https://docs.multisafepay.com/docs/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about Payment Component."
+        "help_text": "Check out our documentation center to found more about Payment Component at https://docs.multisafepay.com/docs/payment-components"
     },
     "multisafepay-direct": {
         "help_text": "Enable the payment inside the checkout page"

@@ -22,10 +22,10 @@
         "multisafepay_live_account": "Wilt u een live account aanmaken, maak dan gerust een <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> aan of neem contact op met de MultiSafepay Sales afdeling:"
     },
     "multisafepay-tokenization": {
-        "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over tokenization."
+        "help_text": "Bekijk ons documentatiecentrum voor meer informatie over tokenization: https://docs.multisafepay.com/docs/recurring-payments"
     },
     "multisafepay-component": {
-        "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/payment-components/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over Payment Component."
+        "help_text": "Bekijk ons documentatiecentrum voor meer informatie over Payment Component: https://docs.multisafepay.com/docs/payment-components"
     },
     "multisafepay-direct": {
         "help_text": "Activeer de betaling binnen de afrekenpagina."

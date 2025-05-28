@@ -81,21 +81,39 @@ Component.register('multisafepay-refund', {
         },
         // This method is used to apply the refund. It calls the refund API and handles the response.
         applyRefund() {
-            this.closeModal()
-            this.multiSafepayApiService.refund(this.amount, this.orderId).then((ApiResponse) => {
-                if (ApiResponse.status === false) {
-                    this.createNotificationError({
-                        title: 'Failed to refund',
-                        message: ApiResponse.message
+            if (this.isLoading) {
+                return;
+            }
+
+            this.isLoading = true;
+            this.closeModal();
+
+            this.multiSafepayApiService.refund(this.amount, this.orderId)
+                .then((ApiResponse) => {
+                    if (ApiResponse.status === false) {
+                        this.createNotificationError({
+                            title: 'Failed to refund',
+                            message: ApiResponse.message
+                        });
+                        return;
+                    }
+
+                    this.createNotificationSuccess({
+                        title: 'Success',
+                        message: 'Successfully refunded'
                     });
-                    return;
-                }
-                this.createNotificationSuccess({
-                    title: 'Success',
-                    message: 'Successfully refunded'
+
+                    this.reloadEntityData();
+                })
+                .catch((error) => {
+                    this.createNotificationError({
+                        title: 'Error',
+                        message: error.message || 'An unexpected error occurred during refund'
+                    });
+                })
+                .finally(() => {
+                    this.isLoading = false;
                 });
-                this.reloadEntityData();
-            });
         },
         // This method is called when the component is created. It sets the version context and reloads the entity data.
         createdComponent() {

@@ -85,13 +85,6 @@ class MultiSafepayStruct extends Struct
     public string|null $last_used_issuer;
 
     /**
-     *  Shopware compare
-     *
-     * @var bool|int
-     */
-    public bool|int $shopware_compare;
-
-    /**
      *  Payment method name
      *
      * @var string|null

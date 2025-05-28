@@ -3,6 +3,7 @@
 .phpunit.result.cache
 /.dist/
 /.idea
+/application/
 /composer.lock
 /node_modules/
 /var/

@@ -13,6 +13,7 @@ on:
   pull_request:
     branches:
       - master
+      - 6.6.x
 
 # This defines the jobs that will run in the workflow
 jobs:
@@ -26,7 +27,7 @@ jobs:
         uses: shopware/setup-shopware@main
         with:
           # Shopware version to use
-          shopware-version: 'v6.6.2.0'
+          shopware-version: 'v6.7.0.0-rc3'
           # PHP version to use
           php-version: 8.2
           # Environment in which Shopware will run
@@ -37,16 +38,17 @@ jobs:
           install: true
 
       # Step to check out the code
-      - name: Checkout MultiSafepay Shopware 6 module
+      - name: Checkout MultiSafepay Shopware 6.7 module
         uses: actions/checkout@v3
         with:
           # This needs to be placed in this location, so when addActivePlugins() in the
           # custom ./tests/TestBootstrap.php is called, it will be able to find the plugin
           # as this is the usual path for them
           path: custom/plugins/MltisafeMultiSafepay
+          fetch-depth: 0
 
       # Step to install the dependencies, matching the repository with the usual plugin location,
-      - name: Install Shopware 6 MultiSafepay module
+      - name: Install Shopware 6.7 MultiSafepay module
         run: |
           composer config repositories.multisafepay.shopware6 "path" "custom/plugins/MltisafeMultiSafepay"
           composer config allow-plugins.php-http/discovery false

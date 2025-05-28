@@ -8,7 +8,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
 use MultiSafepay\Exception\InvalidArgumentException;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -39,21 +40,22 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the shopping cart
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @throws InvalidArgumentException
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $items = [];
-        $order = $transaction->getOrder();
 
         foreach ($this->shoppingCartBuilders as $shoppingCartBuilder) {
             $items[] = $shoppingCartBuilder->build($order, $currency);

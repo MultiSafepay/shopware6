@@ -7,7 +7,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Shopware6\Service\SettingsService;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -53,31 +54,34 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
     /**
      *  Build the seconds active
      *
+     * @param OrderEntity $order
      * @param OrderRequest $orderRequest
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      */
     public function build(
+        OrderEntity $order,
         OrderRequest $orderRequest,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): void {
-        $orderRequest->addSecondsActive($this->getSecondsActive());
+        $orderRequest->addSecondsActive($this->getSecondsActive($order->getSalesChannelId()));
     }
 
     /**
      *  Get the seconds active
      *
+     * @param string|null $salesChannelId
      * @return int
      */
-    public function getSecondsActive(): int
+    public function getSecondsActive(string $salesChannelId = null): int
     {
-        $timeActive = $this->settingsService->getTimeActive();
+        $timeActive = $this->settingsService->getTimeActive($salesChannelId);
         $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;
 
-        return match ($this->settingsService->getTimeActiveLabel()) {
+        return match ($this->settingsService->getTimeActiveLabel($salesChannelId)) {
             self::TIME_ACTIVE_MINUTES => $timeActive * 60,
             self::TIME_ACTIVE_HOURS => $timeActive * 60 * 60,
             default => $timeActive * 24 * 60 * 60,
