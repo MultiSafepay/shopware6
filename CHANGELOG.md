@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2025-06-17
+### Added
++ PLGSHPS6-373: Add support for Shopware 6.7
+
 ## [3.3.0] - 2025-05-21
 ### Added
 + PLGSHPS6-379: Add support for Second Chance
@@ -155,7 +159,7 @@ PLGSHPS6-305: Fix shipping request not working
 + PLGSHPS6-301: Fix dead links that redirect to MultiSafepay docs
 + PLGSHPS6-297: Fix state data missing from order request
 + PLGSHPS6-292: Only show Apple Pay in Shopware 6.4 when it should
-+ Fix User-Agent and HTTP Referer being mandatory in order request 
++ Fix User-Agent and HTTP Referer being mandatory in order request
 
 ***
 
@@ -360,7 +364,7 @@ PLGSHPS6-305: Fix shipping request not working
 
 ## [1.4.0] - - 2020-05-27
 ### Added
-+ Add Tokenization for Visa, Mastercard and Maestro. 
++ Add Tokenization for Visa, Mastercard and Maestro.
 
 ### Changed
 + Replace refund confirm dialog with modal.
