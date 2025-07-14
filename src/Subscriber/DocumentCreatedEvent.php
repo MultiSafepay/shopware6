@@ -81,7 +81,7 @@ class DocumentCreatedEvent implements EventSubscriberInterface
             foreach ($event->getWriteResults() as $writeResult) {
                 $payload = $writeResult->getPayload();
 
-                if (empty($payload) || !$this->paymentUtil->isMultiSafepayPaymentMethod($payload['orderId'], $context)) {
+                if (empty($payload) || !$this->paymentUtil->isMultiSafepayPaymentMethod($payload['orderId'] ?? $payload['id'], $context)) {
                     continue;
                 }
 
