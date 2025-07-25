@@ -276,6 +276,45 @@ class DocumentCreatedEventTest extends TestCase
     }
 
     /**
+     * Test sendInvoiceToMultiSafepay with payload missing orderId (queue scenario)
+     *
+     * Verifies that the method skips processing when orderId is not present in payload
+     *
+     * @return void
+     * @throws Exception
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testSendInvoiceToMultiSafepayWithPayloadMissingOrderId(): void
+    {
+        // Create context and event
+        $context = Context::createDefaultContext();
+
+        // Create a writing result with payload missing orderId (like when sent via queue)
+        $writeResult = $this->createMock(EntityWriteResult::class);
+        $writeResult->method('getPayload')->willReturn([
+            'id' => 'document-id',
+            'sent' => true,
+            'updatedAt' => '2023-01-01T00:00:00+00:00'
+        ]);
+
+        // Create an event with writing results
+        $event = $this->createMock(EntityWrittenEvent::class);
+        $event->method('getContext')->willReturn($context);
+        $event->method('getWriteResults')->willReturn([$writeResult]);
+
+        // Configure payment util to expect that isMultiSafepayPaymentMethod is never called
+        $this->paymentUtilMock->expects($this->never())
+            ->method('isMultiSafepayPaymentMethod');
+
+        // Execute method - should not throw exception and should skip processing
+        $this->documentCreatedEvent->sendInvoiceToMultiSafepay($event);
+
+        // Verify that the method completed successfully without calling payment validation
+        $this->assertTrue(true, 'Method completed successfully without calling payment validation');
+    }
+
+    /**
      * Test sendInvoiceToMultiSafepay with API exception
      *
      * @return void
