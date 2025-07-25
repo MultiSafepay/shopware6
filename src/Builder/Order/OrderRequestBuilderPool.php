@@ -10,7 +10,6 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder;
-use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
@@ -29,11 +28,6 @@ class OrderRequestBuilderPool
      * @var ShoppingCartBuilder
      */
     private ShoppingCartBuilder $shoppingCartBuilder;
-
-    /**
-     * @var RecurringBuilder
-     */
-    private RecurringBuilder $recurringBuilder;
 
     /**
      * @var DescriptionBuilder
@@ -79,7 +73,6 @@ class OrderRequestBuilderPool
      * OrderRequestBuilderPool constructor
      *
      * @param ShoppingCartBuilder $shoppingCartBuilder
-     * @param RecurringBuilder $recurringBuilder
      * @param DescriptionBuilder $descriptionBuilder
      * @param PaymentOptionsBuilder $paymentOptionsBuilder
      * @param CustomerBuilder $customerBuilder
@@ -91,7 +84,6 @@ class OrderRequestBuilderPool
      */
     public function __construct(
         ShoppingCartBuilder $shoppingCartBuilder,
-        RecurringBuilder $recurringBuilder,
         DescriptionBuilder $descriptionBuilder,
         PaymentOptionsBuilder $paymentOptionsBuilder,
         CustomerBuilder $customerBuilder,
@@ -102,7 +94,6 @@ class OrderRequestBuilderPool
         SettingsService $service
     ) {
         $this->shoppingCartBuilder = $shoppingCartBuilder;
-        $this->recurringBuilder = $recurringBuilder;
         $this->descriptionBuilder = $descriptionBuilder;
         $this->paymentOptionsBuilder = $paymentOptionsBuilder;
         $this->customerBuilder = $customerBuilder;
@@ -121,7 +112,6 @@ class OrderRequestBuilderPool
     public function getOrderRequestBuilders(): array
     {
         $builderPool = [
-            'recurring' => $this->recurringBuilder,
             'description' => $this->descriptionBuilder,
             'payment_options' => $this->paymentOptionsBuilder,
             'customer' => $this->customerBuilder,

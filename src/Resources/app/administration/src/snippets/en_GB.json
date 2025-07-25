@@ -22,7 +22,7 @@
         "multisafepay_live_account": "If you would like to set up a live account, feel free to create a <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> or contact the MultiSafepay Sales department:"
     },
     "multisafepay-tokenization": {
-        "help_text": "Check out our documentation center to found more about tokenization at https://docs.multisafepay.com/docs/recurring-payments"
+        "help_text": "It requires enabling the Payment Component. Check out our documentation center to found more about tokenization at https://docs.multisafepay.com/docs/recurring-payments"
     },
     "multisafepay-component": {
         "help_text": "Check out our documentation center to found more about Payment Component at https://docs.multisafepay.com/docs/payment-components"
