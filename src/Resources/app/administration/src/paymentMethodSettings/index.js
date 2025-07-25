@@ -24,6 +24,17 @@ Component.override('sw-settings-payment-detail', {
         'multiSafepayApiService'
     ],
 
+    // Add computed properties
+    computed: {
+        // Computed property to determine if tokenization should be disabled
+        isTokenizationDisabled() {
+            return !(this.paymentMethod &&
+                this.paymentMethod.customFields &&
+                this.paymentMethod.customFields.component
+            ) || !this.componentSupported;
+        }
+    },
+
     // Watch for changes in the 'paymentMethod' data property
     watch: {
         paymentMethod(){
@@ -58,6 +69,18 @@ Component.override('sw-settings-payment-detail', {
             }
 
             this.reloadEntityData()
+        },
+
+        // Watch for changes in the component field
+        'paymentMethod.customFields.component'(newValue) {
+            // If the component is disabled, tokenization should be too
+            if (!newValue &&
+                this.paymentMethod &&
+                this.paymentMethod.customFields &&
+                this.paymentMethod.customFields.tokenization
+            ) {
+                this.paymentMethod.customFields.tokenization = false;
+            }
         }
     },
 

@@ -12,7 +12,6 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DeliveryBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\DescriptionBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PaymentOptionsBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\PluginDataBuilder;
-use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\RecurringBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondChanceBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\SecondsActiveBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
@@ -168,7 +167,6 @@ class OrderRequestBuilderPoolTest extends TestCase
 
         return new OrderRequestBuilderPool(
             $this->getContainer()->get(ShoppingCartBuilder::class),
-            $this->getContainer()->get(RecurringBuilder::class),
             $this->getContainer()->get(DescriptionBuilder::class),
             $paymentOptionMock,
             $this->getContainer()->get(CustomerBuilder::class),

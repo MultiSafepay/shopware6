@@ -22,7 +22,7 @@
         "multisafepay_live_account": "Wenn Sie einen Account eröffnen wollen, können Sie einfach einen <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">Live-Account</a> eröffnen oder kontaktieren Sie das MultiSafepay Sales-Department:"
     },
     "multisafepay-tokenization": {
-        "help_text": "Weitere Informationen zur Tokenisierung finden Sie in unserem <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">Dokumentationscenter.</a>"
+        "help_text": "Weitere Informationen zur Tokenisierung finden Sie in unserem <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">Dokumentationscenter</a>. Es ist erforderlich, die Zahlungskomponente zu aktivieren."
     },
     "multisafepay-component": {
         "help_text": "Sehen Sie sich unser <a href=\"https://docs.multisafepay.com/docs/payment-components\" target=\"_blank\" style=\"color:#fff\">Dokumentationscenter.</a> an, um mehr über die Zahlungskomponente zu erfahren."
