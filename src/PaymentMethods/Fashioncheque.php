@@ -46,7 +46,7 @@ class Fashioncheque implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'FASHIONCHEQUE';
+        return 'FASHIONCHQ';
     }
 
     /**
