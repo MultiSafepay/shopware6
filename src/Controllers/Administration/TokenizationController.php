@@ -48,8 +48,40 @@ class TokenizationController extends AbstractController
     {
         $supported = false;
         $paymentMethodId = $requestDataBag->request->get('paymentMethodId');
+
+        if (empty($paymentMethodId)) {
+            return new JsonResponse([
+                'success' => false,
+                'supported' => false,
+                'errors' => [
+                    [
+                        'status' => '400',
+                        'code' => 'CHECKOUT__MISSING_PAYMENT_METHOD_ID',
+                        'title' => 'Bad Request',
+                        'detail' => 'Payment method ID is required.'
+                    ]
+                ]
+            ], 400);
+        }
+
         $criteria = new Criteria([$paymentMethodId]);
         $paymentMethod = $this->paymentRepository->search($criteria, $context)->get($paymentMethodId);
+
+        if ($paymentMethod === null) {
+            return new JsonResponse([
+                'success' => false,
+                'supported' => false,
+                'errors' => [
+                    [
+                        'status' => '404',
+                        'code' => 'CHECKOUT__PAYMENT_METHOD_NOT_FOUND',
+                        'title' => 'Not Found',
+                        'detail' => sprintf('Payment method with ID "%s" not found.', $paymentMethodId)
+                    ]
+                ]
+            ], 404);
+        }
+
         $handler = $paymentMethod->getHandlerIdentifier();
 
         if (in_array(Tokenization::class, class_uses($handler), true)) {
