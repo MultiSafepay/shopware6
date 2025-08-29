@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.12.0] - 2025-08-29
+### Fixed
++ PLGSHPS6-403: Register NPM dependencies in the plugin to fix asset compilation issues in versions higher than 6.5.8.7
++ PLGSHPS6-404: Fix standalone tokenized order request that does not define the customer reference
+
+### Removed
++ PLGSHPS6-409: Remove iDEAL issuers
+
 ## [2.11.0] - 2024-05-22
 ### Added
 + PLGSHPS6-358: Add Payment Component for iDEAL
