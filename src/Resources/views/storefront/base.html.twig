@@ -13,14 +13,9 @@
         {% if component == true %}
             <script src="https://pay.multisafepay.com/sdk/components/v2/components.js"></script>
         {% endif %}
-        {% if (paymentName == 'ideal' and component == false) or ('mybank' in paymentName and direct == true) %}
+        {% if 'mybank' in paymentName and direct == true %}
             <script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js"></script>
             <script>
-                {% if paymentName == 'ideal' and component == false %}
-                new SlimSelect({
-                    select: '#issuers-ideal'
-                })
-                {% endif %}
                 {% if 'mybank' in paymentName and direct == true %}
                 new SlimSelect({
                     select: '#issuers-mybank'

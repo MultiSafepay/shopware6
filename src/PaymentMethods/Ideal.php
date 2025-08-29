@@ -9,9 +9,6 @@ use MultiSafepay\Shopware6\Handlers\IdealPaymentHandler;
 
 class Ideal implements PaymentMethodInterface
 {
-    public const GATEWAY_NAME = 'iDEAL';
-    public const GATEWAY_CODE = 'IDEAL';
-
     /**
      * {@inheritDoc}
      *
@@ -19,7 +16,7 @@ class Ideal implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return self::GATEWAY_NAME;
+        return 'iDEAL';
     }
 
     /**
@@ -39,7 +36,7 @@ class Ideal implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return self::GATEWAY_CODE;
+        return 'IDEAL';
     }
 
     /**
@@ -49,7 +46,7 @@ class Ideal implements PaymentMethodInterface
      */
     public function getTemplate(): ?string
     {
-        return '@MltisafeMultiSafepay/storefront/multisafepay/ideal/issuers.html.twig';
+        return null;
     }
 
     /**
