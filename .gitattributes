@@ -12,3 +12,4 @@
 docker-compose.yml export-ignore
 .editorconfig export-ignore
 Makefile export-ignore
+/src/Resources/app/storefront/node_modules export-ignore

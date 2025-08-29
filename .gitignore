@@ -1,6 +1,15 @@
+# IDE/Editor files
 .DS_Store
-/.idea
+.idea
+
+# Build/Distribution files
+.dist/
+
+# Dependency directories
+/src/Resources/app/storefront/node_modules
 /vendor/
-/composer.lock
-/.dist/
+
+# Environment/Config files
 .env
+/composer.lock
+/src/Resources/app/storefront/package-lock.json
