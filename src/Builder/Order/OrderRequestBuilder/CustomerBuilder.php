@@ -94,7 +94,14 @@ class CustomerBuilder implements OrderRequestBuilderInterface
             ->addUserAgent($request->headers->get('User-Agent') ?? '')
             ->addReferrer($request->server->get('HTTP_REFERER') ?? '');
 
-        if ($dataBag->getBoolean('tokenize')) {
+
+        $activeToken = empty($dataBag->get('active_token')) ? null : $dataBag->get('active_token');
+
+        if (
+            $activeToken ||
+            $dataBag->getBoolean('tokenize') ||
+            $dataBag->getBoolean('saveToken', false)
+        ) {
             $customerDetails->addReference($customer->getGuest() ? '' : $customer->getId());
         }
 
