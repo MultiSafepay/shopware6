@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2025-09-01
+### Added
++ PLGSHPS6-402: Validation improvements in the API endpoints: "component-allowed" and "tokenization-allowed"
+
+### Fixed
++ PLGSHPS6-400: Fix Fashioncheque gateway code
++ PLGSHPS6-394: Flowbuilder action to generate document Invoice, causes a MultiSafepay error
+
+### Removed
++ PLGSHPS6-391: Remove the standalone tokenization
+
 ## [4.0.0] - 2025-06-17
 ### Added
 + PLGSHPS6-373: Add support for Shopware 6.7

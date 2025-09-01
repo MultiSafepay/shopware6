@@ -12,5 +12,5 @@ class VersionUtil
      *
      * @var string
      */
-    public const PLUGIN_VERSION = '4.0.0';
+    public const PLUGIN_VERSION = '4.1.0';
 }
