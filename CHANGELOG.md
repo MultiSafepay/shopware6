@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.4.0] - 2025-09-01
+### Added
++ PLGSHPS6-401: Validation improvements in the API endpoints: "component-allowed" and "tokenization-allowed"
++ PLGSHPS6-381: SalesChannelId to getTimeActive() & getTimeActiveLabel() in getSecondsActive()
+
+### Fixed
++ PLGSHPS6-397: Fix Fashioncheque gateway code
++ PLGSHPS6-395: Fix Docker based development environment
++ PLGSHPS6-394: Fix Flowbuilder action to generate document Invoice, causes a multisafepay error
+
+### Removed
++ PLGSHPS6-391: Remove the standalone tokenization
+
 ## [3.3.0] - 2025-05-21
 ### Added
 + PLGSHPS6-379: Add support for Second Chance
