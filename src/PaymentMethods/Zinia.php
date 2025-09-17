@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\Support\TechnicalName;
  * This class is used to define the details of Zinia payment method
  *
  * @package MultiSafepay\Shopware6\PaymentMethods
+ * @deprecated No longer supported by MultiSafepay
  */
 class Zinia implements PaymentMethodInterface
 {

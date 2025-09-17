@@ -155,8 +155,7 @@ class PaymentUtil
         WellnessGiftcard::class,
         WijnCadeau::class,
         WinkelCheque::class,
-        YourGift::class,
-        Zinia::class
+        YourGift::class
     ];
 
     /**
@@ -168,7 +167,8 @@ class PaymentUtil
         Alipay::class,
         IngHomePay::class,
         NationaleVerwenCadeaubon::class,
-        Betaalplan::class
+        Betaalplan::class,
+        Zinia::class
     ];
 
     /**
