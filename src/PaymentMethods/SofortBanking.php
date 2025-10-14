@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\Support\TechnicalName;
  * This class is used to define the details of Sofort Banking payment method
  *
  * @package MultiSafepay\Shopware6\PaymentMethods
+ * @deprecated No longer supported by MultiSafepay
  */
 class SofortBanking implements PaymentMethodInterface
 {
