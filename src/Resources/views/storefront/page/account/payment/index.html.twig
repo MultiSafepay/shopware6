@@ -2,7 +2,8 @@
 
 {% block page_account_payment_main %}
     {{ parent() }}
-
-    <template data-multisafepay-apple-pay
-              data-multisafepay-apple-pay-options='{{ page.paymentMethods.elements|json_encode }}'></template>
+    <template
+        data-multisafepay-apple-pay
+        data-multisafepay-apple-pay-options='{{ page.paymentMethods.elements|json_encode }}'>
+    </template>
 {% endblock %}

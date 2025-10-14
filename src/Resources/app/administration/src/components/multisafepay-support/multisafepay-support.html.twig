@@ -1,73 +1,94 @@
 <template>
-    <div id="multisafepay-support">
-        <h2 class="multisafepay-title">{{ $tc("msp-support.documentation") }}</h2>
-        <p>{{ $tc("msp-support.read_docs") }}:</p>
+    <div id="multisafepay-support" role="region" :aria-label="'MultiSafepay ' + $tc('multisafepay-support.documentation')">
+        <h2 class="multisafepay-title">{{ $tc("multisafepay-support.documentation") }}</h2>
+        <p class="mb-1">{{ $tc("multisafepay-support.read_docs") }}:</p>
+
+        <h3 class="mt-1">{{ $tc("multisafepay-support.general_information") }}</h3>
         <ul class="multisafepay-ul">
             <li>
-                <a href="https://docs.multisafepay.com/docs/shopware#shopware-6" target="_blank" rel="noopener">
-                    {{ $tc('msp-support.manual') }}
+                <a href="https://docs.multisafepay.com/docs/shopware-6"
+                   target="_blank"
+                   rel="noopener"
+                   :aria-label="$tc('multisafepay-support.manual') + ' - ' + $tc('multisafepay-support.external_link')">
+                    {{ $tc('multisafepay-support.manual') }}
+                    <span class="sr-only"> – Opens in a new window</span>
                 </a>
             </li>
             <li>
                 <a href="https://github.com/MultiSafepay/shopware6/blob/master/CHANGELOG.md"
-                   target="_blank" rel="noopener">
-                    {{ $tc("msp-support.changelog") }}
+                   target="_blank"
+                   rel="noopener"
+                   :aria-label="$tc('multisafepay-support.changelog') + ' - ' + $tc('multisafepay-support.external_link')">
+                    {{ $tc("multisafepay-support.changelog") }}
+                    <span class="sr-only"> – Opens in a new window</span>
                 </a>
             </li>
         </ul>
-        <p class="mt-1">{{ $tc("msp-support.for_developers") }}:</p>
+
+        <h3 class="mt-1">{{ $tc("multisafepay-support.for_developers") }}</h3>
         <ul class="multisafepay-ul">
             <li>
-                <a href="https://docs.multisafepay.com/reference/introduction" target="_blank" rel="noopener">
-                    {{ $tc("msp-support.api_documentation") }}
+                <a href="https://docs.multisafepay.com/reference/introduction"
+                   target="_blank"
+                   rel="noopener"
+                   :aria-label="$tc('multisafepay-support.api_documentation') + ' - ' + $tc('multisafepay-support.external_link')">
+                    {{ $tc("multisafepay-support.api_documentation") }}
+                    <span class="sr-only"> – Opens in a new window</span>
                 </a>
             </li>
             <li>
-                <a href="https://github.com/MultiSafepay/Shopware6" target="_blank" rel="noopener">
+                <a href="https://github.com/MultiSafepay/Shopware6"
+                   target="_blank"
+                   rel="noopener"
+                   :aria-label="'MultiSafepay GitHub - ' + $tc('multisafepay-support.external_link')">
                     MultiSafepay GitHub
+                    <span class="sr-only"> – Opens in a new window</span>
                 </a>
             </li>
         </ul>
-        <h2 class="mt-2">{{ $tc("msp-support.account")}}</h2>
-        <p>
-            {{ $tc("msp-support.multisafepay_account_needed") }}
-            <br/>
-            <span v-html='$tc("msp-support.multisafepay_test_account")'></span>
-        </p>
-        <p class="mt-2">
-            <span v-html='$tc("msp-support.multisafepay_live_account")'></span>
-        </p>
-        <ul class="multisafepay-ul-none">
-            <li>
-                {{ $tc("msp-support.telephone") }}:
-                <a href="tel:+31208500501">
-                    +31 (0)20 - 8500501
-                </a>
-            </li>
-            <li>
-                {{ $tc("msp-support.e-mail") }}:
-                <a href="mailto:sales@multisafepay.com">
-                    sales@multisafepay.com
-                </a>
-            </li>
-        </ul>
-        <h2 class="mt-2">{{ $tc("msp-support.contact") }}</h2>
-        <p>
-            {{ $tc("msp-support.multisafepay_assistance_integration_team") }}
-        </p>
-        <ul class="multisafepay-ul-none">
-            <li>
-                {{ $tc("msp-support.telephone") }}:
-                <a href="tel:+31208500500">
-                    +31 (0)20 - 8500500
-                </a>
-            </li>
-            <li>
-                {{ $tc("msp-support.e-mail") }}:
-                <a href="mailto:integration@multisafepay.com">
-                    integration@multisafepay.com
-                </a>
-            </li>
-        </ul>
+
+        <h2 class="mt-1">{{ $tc("multisafepay-support.account")}}</h2>
+        <section :aria-label="$tc('multisafepay-support.account')">
+            <p>{{ $tc("multisafepay-support.account_needed") }}</p>
+            <p class="mt-1" v-html='$tc("multisafepay-support.test_account")'></p>
+            <p class="mt-1" v-html='$tc("multisafepay-support.live_account")'></p>
+            <ul class="multisafepay-ul-none mt-1" :aria-label="$tc('multisafepay-support.contact') + ' - ' + $tc('multisafepay-support.sales')">
+                <li>
+                    {{ $tc("multisafepay-support.telephone") }}:
+                    <a href="tel:+31208500501"
+                       :aria-label="$tc('multisafepay-support.telephone') + ': +31 (0)20 - 8500501'">
+                        +31 (0)20 - 8500501
+                    </a>
+                </li>
+                <li>
+                    {{ $tc("multisafepay-support.e-mail") }}:
+                    <a href="mailto:sales@multisafepay.com"
+                       :aria-label="$tc('multisafepay-support.e-mail') + ': sales@multisafepay.com'">
+                        sales@multisafepay.com
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <h2 class="mt-1">{{ $tc("multisafepay-support.contact") }}</h2>
+        <section :aria-label="$tc('multisafepay-support.contact')">
+            <p>{{ $tc("multisafepay-support.assistance_integration_team") }}</p>
+            <ul class="multisafepay-ul-none mt-1" :aria-label="$tc('multisafepay-support.contact') + ' - ' + $tc('multisafepay-support.integration')">
+                <li>
+                    {{ $tc("multisafepay-support.telephone") }}:
+                    <a href="tel:+31208500500"
+                       :aria-label="$tc('multisafepay-support.telephone') + ': +31 (0)20 - 8500500'">
+                        +31 (0)20 - 8500500
+                    </a>
+                </li>
+                <li>
+                    {{ $tc("multisafepay-support.e-mail") }}:
+                    <a href="mailto:integration@multisafepay.com"
+                       :aria-label="$tc('multisafepay-support.e-mail') + ': integration@multisafepay.com'">
+                        integration@multisafepay.com
+                    </a>
+                </li>
+            </ul>
+        </section>
     </div>
 </template>

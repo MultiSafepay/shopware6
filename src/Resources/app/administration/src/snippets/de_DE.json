@@ -4,22 +4,35 @@
         "error": "Verbindung konnte nicht hergestellt werden. Bitte überprüfen Sie Ihre API-Anmeldeinformationen",
         "apiButton": "API Verbindung testen"
     },
-    "msp-support": {
+    "multisafepay-support": {
         "documentation": "Dokumentation",
         "api_documentation": "API Dokumentation",
         "read_docs": "Lesen Sie in unserem Dokumentationen mehr über MultiSafepay und wie Sie mit uns starten können",
         "manual": "Anleitung",
         "changelog": "Änderungsprotokoll",
         "faq": "FAQ",
+        "general_information": "Allgemeine Informationen",
         "for_developers": "Für Entwickler",
         "account": "Account",
-        "e-mail": "E-Mail",
+        "e-mail": "E-mail",
         "telephone": "Telefon",
         "contact": "Kontakt",
-        "multisafepay_account_needed": "Um dieses Plugin nutzen zu können benötigen Sie einen MultiSafepay-Account.",
-        "multisafepay_test_account":"Wenn Sie einen genauen Überblick über die Services von MultiSafepay bekommen möchten, können Sie einfach einen <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">Test-Account</a> eröffnen.",
-        "multisafepay_assistance_integration_team": "Sie brauchen Hilfe? Kontaktieren Sie unser Integrations-Team:",
-        "multisafepay_live_account": "Wenn Sie einen Account eröffnen wollen, können Sie einfach einen <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">Live-Account</a> eröffnen oder kontaktieren Sie das MultiSafepay Sales-Department:"
+        "account_needed": "Um dieses Plugin nutzen zu können benötigen Sie einen MultiSafepay-Account.",
+        "test_account":"Wenn Sie einen genauen Überblick über die Services von MultiSafepay bekommen möchten, können Sie einfach einen <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">Test-Account</a> eröffnen.",
+        "assistance_integration_team": "Sie brauchen Hilfe? Kontaktieren Sie unser Integrations-Team:",
+        "live_account": "Wenn Sie einen Account eröffnen wollen, können Sie einfach einen <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">Live-Account</a> eröffnen oder kontaktieren Sie das MultiSafepay Sales-Department:",
+        "external_link": "Öffnet in neuem Fenster",
+        "sales": "Verkauf",
+        "integration": "Integration"
+    },
+    "multisafepay-refund": {
+        "refund_options": "MultiSafepay Rückerstattungsoptionen",
+        "process_refund": "Rückerstattung verarbeiten",
+        "total_amount_refunded": "Gesamtbetrag rückerstattet",
+        "confirm_refund": "Rückerstattung bestätigen",
+        "cancel_refund": "Rückerstattung abbrechen",
+        "confirm_process_refund": "Bestätigen und Rückerstattung verarbeiten",
+        "confirm": "Bestätigen"
     },
     "multisafepay-tokenization": {
         "help_text": "Weitere Informationen zur Tokenisierung finden Sie in unserem <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">Dokumentationscenter</a>. Es ist erforderlich, die Zahlungskomponente zu aktivieren."
