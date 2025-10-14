@@ -144,7 +144,6 @@ class PaymentUtil
         PayPal::class,
         Paysafecard::class,
         PodiumCadeaukaart::class,
-        SofortBanking::class,
         SportEnFitCadeau::class,
         Trustly::class,
         TrustPay::class,
@@ -168,7 +167,8 @@ class PaymentUtil
         IngHomePay::class,
         NationaleVerwenCadeaubon::class,
         Betaalplan::class,
-        Zinia::class
+        Zinia::class,
+        SofortBanking::class
     ];
 
     /**
