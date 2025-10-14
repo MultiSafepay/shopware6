@@ -19,9 +19,23 @@
         customerId: context.customer.id
     } %}
 
-    <template data-multisafepay-component
-              data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'></template>
-    <div id="multisafepay-checkout" style="margin-bottom: 2rem"></div>
-    <input type="hidden" id="multisafepay-payload" name="payload" value="" form="confirmOrderForm">
-    <input type="hidden" id="multisafepay-tokenize" name="tokenize" value="false" form="confirmOrderForm">
+    <template
+        data-multisafepay-component
+        data-multisafepay-component-options='{{ multiSafepayComponentOptions|json_encode }}'>
+    </template>
+    <div id="multisafepay-checkout"
+        style="margin-bottom: 2rem"
+        role="main"
+        aria-label="{{ 'multisafepay-aria.payment_form'|trans }} {{ context.paymentMethod.name }}">
+    </div>
+    <input type="hidden"
+        id="multisafepay-payload"
+        name="payload"
+        value=""
+        form="confirmOrderForm">
+    <input type="hidden"
+        id="multisafepay-tokenize"
+        name="tokenize"
+        value="false"
+        form="confirmOrderForm">
 {% endif %}

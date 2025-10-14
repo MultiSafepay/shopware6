@@ -1,9 +1,8 @@
 {
-  "msp-mybank": {
-    "selectBankIssuer": "Select your bank"
+  "multisafepay-mybank": {
+    "select_bank_issuer": "Select your bank"
   },
-  "multisafepay-tokenization": {
-    "useDifferentCreditCard" : "Use a different credit card",
-    "saveYourCreditCard" : "Save your credit card for the next purchase"
+  "multisafepay-aria": {
+    "payment_form": "Payment form"
   }
 }

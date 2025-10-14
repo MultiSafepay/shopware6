@@ -1,7 +1,10 @@
 <template v-if="isRefundAllowed">
-    <mt-card title="Refund"
-             :isLoading="isLoading"
-             class="sw-order-detail-base__line-item-grid-card">
+    <mt-card
+        title="Refund"
+        :isLoading="isLoading"
+        class="sw-order-detail-base__line-item-grid-card"
+        role="region"
+        :aria-label="$t('multisafepay-refund.refund_options')">
         <mt-number-field
             label="Amount"
             name="sw-field--amount"
@@ -10,25 +13,43 @@
             number-type="float"
             :step="0.01"
             :max="maxRefundableAmount"
-            :disabled="isRefundDisabled">
+            :disabled="isRefundDisabled"
+            aria-required="true">
         </mt-number-field>
-        <mt-button variant="primary" @click="showRefundModal()" :disabled="isRefundDisabled">Refund</mt-button>
+        <mt-button
+            variant="primary"
+            @click="showRefundModal()"
+            :disabled="isRefundDisabled"
+            :aria-label="$t('multisafepay-refund.process_refund')">
+            Refund
+        </mt-button>
         <span class="float-right">
             <strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmount }}</strong>
         </span>
-        <sw-modal v-show="showModal" title="MultiSafepay refund" variant="small" @modal-close="closeModal()">
+        <sw-modal
+            v-show="showModal"
+            title="MultiSafepay refund"
+            variant="small"
+            @modal-close="closeModal()"
+            role="dialog"
+            aria-live="polite"
+            :aria-label="$t('multisafepay-refund.confirm_refund')">
             <template #default>
                 Are you sure you want to refund {{ order ? order.currency.symbol : 'currency' }}{{ this.amount }}?
                 <br/>
             </template>
             <template #modal-footer>
-                <mt-button @click="closeModal()" size="small">
+                <mt-button
+                    @click="closeModal()"
+                    size="small"
+                    :aria-label="$t('multisafepay-refund.cancel_refund')">
                     {{ $t('global.default.cancel') }}
                 </mt-button>
-                <mt-button @click="applyRefund()"
-                           size="small"
-                           variant="primary">
-                    {{ $t('global.default.apply') }}
+                <mt-button @click="confirmRefund()"
+                    size="small"
+                    variant="primary"
+                    :aria-label="$t('multisafepay-refund.confirm_process_refund')">
+                    {{ $t('multisafepay-refund.confirm') }}
                 </mt-button>
             </template>
         </sw-modal>

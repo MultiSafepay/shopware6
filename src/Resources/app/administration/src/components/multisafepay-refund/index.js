@@ -45,7 +45,8 @@ Component.register('multisafepay-refund', {
             isRefundAllowed: true,
             refundedAmount: 0,
             showModal: false,
-            isRefundDisabled: false
+            isRefundDisabled: false,
+            isFirstTab: false
         };
     },
 
@@ -67,8 +68,11 @@ Component.register('multisafepay-refund', {
         // This method is used to close the refund modal
         closeModal() {
             this.showModal = false;
+            this.isFirstTab = true;
         },
-        // This method is used to show the refund modal. It also validates the refund amount.
+
+        // This method is used to show the refund modal.
+        // It also validates the refund amount.
         showRefundModal() {
             if (this.amount < 0.01) {
                 this.createNotificationWarning({
@@ -78,9 +82,12 @@ Component.register('multisafepay-refund', {
                 return;
             }
             this.showModal = true;
+            this.isFirstTab = true;
         },
-        // This method is used to apply the refund. It calls the refund API and handles the response.
-        applyRefund() {
+
+        // This method is used to confirm the refund.
+        // It calls the refund API and handles the response.
+        confirmRefund() {
             if (this.isLoading) {
                 return;
             }
@@ -93,7 +100,9 @@ Component.register('multisafepay-refund', {
                     if (ApiResponse.status === false) {
                         this.createNotificationError({
                             title: 'Failed to refund',
-                            message: ApiResponse.message
+                            message: 'The refund could not be processed. ' +
+                                'Please check the payment status and try again. ' +
+                                'Error details: ' + ApiResponse.message
                         });
                         return;
                     }
@@ -108,19 +117,25 @@ Component.register('multisafepay-refund', {
                 .catch((error) => {
                     this.createNotificationError({
                         title: 'Error',
-                        message: error.message || 'An unexpected error occurred during refund'
+                        message: 'An unexpected error occurred while processing the refund. ' +
+                            'Please contact support if this problem persists. ' +
+                            'Error details: ' + (error.message || 'Unknown error')
                     });
                 })
                 .finally(() => {
                     this.isLoading = false;
                 });
         },
-        // This method is called when the component is created. It sets the version context and reloads the entity data.
+
+        // This method is called when the component is created.
+        // It sets the version context and reloads the entity data.
         createdComponent() {
             this.versionContext = Shopware.Context.api;
             this.reloadEntityData();
         },
-        // This method is used to reload the entity data. It fetches the order data and refunds data from the API.
+
+        // This method is used to reload the entity data.
+        // It fetches the order data and refunds data from the API.
         reloadEntityData() {
             this.isLoading = true;
             return this.orderRepository.get(this.orderId, this.versionContext, this.orderCriteria).then((response) => {
@@ -139,6 +154,28 @@ Component.register('multisafepay-refund', {
                 return Promise.reject();
             });
         },
+
+        // Handle keyboard events for closing modal with Escape key and Tab navigation
+        handleKeydown(event) {
+            if (event.key === 'Escape' && this.showModal) {
+                this.closeModal();
+            }
+
+            // Handle the Tab key to focus close button on the first tab
+            if (event.key === 'Tab' && this.showModal && this.isFirstTab) {
+                event.preventDefault();
+                this.focusModalCloseButton();
+                this.isFirstTab = false;
+            }
+        },
+
+        // This method is used to focus on the modal's close button (X icon)
+        focusModalCloseButton() {
+            const closeButton = document.querySelector('.sw-modal__close');
+            if (closeButton) {
+                closeButton.focus();
+            }
+        }
     },
 
     // Define the computed properties that this component will use
@@ -148,16 +185,22 @@ Component.register('multisafepay-refund', {
         },
         orderCriteria() {
             const criteria = new Criteria(this.page, this.limit);
-
-            criteria
-                .addAssociation('currency')
-
-            return criteria;
+            return criteria.addAssociation('currency');
         },
     },
 
     // Define the lifecycle hooks that this component will use
     created() {
         this.createdComponent();
+    },
+
+    // Add keyboard event listener when component is mounted
+    mounted() {
+        document.addEventListener('keydown', this.handleKeydown);
+    },
+
+    // Remove keyboard event listener when component is destroyed
+    beforeDestroy() {
+        document.removeEventListener('keydown', this.handleKeydown);
     }
 });

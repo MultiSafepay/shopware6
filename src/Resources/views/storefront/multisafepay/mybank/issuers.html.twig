@@ -1,8 +1,11 @@
 {% if page.extensions.multisafepay.issuers|length > 0 %}
 
     <label for="issuers-mybank">
-        <select id="issuers-mybank" form="confirmOrderForm" name="issuer" class="msp-ss-custom-select">
-            <option value="">{{ "msp-mybank.selectBankIssuer"|trans }}</option>
+        <select id="issuers-mybank"
+                form="confirmOrderForm"
+                name="issuer"
+                class="msp-ss-custom-select">
+            <option value="">{{ "multisafepay-mybank.select_bank_issuer"|trans }}</option>
             {% for issuer in page.extensions.multisafepay.issuers %}
                 <option {% if page.extensions.multisafepay.last_used_issuer == issuer.code %} selected="selected" {% endif %} value="{{ issuer.code }}">{{ issuer.description }}</option>
             {% endfor %}

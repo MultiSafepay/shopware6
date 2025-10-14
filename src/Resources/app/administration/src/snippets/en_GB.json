@@ -4,22 +4,26 @@
         "error": "Connection could not be established. Please check your API credentials",
         "apiButton": "Validate API credentials"
     },
-    "msp-support": {
+    "multisafepay-support": {
         "documentation": "Documentation",
         "api_documentation": "API Documentation",
         "read_docs": "Read our documentation for more information about MultiSafepay and how to get started",
         "manual": "Manual",
         "changelog": "Changelog",
         "faq": "FAQ",
+        "general_information": "General information",
         "for_developers": "For developers",
         "account": "Account",
         "e-mail": "E-mail",
         "telephone": "Telephone",
         "contact": "Contact",
-        "multisafepay_account_needed": "To use this plugin you need a MultiSafepay account.",
-        "multisafepay_test_account":"If you would like to have a clear overview of what MultiSafepay has to offer, feel free to create a <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">test account</a>.",
-        "multisafepay_assistance_integration_team": "Need assistance? Feel free to contact our integration team:",
-        "multisafepay_live_account": "If you would like to set up a live account, feel free to create a <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> or contact the MultiSafepay Sales department:"
+        "account_needed": "To use this plugin you need a MultiSafepay account.",
+        "test_account": "If you would like to have a clear overview of what MultiSafepay has to offer, feel free to create a <a href=\"https://testmerchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">test account</a>.",
+        "assistance_integration_team": "Need assistance? Feel free to contact our integration team:",
+        "live_account": "If you would like to set up a live account, feel free to create a <a href=\"https://merchant.multisafepay.com/signup\" target=\"_blank\" rel=\"noopener\">live account</a> or contact the MultiSafepay Sales department:",
+        "external_link": "Opens in new window",
+        "sales": "Sales",
+        "integration": "Integration"
     },
     "multisafepay-tokenization": {
         "help_text": "It requires enabling the Payment Component. Check out our documentation center to found more about tokenization at https://docs.multisafepay.com/docs/recurring-payments"
@@ -29,5 +33,14 @@
     },
     "multisafepay-direct": {
         "help_text": "Enable the payment inside the checkout page"
+    },
+    "multisafepay-refund": {
+        "refund_options": "MultiSafepay refund options",
+        "process_refund": "Process refund",
+        "total_amount_refunded": "Total amount refunded",
+        "confirm_refund": "Confirm refund",
+        "cancel_refund": "Cancel refund",
+        "confirm_process_refund": "Confirm and process refund",
+        "confirm": "Confirm"
     }
 }
