@@ -1,28 +1,28 @@
 {% block sw_settings_payment_detail_content_field_after_order_enabled %}
     {% parent %}
     <sw-switch-field
-        v-if="componentSupported"
-        v-model:value="paymentMethod.customFields.component"
-        name="sw-field--paymentMethod-customFields.component"
-        class="sw-settings-payment-detail__field-custom-fields-component"
-        label="Component"
-        :help-text="$tc('multisafepay-component.help_text')"
+            v-if="isComponentAllowed"
+            v-model:value="paymentMethod.customFields.component"
+            name="sw-field--paymentMethod-customFields.component"
+            class="sw-settings-payment-detail__field-custom-fields-component"
+            label="Component"
+            :help-text="$tc('multisafepay-component.help_text')"
     ></sw-switch-field>
     <sw-switch-field
-        v-if="tokenizationSupported"
-        v-model:value="paymentMethod.customFields.tokenization"
-        name="sw-field--paymentMethod-customFields.tokenization"
-        class="sw-settings-payment-detail__field-custom-fields-tokenization"
-        label="Tokenization"
-        :help-text="$tc('multisafepay-tokenization.help_text')"
-        :disabled="isTokenizationDisabled"
+            v-if="isTokenizationAllowed"
+            v-model:value="paymentMethod.customFields.tokenization"
+            name="sw-field--paymentMethod-customFields.tokenization"
+            class="sw-settings-payment-detail__field-custom-fields-tokenization"
+            label="Tokenization"
+            :help-text="$tc('multisafepay-tokenization.help_text')"
+            :disabled="isTokenizationDisabled"
     ></sw-switch-field>
     <sw-switch-field
-        v-if="paymentMethod.name.toLowerCase().includes('mybank')"
-        v-model:value="paymentMethod.customFields.direct"
-        name="sw-field--paymentMethod-customFields.direct"
-        class="sw-settings-payment-detail__field-custom-fields-direct"
-        label="Pay inside checkout"
-        :help-text="$tc('multisafepay-direct.help_text')"
+            v-if="isMyBankDirectSupported"
+            v-model:value="paymentMethod.customFields.direct"
+            name="sw-field--paymentMethod-customFields.direct"
+            class="sw-settings-payment-detail__field-custom-fields-direct"
+            label="Pay inside checkout"
+            :help-text="$tc('multisafepay-direct.help_text')"
     ></sw-switch-field>
 {% endblock %}

@@ -12,6 +12,7 @@ use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Exception\InvalidDataInitializationException;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Service\SettingsService;
@@ -112,7 +113,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 $lastUsedIssuer = $customer->getCustomFields()['last_used_issuer'] ?? null;
             }
 
-            if ($event->getSalesChannelContext()->getPaymentMethod()->getName() === MyBank::GATEWAY_NAME) {
+            $paymentMethod = $event->getSalesChannelContext()->getPaymentMethod();
+            if ($paymentMethod->getHandlerIdentifier() === MyBankPaymentHandler::class) {
                 $gatewayNameWithIssuers = MyBank::GATEWAY_NAME;
                 $gatewayCodeWithIssuers = MyBank::GATEWAY_CODE;
             }
@@ -134,7 +136,7 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 
             // Validating if the "direct" status of MyBank "is" true, so issuers should be shown
             // because is a gateway that can switch just between using direct or redirect modes
-            $isMyBankWithDirect = ($gatewayCode === 'MYBANK') && !empty($customFields['direct']);
+            $isMyBankDirect = ($gatewayCode === 'MYBANK') && !empty($customFields['direct']);
 
             $struct = new MultiSafepayStruct();
             $struct->assign([
@@ -150,7 +152,8 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 'direct' => true,
                 'redirect' => false,
                 'show_tokenization' => $this->showTokenization($salesChannelContext),
-                'issuers' => $isMyBankWithDirect ? $issuers : [],
+                'is_mybank_direct' => $isMyBankDirect,
+                'issuers' => $isMyBankDirect ? $issuers : [],
                 'last_used_issuer' => $lastUsedIssuer,
                 'shopware_compare' => version_compare($this->shopwareVersion, '6.4', '<'),
                 'payment_method_name' => $activeName,

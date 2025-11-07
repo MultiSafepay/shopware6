@@ -1,5 +1,5 @@
 # Use dockware/dev as the base image
-FROM dockware/dev:6.6.10.5
+FROM dockware/dev:6.6.10.6
 
 # Swith to root user
 USER root

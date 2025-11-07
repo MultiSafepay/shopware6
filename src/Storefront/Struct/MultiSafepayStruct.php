@@ -71,6 +71,13 @@ class MultiSafepayStruct extends Struct
     public bool $show_tokenization;
 
     /**
+     * Whether this is MyBank with direct mode enabled
+     *
+     * @var bool
+     */
+    public bool $is_mybank_direct = false;
+
+    /**
      * Issuers
      *
      * @var array
