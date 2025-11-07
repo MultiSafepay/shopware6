@@ -2,7 +2,7 @@
 
 {% block component_payment_method_field %}
     {{ parent() }}
-    {% if payment.translated.customFields.is_multisafepay and payment.translated.customFields.template and page.extensions.multisafepay.current_payment_method_id == payment.id %}
-        {% include payment.translated.customFields.template %}
+    {% if payment.customFields.is_multisafepay and payment.customFields.template and page.extensions.multisafepay.current_payment_method_id == payment.id %}
+        {% include payment.customFields.template %}
     {% endif %}
 {% endblock %}

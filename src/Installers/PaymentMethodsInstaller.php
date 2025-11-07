@@ -63,6 +63,11 @@ class PaymentMethodsInstaller implements InstallerInterface
     public EntityRepository $mediaRepository;
 
     /**
+     * @var EntityRepository
+     */
+    public EntityRepository $languageRepository;
+
+    /**
      * PaymentMethodsInstaller constructor
      *
      * @param ContainerInterface $container
@@ -72,6 +77,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $this->pluginIdProvider = $container->get(PluginIdProvider::class);
         $this->paymentMethodRepository = $container->get('payment_method.repository');
         $this->mediaRepository = $container->get('media.repository');
+        $this->languageRepository = $container->get('language.repository');
     }
 
     /**
@@ -167,6 +173,33 @@ class PaymentMethodsInstaller implements InstallerInterface
             }
         }
 
+        // Default custom fields
+        $customFieldsData = [
+            self::IS_MULTISAFEPAY => true,
+            self::TEMPLATE => $paymentMethod->getTemplate(),
+            'direct' => false,
+            'component' => false,
+            'tokenization' => false
+        ];
+
+        // During upgrade, preserve existing custom field values for direct, component, and tokenization
+        if (!$isInstall && $paymentMethodId) {
+            $existingCustomFields = $this->getExistingCustomFields($paymentMethodId, $context);
+
+            if (!empty($existingCustomFields)) {
+                // Preserve the admin-configured values if they exist
+                if (isset($existingCustomFields['direct'])) {
+                    $customFieldsData['direct'] = $existingCustomFields['direct'];
+                }
+                if (isset($existingCustomFields['component'])) {
+                    $customFieldsData['component'] = $existingCustomFields['component'];
+                }
+                if (isset($existingCustomFields['tokenization'])) {
+                    $customFieldsData['tokenization'] = $existingCustomFields['tokenization'];
+                }
+            }
+        }
+
         $paymentData = [
             'id' => $paymentMethodId,
             'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
@@ -175,10 +208,9 @@ class PaymentMethodsInstaller implements InstallerInterface
             'mediaId' => $mediaId,
             'technicalName' => $paymentMethod->getTechnicalName(),
             'afterOrderEnabled' => true,
-            'customFields' => [
-                self::IS_MULTISAFEPAY => true,
-                self::TEMPLATE => $paymentMethod->getTemplate()
-            ]
+            'customFields' => $customFieldsData,
+            // Add translations with custom fields and name for all languages
+            'translations' => $this->getPaymentMethodTranslations($paymentMethod->getName(), $customFieldsData)
         ];
 
         if ($isActive && is_null($paymentMethodId)) {
@@ -214,6 +246,29 @@ class PaymentMethodsInstaller implements InstallerInterface
         }
 
         return $paymentIds->getIds()[0];
+    }
+
+    /**
+     *  Get existing custom fields from a payment method
+     *
+     * Retrieves the current custom fields for a payment method to preserve
+     * admin-configured values during plugin upgrades
+     *
+     * @param string $paymentMethodId
+     * @param Context $context
+     * @return array|null Returns the custom fields array if payment method exists and has custom fields, null otherwise.
+     *                     Note: Returns null (not empty array) when no custom fields are set.
+     */
+    private function getExistingCustomFields(string $paymentMethodId, Context $context): ?array
+    {
+        $criteria = new Criteria([$paymentMethodId]);
+        $paymentMethod = $this->paymentMethodRepository->search($criteria, $context)->first();
+
+        if (!$paymentMethod) {
+            return null;
+        }
+
+        return $paymentMethod->getCustomFields();
     }
 
     /**
@@ -293,6 +348,34 @@ class PaymentMethodsInstaller implements InstallerInterface
         ];
 
         $this->paymentMethodRepository->upsert([$paymentData], $context);
+    }
+
+    /**
+     *  Get payment method translations with custom fields for all languages
+     *
+     * @param string $name
+     * @param array $customFields
+     * @return array
+     */
+    private function getPaymentMethodTranslations(string $name, array $customFields): array
+    {
+        $translations = [];
+
+        // Get all languages
+        $languages = $this->languageRepository->search(
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+
+        // Create translation entry for each language with name and essential custom fields
+        foreach ($languages as $language) {
+            $translations[$language->getId()] = [
+                'name' => $name,
+                'customFields' => $customFields
+            ];
+        }
+
+        return $translations;
     }
 
     /**

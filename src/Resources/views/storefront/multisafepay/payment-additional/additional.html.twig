@@ -1,4 +1,4 @@
-{% if context.paymentMethod.translated.customFields.component == true and page.extensions.multisafepay.api_token %}
+{% if context.paymentMethod.customFields.component == true and page.extensions.multisafepay.api_token %}
     {% if page.cart %}
         {% set amount = page.cart.price.totalPrice %}
     {% else %}

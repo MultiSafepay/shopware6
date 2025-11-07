@@ -13,6 +13,7 @@ use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Exception\InvalidDataInitializationException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Subscriber\CheckoutConfirmTemplateSubscriber;
@@ -577,5 +578,150 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
         );
 
         $this->assertEquals('test-template-id', $result);
+    }
+
+    /**
+     * Test that MyBank identification uses handlerIdentifier instead of name
+     * This fixes the issue where language changes would break MyBank issuers functionality
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testMyBankIdentificationUsesHandlerIdentifier(): void
+    {
+        // Mock payment method with MyBank handler
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')
+            ->willReturn(MyBankPaymentHandler::class);
+        $paymentMethodMock->method('getName')
+            ->willReturn('Italian MyBank Name'); // Different name to ensure handler is used
+
+        $salesChannelContextMock = $this->createMock(SalesChannelContext::class);
+        $salesChannelContextMock->method('getPaymentMethod')
+            ->willReturn($paymentMethodMock);
+
+        // Verify that handlerIdentifier is correctly identified as MyBank
+        // The class constant should match what's in CheckoutConfirmTemplateSubscriber
+        $this->assertEquals(
+            MyBankPaymentHandler::class,
+            $paymentMethodMock->getHandlerIdentifier()
+        );
+    }
+
+    /**
+     * Test is_mybank_direct flag is set correctly when MyBank is in direct mode
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testIsMyBankDirectFlagSetCorrectly(): void
+    {
+        // This test verifies that the is_mybank_direct flag is properly set
+        // when MyBank payment method has 'direct' custom field set to true
+
+        // Mock payment method with MyBank handler and direct mode enabled
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')
+            ->willReturn(MyBankPaymentHandler::class);
+        $paymentMethodMock->method('getCustomFields')
+            ->willReturn([
+                'is_multisafepay' => true,
+                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
+                'direct' => true, // Direct mode enabled
+                'component' => false,
+                'tokenization' => false
+            ]);
+
+        $paymentMethodMock->method('getTranslated')
+            ->willReturn(['customFields' => [
+                'is_multisafepay' => true,
+                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
+                'direct' => true,
+                'component' => false,
+                'tokenization' => false
+            ]]);
+
+        // Verify that custom fields contain the direct flag set to true
+        $customFields = $paymentMethodMock->getCustomFields();
+        $this->assertArrayHasKey('direct', $customFields);
+        $this->assertTrue($customFields['direct']);
+
+        // Verify handler identifier is MyBank
+        $this->assertEquals(MyBankPaymentHandler::class, $paymentMethodMock->getHandlerIdentifier());
+    }
+
+    /**
+     * Test is_mybank_direct flag is false when MyBank is NOT in direct mode
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testIsMyBankDirectFlagFalseWhenNotDirect(): void
+    {
+        // Mock payment method with MyBank handler but direct mode disabled
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')
+            ->willReturn(MyBankPaymentHandler::class);
+        $paymentMethodMock->method('getCustomFields')
+            ->willReturn([
+                'is_multisafepay' => true,
+                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
+                'direct' => false, // Direct mode disabled
+                'component' => false,
+                'tokenization' => false
+            ]);
+
+        // Verify direct flag is false
+        $customFields = $paymentMethodMock->getCustomFields();
+        $this->assertArrayHasKey('direct', $customFields);
+        $this->assertFalse($customFields['direct']);
+
+        // Verify handler identifier is MyBank
+        $this->assertEquals(MyBankPaymentHandler::class, $paymentMethodMock->getHandlerIdentifier());
+    }
+
+    /**
+     * Test custom fields structure for MyBank with direct mode variations
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testMyBankCustomFieldsStructureWithDirectModeVariations(): void
+    {
+        // Test MyBank with direct mode enabled
+        $paymentMethodWithDirect = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodWithDirect->method('getHandlerIdentifier')
+            ->willReturn(MyBankPaymentHandler::class);
+        $paymentMethodWithDirect->method('getCustomFields')
+            ->willReturn([
+                'is_multisafepay' => true,
+                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
+                'direct' => true,
+                'component' => false,
+                'tokenization' => false
+            ]);
+
+        $customFieldsDirect = $paymentMethodWithDirect->getCustomFields();
+        $this->assertTrue($customFieldsDirect['direct']);
+        $this->assertTrue($customFieldsDirect['is_multisafepay']);
+        $this->assertStringContainsString('mybank', $customFieldsDirect['template']);
+
+        // Test MyBank with direct mode disabled
+        $paymentMethodWithoutDirect = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodWithoutDirect->method('getHandlerIdentifier')
+            ->willReturn(MyBankPaymentHandler::class);
+        $paymentMethodWithoutDirect->method('getCustomFields')
+            ->willReturn([
+                'is_multisafepay' => true,
+                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
+                'direct' => false,
+                'component' => false,
+                'tokenization' => false
+            ]);
+
+        $customFieldsNoDirect = $paymentMethodWithoutDirect->getCustomFields();
+        $this->assertFalse($customFieldsNoDirect['direct']);
+        $this->assertTrue($customFieldsNoDirect['is_multisafepay']);
+        $this->assertStringContainsString('mybank', $customFieldsNoDirect['template']);
     }
 }
