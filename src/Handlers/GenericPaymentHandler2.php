@@ -9,6 +9,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\Generic2;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -38,16 +39,18 @@ class GenericPaymentHandler2 extends AsyncPaymentHandler
      * @param SettingsService $settingsService
      * @param EventDispatcherInterface $eventDispatcher
      * @param OrderTransactionStateHandler $transactionStateHandler
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
         SettingsService $settingsService,
         EventDispatcherInterface $eventDispatcher,
-        OrderTransactionStateHandler $transactionStateHandler
+        OrderTransactionStateHandler $transactionStateHandler,
+        LoggerInterface $logger
     ) {
+        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler, $logger);
         $this->settingsService = $settingsService;
-        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler);
     }
 
     /**

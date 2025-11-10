@@ -8,6 +8,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\AlipayPaymentHandler">
@@ -15,6 +16,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\AlipayPlusPaymentHandler">
@@ -22,6 +24,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\AmazonPayPaymentHandler">
@@ -29,6 +32,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler">
@@ -36,6 +40,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\ApplePayPaymentHandler">
@@ -43,6 +48,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BancontactPaymentHandler">
@@ -50,6 +56,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BanktransferPaymentHandler">
@@ -57,6 +64,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BelfiusPaymentHandler">
@@ -64,6 +72,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BetaalplanPaymentHandler">
@@ -71,6 +80,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BillinkPaymentHandler">
@@ -78,6 +88,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\BizumPaymentHandler">
@@ -85,6 +96,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\CbcPaymentHandler">
@@ -92,6 +104,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\CreditCardPaymentHandler">
@@ -99,6 +112,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\DirectDebitPaymentHandler">
@@ -106,6 +120,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\DirectBankTransferPaymentHandler">
@@ -113,6 +128,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\DotpayPaymentHandler">
@@ -120,6 +136,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler">
@@ -128,6 +145,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler2">
@@ -136,6 +154,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler3">
@@ -144,6 +163,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler4">
@@ -152,6 +172,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GenericPaymentHandler5">
@@ -160,6 +181,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\EinvoicePaymentHandler">
@@ -167,6 +189,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\EpsPaymentHandler">
@@ -174,6 +197,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GiropayPaymentHandler">
@@ -181,6 +205,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler">
@@ -188,6 +213,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\IdealPaymentHandler">
@@ -195,6 +221,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\In3B2bPaymentHandler">
@@ -202,6 +229,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\In3PaymentHandler">
@@ -209,6 +237,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\IngHomePayPaymentHandler">
@@ -216,6 +245,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\KbcPaymentHandler">
@@ -223,6 +253,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler">
@@ -230,6 +261,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MaestroPaymentHandler">
@@ -237,6 +269,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MastercardPaymentHandler">
@@ -244,6 +277,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MultibancoPaymentHandler">
@@ -251,6 +285,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MbwayPaymentHandler">
@@ -258,6 +293,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MultiSafepayPaymentHandler">
@@ -265,6 +301,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler">
@@ -272,6 +309,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayAfterDeliveryPaymentHandler">
@@ -279,6 +317,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayAfterDeliveryInstallmentsPaymentHandler">
@@ -286,6 +325,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayAfterDeliveryMfPaymentHandler">
@@ -293,6 +333,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PayPalPaymentHandler">
@@ -300,6 +341,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\PaysafecardPaymentHandler">
@@ -307,6 +349,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\SofortBankingPaymentHandler">
@@ -314,6 +357,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\TrustlyPaymentHandler">
@@ -321,6 +365,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\TrustPayPaymentHandler">
@@ -328,6 +373,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\VisaPaymentHandler">
@@ -335,6 +381,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\WeChatPayPaymentHandler">
@@ -342,6 +389,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="MultiSafepay\Shopware6\Handlers\ZiniaPaymentHandler">
@@ -349,6 +397,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method.async"/>
         </service>
     </services>

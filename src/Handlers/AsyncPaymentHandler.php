@@ -12,6 +12,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -53,23 +54,31 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     private OrderTransactionStateHandler $transactionStateHandler;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * AsyncPaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
      * @param OrderRequestBuilder $orderRequestBuilder
      * @param EventDispatcherInterface $eventDispatcher
      * @param OrderTransactionStateHandler $transactionStateHandler
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
         EventDispatcherInterface $eventDispatcher,
-        OrderTransactionStateHandler $transactionStateHandler
+        OrderTransactionStateHandler $transactionStateHandler,
+        LoggerInterface $logger
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
         $this->eventDispatcher = $eventDispatcher;
         $this->transactionStateHandler = $transactionStateHandler;
+        $this->logger = $logger;
     }
 
     /**
@@ -118,9 +127,15 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $salesChannelContext->getSalesChannel()->getId()
             )->getTransactionManager()->create($orderRequest);
         } catch (ApiException $apiException) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error(
+                'MultiSafepay API Exception during payment',
+                [
+                    'message' => $apiException->getMessage(),
+                    'orderTransactionId' => $orderTransactionId,
+                    'salesChannelId' => $salesChannelContext->getSalesChannel()->getId(),
+                    'code' => $apiException->getCode()
+                ]
+            );
             $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
             throw new PaymentException(
                 (int)$orderTransactionId,
@@ -128,9 +143,15 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $apiException->getMessage()
             );
         } catch (ClientExceptionInterface $clientException) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error(
+                'HTTP Client Exception during payment',
+                [
+                    'message' => $clientException->getMessage(),
+                    'orderTransactionId' => $orderTransactionId,
+                    'salesChannelId' => $salesChannelContext->getSalesChannel()->getId(),
+                    'code' => $clientException->getCode()
+                ]
+            );
             $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
             throw new PaymentException(
                 (int)$orderTransactionId,
@@ -138,6 +159,15 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $clientException->getMessage()
             );
         } catch (Exception $exception) {
+            $this->logger->error(
+                'Unexpected exception during payment',
+                [
+                    'message' => $exception->getMessage(),
+                    'orderTransactionId' => $orderTransactionId,
+                    'salesChannelId' => $salesChannelContext->getSalesChannel()->getId(),
+                    'code' => $exception->getCode()
+                ]
+            );
             $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
             throw new PaymentException(
                 (int)$orderTransactionId,
@@ -163,7 +193,6 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $orderId = $transaction->getOrder()->getOrderNumber();
 
-
         try {
             $transactionId = $request->query->get('transactionid');
 
@@ -171,6 +200,17 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 throw new RuntimeException('Order number does not match order number known at MultiSafepay');
             }
         } catch (Exception $exception) {
+            $this->logger->error(
+                'Exception during payment finalization',
+                [
+                    'message' => $exception->getMessage(),
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $orderId,
+                    'salesChannelId' => $salesChannelContext->getSalesChannel()->getId(),
+                    'code' => $exception->getCode(),
+                    'requestTransactionId' => $request->query->get('transactionid')
+                ]
+            );
             $this->transactionStateHandler->fail($orderTransactionId, $salesChannelContext->getContext());
             throw new PaymentException(
                 (int)$orderTransactionId,
@@ -210,9 +250,15 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $salesChannelContext->getSalesChannel()->getId()
             )->getTransactionManager()->update($orderId, $updateRequest);
         } catch (ClientExceptionInterface|Exception $exception) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->warning(
+                'Failed to cancel pre-transaction at MultiSafepay',
+                [
+                    'message' => $exception->getMessage(),
+                    'orderNumber' => $orderId,
+                    'salesChannelId' => $salesChannelContext->getSalesChannel()->getId(),
+                    'code' => $exception->getCode()
+                ]
+            );
         }
     }
 

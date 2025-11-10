@@ -20,6 +20,7 @@ use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use MultiSafepay\ValueObject\Money;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -48,20 +49,28 @@ class RefundController extends AbstractController
     private PaymentUtil $paymentUtil;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * RefundController constructor
      *
      * @param SdkFactory $sdkFactory
      * @param PaymentUtil $paymentUtil
      * @param OrderUtil $orderUtil
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
         PaymentUtil $paymentUtil,
-        OrderUtil $orderUtil
+        OrderUtil $orderUtil,
+        LoggerInterface $logger
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->paymentUtil = $paymentUtil;
         $this->orderUtil = $orderUtil;
+        $this->logger = $logger;
     }
 
     /**
@@ -116,7 +125,16 @@ class RefundController extends AbstractController
         try {
             $result = $this->sdkFactory->create($order->getSalesChannelId())
                 ->getTransactionManager()->get($order->getOrderNumber());
-        } catch (Exception) {
+        } catch (Exception $exception) {
+            $this->logger->warning(
+                'Failed to get refund data from MultiSafepay',
+                [
+                    'message' => $exception->getMessage(),
+                    'orderId' => $order->getId(),
+                    'orderNumber' => $order->getOrderNumber(),
+                    'salesChannelId' => $order->getSalesChannelId()
+                ]
+            );
             return new JsonResponse(['isAllowed' => true, 'refundedAmount' => 0]);
         }
 
@@ -161,8 +179,33 @@ class RefundController extends AbstractController
         try {
             $transactionManager->refund($transactionData, $refundRequest);
 
+            $this->logger->info(
+                'Refund processed successfully',
+                [
+                    'message' => 'Refund transaction completed',
+                    'orderId' => $order->getId(),
+                    'orderNumber' => $order->getOrderNumber(),
+                    'salesChannelId' => $order->getSalesChannelId(),
+                    'amount' => $request->request->get('amount'),
+                    'currency' => $currency->getIsoCode()
+                ]
+            );
+
             return new JsonResponse(['status' => true]);
         } catch (Exception $exception) {
+            $this->logger->error(
+                'Failed to process refund',
+                [
+                    'message' => $exception->getMessage(),
+                    'orderId' => $order->getId(),
+                    'orderNumber' => $order->getOrderNumber(),
+                    'amount' => $request->request->get('amount'),
+                    'currency' => $currency->getIsoCode(),
+                    'salesChannelId' => $order->getSalesChannelId(),
+                    'code' => $exception->getCode()
+                ]
+            );
+
             return new JsonResponse([
                 'status' => false,
                 'message' => $exception->getMessage(),
