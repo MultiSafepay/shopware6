@@ -9,6 +9,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <argument type="service" id="multisafepay.logger"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -17,12 +18,15 @@
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="multisafepay.logger"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
         </service>
         <service id="MultiSafepay\Shopware6\Storefront\Controller\ApiController" public="true">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="multisafepay.logger"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

@@ -19,6 +19,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
@@ -94,6 +95,11 @@ class PaymentHandlerTest extends TestCase
     private EntityRepository|MockObject $orderRepository;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private LoggerInterface|MockObject $logger;
+
+    /**
      * @var Context|MockObject
      */
     private Context|MockObject $context;
@@ -154,6 +160,7 @@ class PaymentHandlerTest extends TestCase
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
         $this->orderRepository = $this->createMock(EntityRepository::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->context = $this->createMock(Context::class);
         $this->paymentTransaction = $this->createMock(PaymentTransactionStruct::class);
         $this->orderTransaction = $this->createMock(OrderTransactionEntity::class);
@@ -173,7 +180,8 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository
+            $this->orderRepository,
+            $this->logger
         );
 
         // Configure order and orderTransaction
@@ -249,7 +257,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -770,7 +779,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -859,7 +869,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers', 'requiresGender'])
             ->getMock();
@@ -1065,7 +1076,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1194,7 +1206,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1230,7 +1243,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1271,7 +1285,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1312,7 +1327,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1349,7 +1365,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -1391,7 +1408,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1557,7 +1575,8 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository
+            $this->orderRepository,
+            $this->logger
         );
 
         // Access protected method using reflection
@@ -1624,7 +1643,8 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository
+            $this->orderRepository,
+            $this->logger
         );
 
         // Access protected method
@@ -1665,7 +1685,8 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository
+            $this->orderRepository,
+            $this->logger
         );
 
         // Access protected method
@@ -1758,7 +1779,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'requiresGender', 'getGender', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1876,7 +1898,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -1939,7 +1962,8 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();

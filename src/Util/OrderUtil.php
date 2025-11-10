@@ -7,6 +7,7 @@ namespace MultiSafepay\Shopware6\Util;
 
 use Exception;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -30,17 +31,25 @@ class OrderUtil
     private EntityRepository $countryStateRepository;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * OrderUtil constructor.
      *
      * @param EntityRepository $orderRepository
      * @param EntityRepository $countryStateRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         EntityRepository $orderRepository,
-        EntityRepository $countryStateRepository
+        EntityRepository $countryStateRepository,
+        LoggerInterface $logger
     ) {
         $this->orderRepository = $orderRepository;
         $this->countryStateRepository = $countryStateRepository;
+        $this->logger = $logger;
     }
 
     /**
@@ -94,7 +103,13 @@ class OrderUtil
         if ($address instanceof OrderDeliveryEntity) {
             try {
                 $countryStateId = $address->getStateId();
-            } catch (Exception) {
+            } catch (Exception $exception) {
+                $this->logger->debug('Failed to get state ID from OrderDeliveryEntity', [
+                    'message' => 'Exception occurred while getting state ID',
+                    'addressType' => 'OrderDeliveryEntity',
+                    'exceptionMessage' => $exception->getMessage()
+                ]);
+
                 return null;
             }
         } else {

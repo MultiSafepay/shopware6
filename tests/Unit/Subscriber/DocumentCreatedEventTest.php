@@ -17,6 +17,7 @@ use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Document\DocumentCollection;
 use Shopware\Core\Checkout\Document\DocumentEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -52,6 +53,11 @@ class DocumentCreatedEventTest extends TestCase
     private OrderUtil|MockObject $orderUtilMock;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private LoggerInterface|MockObject $loggerMock;
+
+    /**
      * Set up the test case
      *
      * @return void
@@ -63,11 +69,13 @@ class DocumentCreatedEventTest extends TestCase
         $this->sdkFactoryMock = $this->createMock(SdkFactory::class);
         $this->paymentUtilMock = $this->createMock(PaymentUtil::class);
         $this->orderUtilMock = $this->createMock(OrderUtil::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->documentCreatedEvent = new DocumentCreatedEvent(
             $this->sdkFactoryMock,
             $this->paymentUtilMock,
-            $this->orderUtilMock
+            $this->orderUtilMock,
+            $this->loggerMock
         );
     }
 
@@ -407,5 +415,128 @@ class DocumentCreatedEventTest extends TestCase
 
         // No exceptions should be thrown
         $this->assertTrue(true);
+    }
+
+    /**
+     * Test that logger is called when API exception occurs during invoice send
+     *
+     * @return void
+     * @throws Exception
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testLoggerIsCalledWhenApiExceptionOccurs(): void
+    {
+        // Create context
+        $context = Context::createDefaultContext();
+
+        // Create document entity
+        $document = $this->createMock(DocumentEntity::class);
+        $document->method('getOrderId')->willReturn('order-id-123');
+        $document->method('getId')->willReturn('invoice-id-999');
+        $document->method('getConfig')->willReturn([
+            'name' => 'invoice',
+            'custom' => ['invoiceNumber' => 'INV-2023-001']
+        ]);
+
+        $documentCollection = new DocumentCollection([$document]);
+
+        // Create order entity
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getId')->willReturn('order-id-123');
+        $order->method('getOrderNumber')->willReturn('ORD-2023-789');
+        $order->method('getSalesChannelId')->willReturn('sales-channel-456');
+        $order->method('getDocuments')->willReturn($documentCollection);
+
+        // Create write result
+        $writeResult = $this->createMock(EntityWriteResult::class);
+        $writeResult->method('getPayload')->willReturn([
+            'orderId' => 'order-id-123',
+            'config' => ['documentNumber' => 'INV-2023-001']
+        ]);
+        $writeResult->method('getProperty')->willReturn('invoice');
+
+        // Create event
+        $event = $this->createMock(EntityWrittenEvent::class);
+        $event->method('getContext')->willReturn($context);
+        $event->method('getWriteResults')->willReturn([$writeResult]);
+
+        // Configure PaymentUtil
+        $this->paymentUtilMock->method('isMultiSafepayPaymentMethod')
+            ->willReturn(true);
+
+        // Configure OrderUtil
+        $this->orderUtilMock->method('getOrder')
+            ->willReturn($order);
+
+        // Set up SDK that throws ApiException
+        $exceptionMessage = 'Invoice update failed';
+        $exceptionCode = 400;
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('update')
+            ->willThrowException(new ApiException($exceptionMessage, $exceptionCode));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactoryMock->method('create')
+            ->willReturn($sdk);
+
+        // Assert that logger->warning is called with correct context
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to send invoice to MultiSafepay',
+                $this->callback(function ($context) use ($exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Could not update invoice ID in MultiSafepay'
+                        && $context['orderId'] === 'order-id-123'
+                        && $context['orderNumber'] === 'ORD-2023-789'
+                        && $context['salesChannelId'] === 'sales-channel-456'
+                        && $context['invoiceId'] === 'INV-2023-001'
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // Execute
+        $this->documentCreatedEvent->sendInvoiceToMultiSafepay($event);
+    }
+
+    /**
+     * Test that logger is called when outer exception occurs
+     *
+     * @return void
+     * @throws Exception
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testLoggerIsCalledWhenOuterExceptionOccurs(): void
+    {
+        // Create context
+        $context = Context::createDefaultContext();
+
+        // Create event that throws exception during getWriteResults
+        $exceptionMessage = 'Unexpected error during document processing';
+        $exceptionCode = 0;
+        $event = $this->createMock(EntityWrittenEvent::class);
+        $event->method('getContext')->willReturn($context);
+        $event->method('getWriteResults')
+            ->willThrowException(new Exception($exceptionMessage, $exceptionCode));
+
+        // Assert that logger->warning is called with correct context
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to process document created event',
+                $this->callback(function ($context) use ($exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Exception occurred while processing document creation'
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // Execute
+        $this->documentCreatedEvent->sendInvoiceToMultiSafepay($event);
     }
 }

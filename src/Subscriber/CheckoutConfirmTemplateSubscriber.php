@@ -20,6 +20,7 @@ use MultiSafepay\Shopware6\Storefront\Struct\MultiSafepayStruct;
 use MultiSafepay\Shopware6\Support\Tokenization;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -56,23 +57,31 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
     private SettingsService $settingsService;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * CheckoutConfirmTemplateSubscriber constructor
      *
      * @param SdkFactory $sdkFactory
      * @param EntityRepository $languageRepository
      * @param SettingsService $settingsService
      * @param string $shopwareVersion
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
         EntityRepository $languageRepository,
         SettingsService $settingsService,
-        string $shopwareVersion
+        string $shopwareVersion,
+        LoggerInterface $logger
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->languageRepository = $languageRepository;
         $this->shopwareVersion = $shopwareVersion;
         $this->settingsService = $settingsService;
+        $this->logger = $logger;
     }
 
     /**
@@ -121,7 +130,14 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
 
             try {
                 $sdk = $this->sdkFactory->create($salesChannelContext->getSalesChannelId());
-            } catch (InvalidApiKeyException) {
+            } catch (InvalidApiKeyException $exception) {
+                $this->logger->warning('Invalid MultiSafepay API key for checkout confirmation page', [
+                    'message' => 'SDK factory failed due to invalid API key',
+                    'salesChannelId' => $salesChannelContext->getSalesChannelId(),
+                    'paymentMethodName' => $salesChannelContext->getPaymentMethod()->getName(),
+                    'exceptionMessage' => $exception->getMessage()
+                ]);
+
                 return;
             }
             if (!is_null($gatewayCodeWithIssuers)) {
@@ -163,10 +179,16 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
                 MultiSafepayStruct::EXTENSION_NAME,
                 $struct
             );
-        } catch (InvalidArgumentException | ApiException | ClientExceptionInterface) {
-            /***
-             * @TODO add better logging system
-             */
+        } catch (InvalidArgumentException | ApiException | ClientExceptionInterface $exception) {
+            $paymentMethod = $event->getSalesChannelContext()->getPaymentMethod();
+            $this->logger->warning('Failed to add MultiSafepay extension to checkout confirm page', [
+                'message' => 'Exception occurred while adding MultiSafepay extension',
+                'salesChannelId' => $event->getSalesChannelContext()->getSalesChannelId(),
+                'paymentMethodId' => $paymentMethod->getId(),
+                'paymentMethodName' => $paymentMethod->getName(),
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
         }
     }
 
@@ -204,7 +226,17 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
         try {
             return $this->sdkFactory->create($salesChannelContext->getSalesChannelId())->getApiTokenManager()
                 ->get()->getApiToken();
-        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface | InvalidDataInitializationException) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface | InvalidDataInitializationException $exception) {
+            $paymentMethod = $salesChannelContext->getPaymentMethod();
+            $this->logger->warning('Failed to get API token for components', [
+                'message' => 'Could not retrieve API token from MultiSafepay',
+                'salesChannelId' => $salesChannelContext->getSalesChannelId(),
+                'paymentMethodId' => $paymentMethod->getId(),
+                'gatewayCode' => $this->getGatewayCode($paymentMethod->getHandlerIdentifier()),
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return null;
         }
     }
@@ -309,7 +341,17 @@ class CheckoutConfirmTemplateSubscriber implements EventSubscriberInterface
             return $this->sdkFactory->create($salesChannelContext->getSalesChannelId())
                 ->getTokenManager()
                 ->getListByGatewayCodeAsArray($customer->getId(), $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()));
-        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface $exception) {
+            $customer = $salesChannelContext->getCustomer();
+            $this->logger->warning('Failed to get tokenization tokens', [
+                'message' => 'Could not retrieve saved tokens from MultiSafepay',
+                'salesChannelId' => $salesChannelContext->getSalesChannelId(),
+                'customerId' => $customer ? $customer->getId() : 'unknown',
+                'gatewayCode' => $this->getGatewayCode($salesChannelContext->getPaymentMethod()->getHandlerIdentifier()),
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return [];
         }
     }

@@ -16,6 +16,7 @@ use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\Util\Notification;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -55,6 +56,11 @@ class NotificationController extends StorefrontController
     private SettingsService $config;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * NotificationController constructor
      *
      * @param CheckoutHelper $checkoutHelper
@@ -62,19 +68,22 @@ class NotificationController extends StorefrontController
      * @param RequestUtil $requestUtil
      * @param OrderUtil $orderUtil
      * @param SettingsService $settingsService
+     * @param LoggerInterface $logger
      */
     public function __construct(
         CheckoutHelper $checkoutHelper,
         SdkFactory $sdkFactory,
         RequestUtil $requestUtil,
         OrderUtil $orderUtil,
-        SettingsService $settingsService
+        SettingsService $settingsService,
+        LoggerInterface $logger
     ) {
         $this->checkoutHelper = $checkoutHelper;
         $this->request = $requestUtil->getGlobals();
         $this->sdkFactory = $sdkFactory;
         $this->orderUtil = $orderUtil;
         $this->config = $settingsService;
+        $this->logger = $logger;
     }
 
     /**
@@ -91,7 +100,15 @@ class NotificationController extends StorefrontController
 
         try {
             $order = $this->orderUtil->getOrderFromNumber($orderNumber);
-        } catch (InconsistentCriteriaIdsException) {
+        } catch (InconsistentCriteriaIdsException $exception) {
+            $this->logger->warning('Order not found for MultiSafepay notification', [
+                'message' => 'Could not find order for notification',
+                'orderNumber' => $orderNumber,
+                'orderId' => 'unknown',
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return $response->setContent('NG');
         }
 
@@ -106,7 +123,16 @@ class NotificationController extends StorefrontController
         try {
             $result = $this->sdkFactory->create($order->getSalesChannelId())
                 ->getTransactionManager()->get($orderNumber);
-        } catch (Exception) {
+        } catch (Exception $exception) {
+            $this->logger->error('Failed to get transaction from MultiSafepay', [
+                'message' => 'Could not retrieve transaction details from MultiSafepay API',
+                'orderNumber' => $orderNumber,
+                'orderId' => $order->getId(),
+                'salesChannelId' => $order->getSalesChannelId(),
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return $response->setContent('NG');
         }
 
@@ -133,7 +159,13 @@ class NotificationController extends StorefrontController
 
         try {
             $order = $this->orderUtil->getOrderFromNumber($orderNumber);
-        } catch (InconsistentCriteriaIdsException) {
+        } catch (InconsistentCriteriaIdsException $exception) {
+            $this->logger->warning('Order not found in post-notification', [
+                'message' => 'Could not find order by order number',
+                'orderNumber' => $orderNumber,
+                'exceptionMessage' => $exception->getMessage()
+            ]);
+
             return $response->setContent('NG');
         }
 
@@ -154,17 +186,35 @@ class NotificationController extends StorefrontController
             return $response->setContent('NG');
         }
 
+        $hasAuthHeader = isset($_SERVER['HTTP_AUTH']);
         if (!Notification::verifyNotification(
             $body,
-            $_SERVER['HTTP_AUTH'],
+            $_SERVER['HTTP_AUTH'] ?? '',
             $this->config->getApiKey($order->getSalesChannelId())
         )) {
+            $this->logger->warning('Post-notification verification failed', [
+                'message' => 'Notification signature verification failed',
+                'orderNumber' => $orderNumber,
+                'orderId' => $order->getId(),
+                'hasAuthHeader' => $hasAuthHeader,
+                'bodyLength' => strlen($body)
+            ]);
+
             return $response->setContent('NG');
         }
 
         try {
             $transaction = new TransactionResponse(json_decode($body, true, 512, JSON_THROW_ON_ERROR), $body);
         } catch (JsonException $jsonException) {
+            $this->logger->error('Failed to parse post-notification JSON', [
+                'message' => 'Could not decode JSON from notification body',
+                'orderNumber' => $orderNumber,
+                'orderId' => $order->getId(),
+                'bodyLength' => strlen($body),
+                'exceptionMessage' => $jsonException->getMessage(),
+                'exceptionCode' => $jsonException->getCode()
+            ]);
+
             return $response->setContent('JSON Error: ' . $jsonException->getMessage());
         }
 

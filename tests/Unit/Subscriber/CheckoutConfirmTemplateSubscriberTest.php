@@ -8,12 +8,13 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Subscriber;
 use MultiSafepay\Api\ApiTokenManager;
 use MultiSafepay\Api\ApiTokens\ApiToken;
 use MultiSafepay\Api\Issuers\Issuer;
+use MultiSafepay\Api\TokenManager;
+use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Exception\InvalidDataInitializationException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
-use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Subscriber\CheckoutConfirmTemplateSubscriber;
@@ -21,6 +22,7 @@ use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
@@ -32,6 +34,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\Locale\LocaleEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPage;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage;
@@ -67,6 +70,11 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
     private SettingsService|MockObject $settingsServiceMock;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private LoggerInterface|MockObject $loggerMock;
+
+    /**
      * Set up the test case
      *
      * @return void
@@ -77,12 +85,14 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
         $this->sdkFactoryMock = $this->createMock(SdkFactory::class);
         $this->languageRepositoryMock = $this->createMock(EntityRepository::class);
         $this->settingsServiceMock = $this->createMock(SettingsService::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->subscriber = new CheckoutConfirmTemplateSubscriber(
             $this->sdkFactoryMock,
             $this->languageRepositoryMock,
             $this->settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $this->loggerMock
         );
     }
 
@@ -112,12 +122,14 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
         $sdkFactoryMock = $this->createMock(SdkFactory::class);
         $languageRepositoryMock = $this->createMock(EntityRepository::class);
         $settingsServiceMock = $this->createMock(SettingsService::class);
+        $loggerMock = $this->createMock(LoggerInterface::class);
 
         $subscriber = new class(
             $sdkFactoryMock,
             $languageRepositoryMock,
             $settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $loggerMock
         ) extends CheckoutConfirmTemplateSubscriber {
             // Extended class to make the protected method public for testing
             public function testEvent($event): void
@@ -156,12 +168,14 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
 
         $languageRepositoryMock = $this->createMock(EntityRepository::class);
         $settingsServiceMock = $this->createMock(SettingsService::class);
+        $loggerMock = $this->createMock(LoggerInterface::class);
 
         $subscriber = new CheckoutConfirmTemplateSubscriber(
             $sdkFactoryMock,
             $languageRepositoryMock,
             $settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $loggerMock
         );
 
         // Create a mock CheckoutConfirmPage
@@ -390,13 +404,15 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
         // Mock repositories and services
         $languageRepositoryMock = $this->createMock(EntityRepository::class);
         $settingsServiceMock = $this->createMock(SettingsService::class);
+        $loggerMock = $this->createMock(LoggerInterface::class);
 
         // Create subscriber
         $subscriber = new CheckoutConfirmTemplateSubscriber(
             $sdkFactoryMock,
             $languageRepositoryMock,
             $settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $loggerMock
         );
 
         // Mock payment method
@@ -469,7 +485,8 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
             $this->sdkFactoryMock,
             $this->languageRepositoryMock,
             $settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $this->loggerMock
         );
 
         // Get a reflection of the class to access private property and method
@@ -546,7 +563,8 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
             $this->sdkFactoryMock,
             $this->languageRepositoryMock,
             $settingsServiceMock,
-            '6.7.0.0'
+            '6.7.0.0',
+            $this->loggerMock
         );
 
         $result = $method->invokeArgs(
@@ -581,147 +599,281 @@ class CheckoutConfirmTemplateSubscriberTest extends TestCase
     }
 
     /**
-     * Test that MyBank identification uses handlerIdentifier instead of name
-     * This fixes the issue where language changes would break MyBank issuers functionality
+     * Test that logger is called when InvalidApiKeyException occurs during SDK factory creation
      *
      * @return void
      * @throws Exception
+     * @throws \Exception
      */
-    public function testMyBankIdentificationUsesHandlerIdentifier(): void
+    public function testLoggerIsCalledWhenInvalidApiKeyInSdkFactory(): void
     {
-        // Mock payment method with MyBank handler
-        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
-        $paymentMethodMock->method('getHandlerIdentifier')
-            ->willReturn(MyBankPaymentHandler::class);
-        $paymentMethodMock->method('getName')
-            ->willReturn('Italian MyBank Name'); // Different name to ensure handler is used
+        $salesChannelId = 'test-channel-123';
+        $paymentMethodId = 'payment-method-456';
+        $paymentMethodName = 'Test Payment Method';
 
-        $salesChannelContextMock = $this->createMock(SalesChannelContext::class);
-        $salesChannelContextMock->method('getPaymentMethod')
-            ->willReturn($paymentMethodMock);
+        // Mock payment method
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethod->method('getId')->willReturn($paymentMethodId);
+        $paymentMethod->method('getName')->willReturn($paymentMethodName);
+        $paymentMethod->method('getTranslated')->willReturn(['name' => $paymentMethodName]);
+        $paymentMethod->method('getHandlerIdentifier')->willReturn(MyBank::class);
 
-        // Verify that handlerIdentifier is correctly identified as MyBank
-        // The class constant should match what's in CheckoutConfirmTemplateSubscriber
-        $this->assertEquals(
-            MyBankPaymentHandler::class,
-            $paymentMethodMock->getHandlerIdentifier()
-        );
+        // Mock SalesChannelContext
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')->willReturn($salesChannelId);
+        $salesChannelContext->method('getPaymentMethod')->willReturn($paymentMethod);
+
+        // Mock SDK factory to throw InvalidApiKeyException
+        $exceptionMessage = 'Invalid API key provided';
+        $this->sdkFactoryMock->method('create')
+            ->willThrowException(new InvalidApiKeyException($exceptionMessage));
+
+        // Assert that logger->warning is called
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Invalid MultiSafepay API key for checkout confirmation page',
+                $this->callback(function ($context) use ($salesChannelId, $paymentMethodName, $exceptionMessage) {
+                    return $context['message'] === 'SDK factory failed due to invalid API key'
+                        && $context['salesChannelId'] === $salesChannelId
+                        && $context['paymentMethodName'] === $paymentMethodName
+                        && $context['exceptionMessage'] === $exceptionMessage;
+                })
+            );
+
+        // Create CheckoutConfirmPage mock
+        $page = $this->createMock(CheckoutConfirmPage::class);
+
+        // Create event
+        $event = $this->createMock(CheckoutConfirmPageLoadedEvent::class);
+        $event->method('getSalesChannelContext')->willReturn($salesChannelContext);
+        $event->method('getPage')->willReturn($page);
+
+        // Execute - should not throw exception
+        $this->subscriber->addMultiSafepayExtension($event);
     }
 
     /**
-     * Test is_mybank_direct flag is set correctly when MyBank is in direct mode
+     * Test that logger is called when general exception occurs in addMultiSafepayExtension
      *
      * @return void
      * @throws Exception
+     * @throws \Exception
      */
-    public function testIsMyBankDirectFlagSetCorrectly(): void
+    public function testLoggerIsCalledWhenGeneralExceptionInAddMultiSafepayExtension(): void
     {
-        // This test verifies that the is_mybank_direct flag is properly set
-        // when MyBank payment method has 'direct' custom field set to true
+        $salesChannelId = 'test-channel-789';
+        $paymentMethodId = 'payment-method-789';
+        $paymentMethodName = 'Another Payment Method';
 
-        // Mock payment method with MyBank handler and direct mode enabled
-        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
-        $paymentMethodMock->method('getHandlerIdentifier')
-            ->willReturn(MyBankPaymentHandler::class);
-        $paymentMethodMock->method('getCustomFields')
-            ->willReturn([
-                'is_multisafepay' => true,
-                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
-                'direct' => true, // Direct mode enabled
-                'component' => false,
-                'tokenization' => false
-            ]);
+        // Mock payment method
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethod->method('getId')->willReturn($paymentMethodId);
+        $paymentMethod->method('getName')->willReturn($paymentMethodName);
+        $paymentMethod->method('getTranslated')->willReturn(['name' => $paymentMethodName]);
+        $paymentMethod->method('getHandlerIdentifier')->willReturn('MultiSafepay\Shopware6\Handlers\IdealPaymentHandler');
+        $paymentMethod->method('getCustomFields')->willReturn([]);
 
-        $paymentMethodMock->method('getTranslated')
-            ->willReturn(['customFields' => [
-                'is_multisafepay' => true,
-                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
-                'direct' => true,
-                'component' => false,
-                'tokenization' => false
-            ]]);
+        // Mock Context with languageId
+        $context = $this->createMock(Context::class);
+        $context->method('getLanguageId')->willReturn('lang-id-123');
 
-        // Verify that custom fields contain the direct flag set to true
-        $customFields = $paymentMethodMock->getCustomFields();
-        $this->assertArrayHasKey('direct', $customFields);
-        $this->assertTrue($customFields['direct']);
+        // Mock language repository to return a language with locale
+        $locale = $this->createMock(LocaleEntity::class);
+        $locale->method('getCode')->willReturn('en_GB');
 
-        // Verify handler identifier is MyBank
-        $this->assertEquals(MyBankPaymentHandler::class, $paymentMethodMock->getHandlerIdentifier());
+        $language = $this->createMock(LanguageEntity::class);
+        $language->method('getLocale')->willReturn($locale);
+
+        $languageSearchResult = $this->createMock(EntitySearchResult::class);
+        $languageSearchResult->method('get')->willReturn($language);
+
+        $this->languageRepositoryMock->method('search')->willReturn($languageSearchResult);
+
+        // Mock customer
+        $customer = $this->createMock(CustomerEntity::class);
+        $customer->method('getCustomFields')->willReturn(null);
+
+        // Mock SalesChannelContext
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')->willReturn($salesChannelId);
+        $salesChannelContext->method('getPaymentMethod')->willReturn($paymentMethod);
+        $salesChannelContext->method('getContext')->willReturn($context);
+        $salesChannelContext->method('getCustomer')->willReturn($customer);
+
+        // Mock page to throw ApiException when addExtension is called
+        $exceptionMessage = 'Unexpected error during extension';
+        $exceptionCode = 0;
+        $page = $this->createMock(CheckoutConfirmPage::class);
+        $page->method('addExtension')
+            ->willThrowException(new ApiException($exceptionMessage, $exceptionCode));
+
+        // Mock SDK
+        $sdk = $this->createMock(Sdk::class);
+        $this->sdkFactoryMock->method('create')->willReturn($sdk);
+
+        // Mock settings service to bypass getTokens
+        $this->settingsServiceMock->method('getGatewaySetting')->willReturn(false);
+
+        // Mock sales channel
+        $salesChannel = $this->createMock(SalesChannelEntity::class);
+        $salesChannel->method('getLanguageId')->willReturn('lang-id-123');
+        $salesChannelContext->method('getSalesChannel')->willReturn($salesChannel);
+
+        // Mock event
+        $event = $this->createMock(CheckoutConfirmPageLoadedEvent::class);
+        $event->method('getSalesChannelContext')->willReturn($salesChannelContext);
+        $event->method('getContext')->willReturn($context);
+        $event->method('getPage')->willReturn($page);
+
+        // Assert that logger->warning is called
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to add MultiSafepay extension to checkout confirm page',
+                $this->callback(function ($context) use ($salesChannelId, $paymentMethodId, $paymentMethodName, $exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Exception occurred while adding MultiSafepay extension'
+                        && $context['salesChannelId'] === $salesChannelId
+                        && $context['paymentMethodId'] === $paymentMethodId
+                        && $context['paymentMethodName'] === $paymentMethodName
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // Execute
+        $this->subscriber->addMultiSafepayExtension($event);
     }
 
     /**
-     * Test is_mybank_direct flag is false when MyBank is NOT in direct mode
+     * Test that logger is called when exception occurs in getComponentsToken
      *
      * @return void
+     * @throws ReflectionException
      * @throws Exception
      */
-    public function testIsMyBankDirectFlagFalseWhenNotDirect(): void
+    public function testLoggerIsCalledWhenExceptionInGetComponentsToken(): void
     {
-        // Mock payment method with MyBank handler but direct mode disabled
-        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
-        $paymentMethodMock->method('getHandlerIdentifier')
-            ->willReturn(MyBankPaymentHandler::class);
-        $paymentMethodMock->method('getCustomFields')
-            ->willReturn([
-                'is_multisafepay' => true,
-                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
-                'direct' => false, // Direct mode disabled
-                'component' => false,
-                'tokenization' => false
-            ]);
+        $salesChannelId = 'test-channel-555';
+        $gatewayCode = 'IDEAL';
 
-        // Verify direct flag is false
-        $customFields = $paymentMethodMock->getCustomFields();
-        $this->assertArrayHasKey('direct', $customFields);
-        $this->assertFalse($customFields['direct']);
+        // Mock payment method (use Ideal which has gateway code IDEAL)
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethod->method('getId')->willReturn('payment-id-555');
+        $paymentMethod->method('getHandlerIdentifier')->willReturn('MultiSafepay\Shopware6\Handlers\IdealPaymentHandler');
 
-        // Verify handler identifier is MyBank
-        $this->assertEquals(MyBankPaymentHandler::class, $paymentMethodMock->getHandlerIdentifier());
+        // Mock SalesChannelContext
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')->willReturn($salesChannelId);
+        $salesChannelContext->method('getPaymentMethod')->willReturn($paymentMethod);
+
+        // Mock SettingsService to enable component
+        $this->settingsServiceMock->method('getGatewaySetting')
+            ->willReturn(true);
+
+        // Mock SDK to throw ApiException (which is caught by the method)
+        $exceptionMessage = 'Token generation failed';
+        $exceptionCode = 500;
+        $apiTokenManager = $this->createMock(ApiTokenManager::class);
+        $apiTokenManager->method('get')
+            ->willThrowException(new ApiException($exceptionMessage, $exceptionCode));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getApiTokenManager')->willReturn($apiTokenManager);
+
+        $this->sdkFactoryMock->method('create')->willReturn($sdk);
+
+        // Assert that logger->warning is called
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to get API token for components',
+                $this->callback(function ($context) use ($salesChannelId, $gatewayCode, $exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Could not retrieve API token from MultiSafepay'
+                        && $context['salesChannelId'] === $salesChannelId
+                        && $context['paymentMethodId'] === 'payment-id-555'
+                        && $context['gatewayCode'] === $gatewayCode
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // Use reflection to call private method
+        $reflectionClass = new ReflectionClass($this->subscriber);
+        $method = $reflectionClass->getMethod('getComponentsToken');
+
+        $result = $method->invokeArgs($this->subscriber, [$salesChannelContext]);
+
+        // Should return null when exception occurs
+        $this->assertNull($result);
     }
 
     /**
-     * Test custom fields structure for MyBank with direct mode variations
+     * Test that logger is called when exception occurs in getTokens
      *
      * @return void
+     * @throws ReflectionException
      * @throws Exception
      */
-    public function testMyBankCustomFieldsStructureWithDirectModeVariations(): void
+    public function testLoggerIsCalledWhenExceptionInGetTokens(): void
     {
-        // Test MyBank with direct mode enabled
-        $paymentMethodWithDirect = $this->createMock(PaymentMethodEntity::class);
-        $paymentMethodWithDirect->method('getHandlerIdentifier')
-            ->willReturn(MyBankPaymentHandler::class);
-        $paymentMethodWithDirect->method('getCustomFields')
-            ->willReturn([
-                'is_multisafepay' => true,
-                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
-                'direct' => true,
-                'component' => false,
-                'tokenization' => false
-            ]);
+        $salesChannelId = 'test-channel-666';
+        $customerId = 'customer-666';
+        $gatewayCode = 'IDEAL';
 
-        $customFieldsDirect = $paymentMethodWithDirect->getCustomFields();
-        $this->assertTrue($customFieldsDirect['direct']);
-        $this->assertTrue($customFieldsDirect['is_multisafepay']);
-        $this->assertStringContainsString('mybank', $customFieldsDirect['template']);
+        // Mock customer
+        $customer = $this->createMock(CustomerEntity::class);
+        $customer->method('getId')->willReturn($customerId);
 
-        // Test MyBank with direct mode disabled
-        $paymentMethodWithoutDirect = $this->createMock(PaymentMethodEntity::class);
-        $paymentMethodWithoutDirect->method('getHandlerIdentifier')
-            ->willReturn(MyBankPaymentHandler::class);
-        $paymentMethodWithoutDirect->method('getCustomFields')
-            ->willReturn([
-                'is_multisafepay' => true,
-                'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
-                'direct' => false,
-                'component' => false,
-                'tokenization' => false
-            ]);
+        // Mock payment method (use Ideal which has gateway code IDEAL)
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethod->method('getHandlerIdentifier')->willReturn('MultiSafepay\Shopware6\Handlers\IdealPaymentHandler');
 
-        $customFieldsNoDirect = $paymentMethodWithoutDirect->getCustomFields();
-        $this->assertFalse($customFieldsNoDirect['direct']);
-        $this->assertTrue($customFieldsNoDirect['is_multisafepay']);
-        $this->assertStringContainsString('mybank', $customFieldsNoDirect['template']);
+        // Mock SalesChannelContext
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')->willReturn($salesChannelId);
+        $salesChannelContext->method('getCustomer')->willReturn($customer);
+        $salesChannelContext->method('getPaymentMethod')->willReturn($paymentMethod);
+
+        // Mock SettingsService to enable component
+        $this->settingsServiceMock->method('getGatewaySetting')
+            ->willReturn(true);
+
+        // Mock SDK to throw ApiException (which is caught by the method)
+        $exceptionMessage = 'Token list retrieval failed';
+        $exceptionCode = 404;
+        $tokenManager = $this->createMock(TokenManager::class);
+        $tokenManager->method('getListByGatewayCodeAsArray')
+            ->willThrowException(new ApiException($exceptionMessage, $exceptionCode));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTokenManager')->willReturn($tokenManager);
+
+        $this->sdkFactoryMock->method('create')->willReturn($sdk);
+
+        // Assert that logger->warning is called
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to get tokenization tokens',
+                $this->callback(function ($context) use ($salesChannelId, $customerId, $gatewayCode, $exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Could not retrieve saved tokens from MultiSafepay'
+                        && $context['salesChannelId'] === $salesChannelId
+                        && $context['customerId'] === $customerId
+                        && $context['gatewayCode'] === $gatewayCode
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // Use reflection to call private method
+        $reflectionClass = new ReflectionClass($this->subscriber);
+        $method = $reflectionClass->getMethod('getTokens');
+
+        $result = $method->invokeArgs($this->subscriber, [$salesChannelContext]);
+
+        // Should return empty array when exception occurs
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
     }
 }

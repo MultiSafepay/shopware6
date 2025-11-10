@@ -13,6 +13,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="order.repository"/>
+            <argument type="service" id="multisafepay.logger"/>
         </service>
 
         <!-- Auto-register all payment handlers that extend the base handler -->
@@ -33,6 +34,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="order.repository"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method"/>
         </service>
 
@@ -46,6 +48,7 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="order.repository"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="shopware.payment.method"/>
         </prototype>
     </services>

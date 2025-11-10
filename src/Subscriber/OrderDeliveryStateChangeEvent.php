@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -49,23 +50,31 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
     private OrderUtil $orderUtil;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * OrderDeliveryStateChangeEvent constructor
      *
      * @param EntityRepository $orderDeliveryRepository
      * @param SdkFactory $sdkFactory
      * @param PaymentUtil $paymentUtil
      * @param OrderUtil $orderUtil
+     * @param LoggerInterface $logger
      */
     public function __construct(
         EntityRepository $orderDeliveryRepository,
         SdkFactory $sdkFactory,
         PaymentUtil $paymentUtil,
-        OrderUtil $orderUtil
+        OrderUtil $orderUtil,
+        LoggerInterface $logger
     ) {
         $this->orderDeliveryRepository = $orderDeliveryRepository;
         $this->sdkFactory = $sdkFactory;
         $this->paymentUtil = $paymentUtil;
         $this->orderUtil = $orderUtil;
+        $this->logger = $logger;
     }
 
     /**
@@ -101,6 +110,7 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
             return;
         }
 
+        $order = null;
         try {
             $order = $this->orderUtil->getOrder($orderId, $context);
             $this->sdkFactory->create($order->getSalesChannelId())
@@ -114,7 +124,17 @@ class OrderDeliveryStateChangeEvent implements EventSubscriberInterface
                         'reason' => 'Shipped',
                     ])
                 );
-        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface) {
+        } catch (ApiException | InvalidApiKeyException | ClientExceptionInterface $exception) {
+            $this->logger->warning('Failed to update shipping status to MultiSafepay', [
+                'message' => 'Could not send shipping update to MultiSafepay API',
+                'orderId' => $orderId,
+                'orderNumber' => $order ? $order->getOrderNumber() : 'unknown',
+                'salesChannelId' => $order ? $order->getSalesChannelId() : 'unknown',
+                'trackAndTraceCode' => reset($trackAndTraceCode) ?: null,
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return;
         }
     }

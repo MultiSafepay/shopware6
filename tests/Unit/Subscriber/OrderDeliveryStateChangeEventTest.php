@@ -15,6 +15,7 @@ use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -57,6 +58,11 @@ class OrderDeliveryStateChangeEventTest extends TestCase
     private OrderUtil|MockObject $orderUtilMock;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private LoggerInterface|MockObject $loggerMock;
+
+    /**
      * Set up the test case
      *
      * @return void
@@ -69,12 +75,14 @@ class OrderDeliveryStateChangeEventTest extends TestCase
         $this->sdkFactoryMock = $this->createMock(SdkFactory::class);
         $this->paymentUtilMock = $this->createMock(PaymentUtil::class);
         $this->orderUtilMock = $this->createMock(OrderUtil::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->orderDeliveryStateChangeEvent = new OrderDeliveryStateChangeEvent(
             $this->orderDeliveryRepositoryMock,
             $this->sdkFactoryMock,
             $this->paymentUtilMock,
-            $this->orderUtilMock
+            $this->orderUtilMock,
+            $this->loggerMock
         );
     }
 
@@ -275,5 +283,99 @@ class OrderDeliveryStateChangeEventTest extends TestCase
 
         // If we reach this point without errors, the test passes
         $this->assertTrue(true);
+    }
+
+    /**
+     * Test that logger is called with correct parameters when exception occurs
+     *
+     * @return void
+     * @throws Exception
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testLoggerIsCalledWhenExceptionOccurs(): void
+    {
+        // 1. Create and configure the event
+        $event = $this->createMock(StateMachineStateChangeEvent::class);
+        $event->method('getTransitionSide')
+            ->willReturn(StateMachineStateChangeEvent::STATE_MACHINE_TRANSITION_SIDE_ENTER);
+        $event->method('getStateName')
+            ->willReturn(OrderDeliveryStates::STATE_SHIPPED);
+
+        // 2. Create context
+        $context = Context::createDefaultContext();
+        $event->method('getContext')
+            ->willReturn($context);
+
+        // 3. Set up the transition with entity ID
+        $transition = $this->createMock(Transition::class);
+        $transition->method('getEntityId')
+            ->willReturn('test-delivery-id');
+        $event->method('getTransition')
+            ->willReturn($transition);
+
+        // 4. Set up an order delivery entity
+        $orderDelivery = $this->createMock(OrderDeliveryEntity::class);
+        $orderDelivery->method('getOrderId')
+            ->willReturn('test-order-id');
+        $orderDelivery->method('getTrackingCodes')
+            ->willReturn(['TRACK123456']);
+
+        // 5. Set up repository search result
+        $searchResult = $this->createMock(EntitySearchResult::class);
+        $searchResult->method('first')
+            ->willReturn($orderDelivery);
+
+        $this->orderDeliveryRepositoryMock->method('search')
+            ->willReturn($searchResult);
+
+        // 6. Configure PaymentUtil to confirm a MultiSafepay payment
+        $this->paymentUtilMock->method('isMultiSafepayPaymentMethod')
+            ->with('test-order-id', $context)
+            ->willReturn(true);
+
+        // 7. Set up Order entity
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getSalesChannelId')
+            ->willReturn('test-sales-channel-id');
+        $order->method('getOrderNumber')
+            ->willReturn('ORD-2023-12345');
+
+        $this->orderUtilMock->method('getOrder')
+            ->with('test-order-id', $context)
+            ->willReturn($order);
+
+        // 8. Set up an SDK that throws an ApiException
+        $exceptionMessage = 'MultiSafepay API connection failed';
+        $exceptionCode = 500;
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('update')
+            ->willThrowException(new ApiException($exceptionMessage, $exceptionCode));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactoryMock->method('create')
+            ->with('test-sales-channel-id')
+            ->willReturn($sdk);
+
+        // 9. Assert that logger->warning is called with correct context
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed to update shipping status to MultiSafepay',
+                $this->callback(function ($context) use ($exceptionMessage, $exceptionCode) {
+                    return $context['message'] === 'Could not send shipping update to MultiSafepay API'
+                        && $context['orderId'] === 'test-order-id'
+                        && $context['orderNumber'] === 'ORD-2023-12345'
+                        && $context['salesChannelId'] === 'test-sales-channel-id'
+                        && $context['trackAndTraceCode'] === 'TRACK123456'
+                        && $context['exceptionMessage'] === $exceptionMessage
+                        && $context['exceptionCode'] === $exceptionCode;
+                })
+            );
+
+        // 10. Execute the method under test
+        $this->orderDeliveryStateChangeEvent->onOrderDeliveryStateChanged($event);
     }
 }

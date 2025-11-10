@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -89,6 +90,7 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
         $settingsService = $this->createMock(SettingsService::class);
         $orderTransactionRepository = $this->createMock(EntityRepository::class);
         $orderRepository = $this->createMock(EntityRepository::class);
+        $logger = $this->createMock(LoggerInterface::class);
 
         // Create the handler instance
         $handler = new $handlerClass(
@@ -99,7 +101,8 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
             $salesChannelContextFactory,
             $settingsService,
             $orderTransactionRepository,
-            $orderRepository
+            $orderRepository,
+            $logger
         );
 
         // Verify via reflection that the sdkFactory property is correctly set

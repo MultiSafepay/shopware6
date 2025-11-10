@@ -8,12 +8,14 @@
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscriber\DocumentCreatedEvent">
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscriber\SalesChannelContextSwitchEvent">
@@ -26,6 +28,7 @@
             <argument type="service" id="language.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument>%kernel.shopware_version%</argument>
+            <argument type="service" id="multisafepay.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscriber\PaymentMethodCustomFields">

@@ -36,6 +36,22 @@
         <title>Configuration</title>
         <title lang="de-DE">Konfiguration</title>
         <title lang="nl-NL">Instellingen</title>
+        <input-field type="bool">
+            <name>debugMode</name>
+            <label>Debug Mode</label>
+            <label lang="de-DE">Debug-Modus</label>
+            <label lang="nl-NL">Debugmodus</label>
+            <helpText>
+                <![CDATA[Enable debug mode to log detailed information about payment processes]]>
+            </helpText>
+            <helpText lang="de-DE">
+                <![CDATA[Aktivieren Sie den Debug-Modus, um detaillierte Informationen zu Zahlungsprozessen zu protokollieren]]>
+            </helpText>
+            <helpText lang="nl-NL">
+                <![CDATA[Schakel de debug-modus in om gedetailleerde informatie over betalingsprocessen te loggen]]>
+            </helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
         <input-field type="int">
             <name>timeActive</name>
             <label>Time an order stays active</label>

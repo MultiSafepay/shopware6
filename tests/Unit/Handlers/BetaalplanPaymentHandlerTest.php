@@ -77,6 +77,7 @@ class BetaalplanPaymentHandlerTest extends TestCase
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $this->orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
         $orderRepositoryMock = $this->createMock(EntityRepository::class);
+        $loggerMock = $this->createMock(\Psr\Log\LoggerInterface::class);
 
         $this->paymentHandler = new BetaalplanPaymentHandler(
             $this->sdkFactoryMock,
@@ -86,7 +87,8 @@ class BetaalplanPaymentHandlerTest extends TestCase
             $cachedSalesChannelContextFactoryMock,
             $settingsServiceMock,
             $this->orderTransactionRepositoryMock,
-            $orderRepositoryMock
+            $orderRepositoryMock,
+            $loggerMock
         );
     }
 

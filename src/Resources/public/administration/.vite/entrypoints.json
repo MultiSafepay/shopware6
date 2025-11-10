@@ -3,11 +3,11 @@
   "entryPoints": {
     "mltisafe-multi-safepay": {
       "css": [
-        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-B0_LvpLd.css"
+        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-CsUHKXHE.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-CVx4Vc96.js"
+        "/bundles/mltisafemultisafepay/administration/assets/mltisafe-multi-safepay-BXepWubs.js"
       ],
       "legacy": false,
       "preload": []

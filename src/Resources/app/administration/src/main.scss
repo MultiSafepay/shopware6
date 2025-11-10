@@ -1,0 +1,10 @@
+/**
+ * MultiSafepay Administration Styles
+ */
+
+// Remove margin-top ONLY from MultiSafepay plugin configuration switches
+// Targets switches whose input name/id starts with "MltisafeMultiSafepay.config."
+.sw-field--switch:has(input[name^="MltisafeMultiSafepay.config."]),
+.sw-field--switch:has(input[id^="MltisafeMultiSafepay.config."]) {
+    margin-top: 0 !important;
+}

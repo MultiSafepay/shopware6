@@ -370,4 +370,101 @@ class SettingsServiceTest extends TestCase
         $this->assertFalse($result);
         $this->assertIsBool($result);
     }
+
+    /**
+     * Test isDebugMode method when enabled
+     *
+     * @return void
+     */
+    public function testIsDebugModeWhenEnabled(): void
+    {
+        $salesChannelId = 'test-sales-channel-id';
+
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with('MltisafeMultiSafepay.config.' . SettingsService::DEBUG_MODE_CONFIG_NAME, $salesChannelId)
+            ->willReturn(true);
+
+        $result = $this->settingsService->isDebugMode($salesChannelId);
+
+        $this->assertTrue($result);
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Test isDebugMode method when disabled
+     *
+     * @return void
+     */
+    public function testIsDebugModeWhenDisabled(): void
+    {
+        $salesChannelId = 'test-sales-channel-id';
+
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with('MltisafeMultiSafepay.config.' . SettingsService::DEBUG_MODE_CONFIG_NAME, $salesChannelId)
+            ->willReturn(false);
+
+        $result = $this->settingsService->isDebugMode($salesChannelId);
+
+        $this->assertFalse($result);
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Test isDebugMode method with null sales channel ID
+     *
+     * @return void
+     */
+    public function testIsDebugModeWithNullSalesChannelId(): void
+    {
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with('MltisafeMultiSafepay.config.' . SettingsService::DEBUG_MODE_CONFIG_NAME, null)
+            ->willReturn(true);
+
+        $result = $this->settingsService->isDebugMode(null);
+
+        $this->assertTrue($result);
+    }
+
+    /**
+     * Test isDebugMode method with non-boolean value
+     *
+     * @return void
+     */
+    public function testIsDebugModeWithNonBooleanValue(): void
+    {
+        $salesChannelId = 'test-sales-channel-id';
+
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with('MltisafeMultiSafepay.config.' . SettingsService::DEBUG_MODE_CONFIG_NAME, $salesChannelId)
+            ->willReturn('1');
+
+        $result = $this->settingsService->isDebugMode($salesChannelId);
+
+        $this->assertTrue($result);
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Test isDebugMode method returns false when null
+     *
+     * @return void
+     */
+    public function testIsDebugModeReturnsFalseWhenNull(): void
+    {
+        $salesChannelId = 'test-sales-channel-id';
+
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with('MltisafeMultiSafepay.config.' . SettingsService::DEBUG_MODE_CONFIG_NAME, $salesChannelId)
+            ->willReturn(null);
+
+        $result = $this->settingsService->isDebugMode($salesChannelId);
+
+        $this->assertFalse($result);
+        $this->assertIsBool($result);
+    }
 }

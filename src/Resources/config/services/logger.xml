@@ -19,6 +19,6 @@
         </monolog:handler>
     </monolog:config>
     <services>
-        <service id="monolog.logger.multisafepay_general" class="Psr\Log\LoggerInterface" />
+        <service id="multisafepay.logger" alias="monolog.logger.multisafepay_general" public="false"/>
     </services>
 </container>

@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
@@ -143,6 +144,7 @@ class OrderDeliveryStateChangeEventTest extends TestCase
                 $this->getContainer()->get(SdkFactory::class),
                 $this->getContainer()->get(PaymentUtil::class),
                 $this->getContainer()->get(OrderUtil::class),
+                $this->createMock(LoggerInterface::class),
             ])
             ->onlyMethods($methodNames)
             ->getMock();

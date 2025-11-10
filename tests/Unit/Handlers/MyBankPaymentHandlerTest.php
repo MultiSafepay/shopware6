@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -74,6 +75,11 @@ class MyBankPaymentHandlerTest extends TestCase
     private EntityRepository|MockObject $orderRepository;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private LoggerInterface|MockObject $logger;
+
+    /**
      * Set up the test case
      *
      * @return void
@@ -89,6 +95,7 @@ class MyBankPaymentHandlerTest extends TestCase
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
         $this->orderRepository = $this->createMock(EntityRepository::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->myBankPaymentHandler = new MyBankPaymentHandler(
             $this->sdkFactory,
@@ -98,7 +105,8 @@ class MyBankPaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository
+            $this->orderRepository,
+            $this->logger
         );
     }
 
@@ -151,7 +159,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository
+                    $this->orderRepository,
+                    $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -209,7 +218,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository
+                    $this->orderRepository,
+                    $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -267,7 +277,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository
+                    $this->orderRepository,
+                    $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -335,7 +346,8 @@ class MyBankPaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository
+                $this->orderRepository,
+                $this->logger
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();

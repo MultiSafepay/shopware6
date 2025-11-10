@@ -122,18 +122,16 @@ class CheckoutHelper
             $criteria = new Criteria([$transaction->getId()]);
             $criteria->addAssociation('order');
             $loadedTransaction = $this->transactionRepository->search($criteria, $context)->first();
-            $order = $loadedTransaction ? $loadedTransaction->getOrder() : null;
+            $order = $loadedTransaction?->getOrder();
             $orderNumber = !is_null($order) ? $order->getOrderNumber() : 'null';
 
-            $this->logger->warning(
-                'IllegalTransitionException',
-                [
-                    'message' => 'An illegal transition exception occurred',
-                    'currentState' => $currentState,
-                    'orderNumber' => $orderNumber,
-                    'status' => $status
-                ]
-            );
+            $this->logger->warning('IllegalTransitionException', [
+                'message' => 'An illegal transition exception occurred',
+                'currentState' => $currentState,
+                'orderNumber' => $orderNumber,
+                'status' => $status
+            ]);
+
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         }

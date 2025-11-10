@@ -11,6 +11,7 @@ use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -46,6 +47,7 @@ class KlarnaPaymentHandlerTest extends TestCase
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
         $orderRepositoryMock = $this->createMock(EntityRepository::class);
+        $loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->paymentHandler = new KlarnaPaymentHandler(
             $sdkFactoryMock,
@@ -55,7 +57,8 @@ class KlarnaPaymentHandlerTest extends TestCase
             $cachedSalesChannelContextFactoryMock,
             $settingsServiceMock,
             $orderTransactionRepositoryMock,
-            $orderRepositoryMock
+            $orderRepositoryMock,
+            $loggerMock
         );
     }
 

@@ -17,6 +17,7 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -77,6 +78,7 @@ class NationaleVerwenCadeaubonPaymentHandlerTest extends TestCase
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $this->orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
         $orderRepositoryMock = $this->createMock(EntityRepository::class);
+        $loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->paymentHandler = new NationaleVerwenCadeaubonPaymentHandler(
             $this->sdkFactoryMock,
@@ -86,7 +88,8 @@ class NationaleVerwenCadeaubonPaymentHandlerTest extends TestCase
             $cachedSalesChannelContextFactoryMock,
             $settingsServiceMock,
             $this->orderTransactionRepositoryMock,
-            $orderRepositoryMock
+            $orderRepositoryMock,
+            $loggerMock
         );
     }
 

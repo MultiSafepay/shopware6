@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -39,20 +40,28 @@ class DocumentCreatedEvent implements EventSubscriberInterface
     private OrderUtil $orderUtil;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * DocumentCreatedEvent constructor
      *
      * @param SdkFactory $sdkFactory
      * @param PaymentUtil $paymentUtil
      * @param OrderUtil $orderUtil
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
         PaymentUtil $paymentUtil,
-        OrderUtil $orderUtil
+        OrderUtil $orderUtil,
+        LoggerInterface $logger
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->paymentUtil = $paymentUtil;
         $this->orderUtil = $orderUtil;
+        $this->logger = $logger;
     }
 
     /**
@@ -87,6 +96,8 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                     continue;
                 }
 
+                $order = null;
+                $invoiceNumber = null;
                 try {
                     $order = $this->orderUtil->getOrder($payload['orderId'], $context);
 
@@ -95,21 +106,38 @@ class DocumentCreatedEvent implements EventSubscriberInterface
                             continue;
                         }
 
+                        $invoiceNumber = $document->getConfig()['custom']['invoiceNumber'] ?? null;
                         $this->sdkFactory->create($order->getSalesChannelId())
                             ->getTransactionManager()
                             ->update(
                                 $order->getOrderNumber(),
                                 (new UpdateRequest())->addData([
-                                    'invoice_id' => $document->getConfig()['custom']['invoiceNumber']
+                                    'invoice_id' => $invoiceNumber
                                 ])
                             );
                         break;
                     }
-                } catch (ApiException | InvalidApiKeyException) {
+                } catch (ApiException | InvalidApiKeyException $exception) {
+                    $this->logger->warning('Failed to send invoice to MultiSafepay', [
+                        'message' => 'Could not update invoice ID in MultiSafepay',
+                        'orderId' => $payload['orderId'],
+                        'orderNumber' => $order ? $order->getOrderNumber() : 'unknown',
+                        'salesChannelId' => $order ? $order->getSalesChannelId() : 'unknown',
+                        'invoiceId' => $invoiceNumber ?? 'not_available',
+                        'exceptionMessage' => $exception->getMessage(),
+                        'exceptionCode' => $exception->getCode()
+                    ]);
+
                     return;
                 }
             }
-        } catch (Exception) {
+        } catch (Exception $exception) {
+            $this->logger->warning('Failed to process document created event', [
+                'message' => 'Exception occurred while processing document creation',
+                'exceptionMessage' => $exception->getMessage(),
+                'exceptionCode' => $exception->getCode()
+            ]);
+
             return;
         }
     }

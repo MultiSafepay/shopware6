@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
@@ -76,6 +77,11 @@ class PaymentHandler extends AbstractPaymentHandler
     private EntityRepository $orderTransactionRepository;
 
     /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * PaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
@@ -86,6 +92,7 @@ class PaymentHandler extends AbstractPaymentHandler
      * @param SettingsService $settingsService
      * @param EntityRepository $orderTransactionRepository
      * @param EntityRepository $orderRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SdkFactory $sdkFactory,
@@ -95,7 +102,8 @@ class PaymentHandler extends AbstractPaymentHandler
         CachedSalesChannelContextFactory $cachedSalesChannelContextFactory,
         SettingsService $settingsService,
         EntityRepository $orderTransactionRepository,
-        EntityRepository $orderRepository
+        EntityRepository $orderRepository,
+        LoggerInterface $logger
         // The order repository is required as a dependency for Shopware's transaction management system
         // even though it's not directly used within this class.
         //
@@ -110,6 +118,7 @@ class PaymentHandler extends AbstractPaymentHandler
         $this->cachedSalesChannelContextFactory = $cachedSalesChannelContextFactory;
         $this->settingsService = $settingsService;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->logger = $logger;
     }
 
     /**
@@ -161,10 +170,24 @@ class PaymentHandler extends AbstractPaymentHandler
 
             $gateway = $this->getGatewayFromPaymentMethod($transaction, $context);
             if (empty($gateway)) {
+                $this->logger->warning('PaymentHandler: Payment gateway could not be determined', [
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $order->getOrderNumber()
+                ]);
+
                 throw PaymentException::asyncProcessInterrupted(
                     $orderTransactionId,
                     'Payment gateway could not be determined.'
                 );
+            }
+            $salesChannelId = $salesChannelContext->getSalesChannelId();
+
+            if ($this->settingsService->isDebugMode($salesChannelId)) {
+                $this->logger->info('PaymentHandler: Starting payment process', [
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $order->getOrderNumber(),
+                    'gateway' => $gateway
+                ]);
             }
 
             $gatewayInfo = $this->getIssuers($request);
@@ -197,8 +220,16 @@ class PaymentHandler extends AbstractPaymentHandler
             $orderRequest = $event->getOrderRequest();
 
             // Process the transaction
-            $salesChannelId = $salesChannelContext->getSalesChannelId();
             $response = $this->sdkFactory->create($salesChannelId)->getTransactionManager()->create($orderRequest);
+
+            if ($this->settingsService->isDebugMode($salesChannelId)) {
+                $this->logger->info('PaymentHandler: Payment transaction created successfully', [
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $order->getOrderNumber(),
+                    'gateway' => $gateway,
+                    'hasPaymentUrl' => !empty($response->getPaymentUrl())
+                ]);
+            }
 
             // Return the payment URL
             if ($response->getPaymentUrl()) {
@@ -207,9 +238,13 @@ class PaymentHandler extends AbstractPaymentHandler
 
             return null;
         } catch (ApiException $apiException) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error('PaymentHandler: MultiSafepay API exception during payment process', [
+                'orderTransactionId' => $orderTransactionId,
+                'orderNumber' => $order->getOrderNumber(),
+                'message' => $apiException->getMessage(),
+                'code' => $apiException->getCode()
+            ]);
+
             $this->transactionStateHandler->fail($orderTransactionId, $context);
             throw PaymentException::asyncProcessInterrupted(
                 $orderTransactionId,
@@ -217,9 +252,12 @@ class PaymentHandler extends AbstractPaymentHandler
                 $apiException
             );
         } catch (ClientExceptionInterface $clientException) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error('PaymentHandler: HTTP client exception during payment process', [
+                'orderTransactionId' => $orderTransactionId,
+                'orderNumber' => $order->getOrderNumber(),
+                'message' => $clientException->getMessage()
+            ]);
+
             $this->transactionStateHandler->fail($orderTransactionId, $context);
             throw PaymentException::asyncProcessInterrupted(
                 $orderTransactionId,
@@ -227,9 +265,14 @@ class PaymentHandler extends AbstractPaymentHandler
                 $clientException
             );
         } catch (Exception $exception) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error('PaymentHandler: Unexpected exception during payment process', [
+                'orderTransactionId' => $orderTransactionId,
+                'orderNumber' => $order->getOrderNumber(),
+                'message' => $exception->getMessage(),
+                'code' => $exception->getCode(),
+                'exceptionClass' => get_class($exception)
+            ]);
+
             $this->transactionStateHandler->fail($orderTransactionId, $context);
             throw PaymentException::asyncProcessInterrupted(
                 $orderTransactionId,
@@ -298,19 +341,41 @@ class PaymentHandler extends AbstractPaymentHandler
             );
         }
         $orderId = $order->getOrderNumber();
+        $salesChannelId = $order->getSalesChannelId();
+
+        if ($this->settingsService->isDebugMode($salesChannelId)) {
+            $this->logger->info('PaymentHandler: Finalizing payment', [
+                'orderTransactionId' => $orderTransactionId,
+                'orderNumber' => $orderId,
+                'transactionId' => $request->query->get('transactionid'),
+                'cancelled' => $request->query->getBoolean('cancel')
+            ]);
+        }
 
         try {
             $transactionId = $request->query->get('transactionid');
 
             if ($orderId !== (string)$transactionId) {
+                $this->logger->warning('PaymentHandler: Transaction ID mismatch during finalization', [
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $orderId,
+                    'expectedTransactionId' => $orderId,
+                    'receivedTransactionId' => $transactionId
+                ]);
+
                 throw PaymentException::invalidTransaction(
                     $transaction->getOrderTransactionId()
                 );
             }
         } catch (Exception $exception) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->error('PaymentHandler: Exception during payment finalization', [
+                'orderTransactionId' => $orderTransactionId,
+                'orderNumber' => $orderId,
+                'message' => $exception->getMessage(),
+                'code' => $exception->getCode(),
+                'exceptionClass' => get_class($exception)
+            ]);
+
             $this->transactionStateHandler->fail($orderTransactionId, $context);
             throw PaymentException::asyncFinalizeInterrupted(
                 $orderTransactionId,
@@ -320,11 +385,15 @@ class PaymentHandler extends AbstractPaymentHandler
         }
 
         if ($request->query->getBoolean('cancel')) {
-            /**
-             * @Todo improve log handling for better debugging
-             *
-             * Alter the payment status to cancel
-             */
+            if ($this->settingsService->isDebugMode($salesChannelId)) {
+                $this->logger->info('PaymentHandler: Payment cancelled by customer', [
+                    'orderTransactionId' => $orderTransactionId,
+                    'orderNumber' => $orderId,
+                    'salesChannelId' => $salesChannelId
+                ]);
+            }
+
+            // Alter the payment status to cancel
             $this->transactionStateHandler->cancel($orderTransactionId, $context);
 
             // Cancel pre-transaction preventing issues related to Second Chance
@@ -352,10 +421,20 @@ class PaymentHandler extends AbstractPaymentHandler
             $this->sdkFactory->create(
                 $salesChannelId
             )->getTransactionManager()->update($orderId, $updateRequest);
+
+            if ($this->settingsService->isDebugMode($salesChannelId)) {
+                $this->logger->info('PaymentHandler: Pre-transaction cancelled successfully', [
+                    'salesChannelId' => $salesChannelId,
+                    'orderNumber' => $orderId
+                ]);
+            }
         } catch (ClientExceptionInterface|Exception $exception) {
-            /**
-             * @Todo improve log handling for better debugging
-             */
+            $this->logger->warning('PaymentHandler: Failed to cancel pre-transaction', [
+                'salesChannelId' => $salesChannelId,
+                'orderNumber' => $orderId,
+                'message' => $exception->getMessage(),
+                'exceptionClass' => get_class($exception)
+            ]);
         }
     }
 
@@ -438,13 +517,21 @@ class PaymentHandler extends AbstractPaymentHandler
                 }
 
                 return (new $className())->getGatewayCode();
-            } catch (Exception) {
-                /**
-                 * @Todo improve log handling for better debugging
-                 */
+            } catch (Exception $exception) {
+                $this->logger->warning('PaymentHandler: Failed to get gateway from payment method', [
+                    'className' => $className,
+                    'orderTransactionId' => $transaction->getOrderTransactionId(),
+                    'message' => $exception->getMessage()
+                ]);
+
                 return null;
             }
         }
+
+        $this->logger->warning('PaymentHandler: Payment method class not found or invalid', [
+            'className' => $className,
+            'orderTransactionId' => $transaction->getOrderTransactionId()
+        ]);
 
         return null;
     }

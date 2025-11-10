@@ -52,6 +52,13 @@ class SettingsService
     public const SECOND_CHANCE_CONFIG_NAME = 'secondChance';
 
     /**
+     * Debug mode config name
+     *
+     * @var string
+     */
+    public const DEBUG_MODE_CONFIG_NAME = 'debugMode';
+
+    /**
      * @var SystemConfigService
      */
     public SystemConfigService $systemConfigService;
@@ -158,5 +165,16 @@ class SettingsService
     public function isShoppingCartExcluded(): bool
     {
         return (bool) $this->getSetting('excludeShoppingCart');
+    }
+
+    /**
+     *  Check if debug mode is enabled
+     *
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function isDebugMode(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->getSetting(self::DEBUG_MODE_CONFIG_NAME, $salesChannelId);
     }
 }

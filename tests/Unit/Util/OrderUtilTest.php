@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use MultiSafepay\Shopware6\Util\OrderUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionException;
 use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
@@ -45,7 +46,8 @@ class OrderUtilTest extends TestCase
     {
         $this->orderRepository = $this->createMock(EntityRepository::class);
         $this->countryStateRepository = $this->createMock(EntityRepository::class);
-        $this->orderUtil = new OrderUtil($this->orderRepository, $this->countryStateRepository);
+        $logger = $this->createMock(LoggerInterface::class);
+        $this->orderUtil = new OrderUtil($this->orderRepository, $this->countryStateRepository, $logger);
         $this->context = Context::createDefaultContext();
     }
 

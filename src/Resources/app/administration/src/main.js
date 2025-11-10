@@ -1,3 +1,4 @@
+import './main.scss';
 import './components/multisafepay-refund';
 import './components/multisafepay-verify-api-key';
 import './components/multisafepay-support';

@@ -31,6 +31,7 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -243,6 +244,8 @@ class GenericPaymentHandlersTest extends TestCase
             ->method('getSetting')
             ->willReturn(self::GENERIC_CODE);
 
+        $logger = $this->createMock(LoggerInterface::class);
+
         $handlerClass = $paymentMethod->getPaymentHandler();
         $actualHandler = new $handlerClass(
             $this->setupSdkFactory(),
@@ -252,7 +255,8 @@ class GenericPaymentHandlersTest extends TestCase
             $cachedSalesChannelContextFactory,
             $settingsServiceMock,
             $orderTransactionRepository,
-            $orderRepository
+            $orderRepository,
+            $logger
         );
 
         $mockPaymentHandler = $this->getMockBuilder($handlerClass)
@@ -264,7 +268,8 @@ class GenericPaymentHandlersTest extends TestCase
                 $cachedSalesChannelContextFactory,
                 $settingsServiceMock,
                 $orderTransactionRepository,
-                $orderRepository
+                $orderRepository,
+                $logger
             ])
             ->onlyMethods(['getClassName', 'pay', 'supports'])
             ->getMock();

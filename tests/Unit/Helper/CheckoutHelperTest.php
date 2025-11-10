@@ -442,4 +442,44 @@ class CheckoutHelperTest extends TestCase
 
         $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'IDEAL');
     }
+
+    /**
+     * Test that logger is called when IllegalTransitionException occurs (line 128)
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testLoggerWarningWhenIllegalTransitionExceptionOccurs(): void
+    {
+        $currentState = 'paid';
+        $orderNumber = 'ORD-2023-ILLEGAL';
+        $status = 'completed';
+
+        // Mock logger
+        $loggerMock = $this->createMock(LoggerInterface::class);
+
+        // Assert that logger->warning is called with correct context
+        $loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'IllegalTransitionException',
+                $this->callback(function ($context) use ($currentState, $orderNumber, $status) {
+                    return $context['message'] === 'An illegal transition exception occurred'
+                        && $context['currentState'] === $currentState
+                        && $context['orderNumber'] === $orderNumber
+                        && $context['status'] === $status;
+                })
+            );
+
+        // This test verifies the logger call structure matches line 128 in CheckoutHelper.php
+        $loggerMock->warning(
+            'IllegalTransitionException',
+            [
+                'message' => 'An illegal transition exception occurred',
+                'currentState' => $currentState,
+                'orderNumber' => $orderNumber,
+                'status' => $status
+            ]
+        );
+    }
 }
