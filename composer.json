@@ -2,7 +2,7 @@
     "name": "multisafepay/shopware6",
     "description": "MultiSafepay module for Shopware 6.6.x",
     "type": "shopware-platform-plugin",
-    "version": "3.4.0",
+    "version": "3.5.0",
     "license": "MIT",
     "minimum-stability": "stable",
     "require": {
