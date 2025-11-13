@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [4.2.0] - 2025-11-13
+### Added
++ PLGSHPS6-389: Add log exceptions on payment and refund process
++ DAVAMS-910: Add compliance with the European Accessibility Act (EAA) 2025
+
+### Fixed
++ PLGSHPS6-399: Fix language change breaks payment components, tokenization, and payment type
+
+### Removed
++ DAVAMS-927: Remove Sofort payment method
++ ZINIA-89: Remove Zinia payment method
+
 ## [4.1.0] - 2025-09-01
 ### Added
 + PLGSHPS6-402: Validation improvements in the API endpoints: "component-allowed" and "tokenization-allowed"
