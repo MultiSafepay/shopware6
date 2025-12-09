@@ -8,6 +8,7 @@ namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\Subscriber\PaymentMethodCustomFields;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityWriteResult;
@@ -35,7 +36,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
     private Context $context;
 
     /**
-     * Set up test environment before each test
+     * Set up the test environment before each test
      *
      * @return void
      */
@@ -43,7 +44,12 @@ class PaymentMethodCustomFieldsTest extends TestCase
     {
         parent::setUp();
 
-        $this->context = Context::createDefaultContext();
+        // Create context with AdminApiSource with admin privileges to simulate admin panel edits
+        // Set isAdmin=true to bypass ACL checks in integration tests
+        $source = new AdminApiSource(Uuid::randomHex());
+        $source->setIsAdmin(true);
+        $this->context = new Context($source);
+        
         $this->paymentMethodRepository = $this->getContainer()->get('payment_method.repository');
         $this->translationRepository = $this->getContainer()->get('payment_method_translation.repository');
         $this->languageRepository = $this->getContainer()->get('language.repository');
@@ -130,7 +136,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
             ]
         ], $this->context);
 
-        // Create a mock write result
+        // Create a mock writing result
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -170,13 +176,13 @@ class PaymentMethodCustomFieldsTest extends TestCase
     }
 
     /**
-     * Test that the subscriber handles empty payload correctly
+     * Test that the subscriber handles an empty payload correctly
      *
      * @return void
      */
     public function testOnPaymentMethodTranslationWrittenWithEmptyPayload(): void
     {
-        // Create a mock write result with empty payload
+        // Create a mock writing result with an empty payload
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -208,7 +214,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
      */
     public function testOnPaymentMethodTranslationWrittenWithMissingPaymentMethodId(): void
     {
-        // Create a mock write result with missing paymentMethodId
+        // Create a mock writing result with missing paymentMethodId
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -242,7 +248,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
      */
     public function testOnPaymentMethodTranslationWrittenWithMissingLanguageId(): void
     {
-        // Create a mock write result with missing languageId
+        // Create a mock writing result with missing languageId
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -314,7 +320,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
         $this->assertNotNull($customFields, 'Custom fields should not be null');
         $this->assertIsArray($customFields);
         
-        // Check that existing custom field is preserved
+        // Check that the existing custom field is preserved
         $this->assertArrayHasKey('custom_field', $customFields);
         $this->assertEquals('custom_value', $customFields['custom_field']);
 
@@ -329,14 +335,14 @@ class PaymentMethodCustomFieldsTest extends TestCase
      * Test that onLanguageWritten creates translations for MultiSafepay payment methods
      * when a new language is created
      *
-     * This test is simplified because creating a full language in Shopware is complex
+     * This test is simplified because creating a full language in Shopware is complex.
      * We test the subscriber logic with mocked data
      *
      * @return void
      */
     public function testOnLanguageWrittenWithEmptyPayload(): void
     {
-        // Create a mock write result with empty payload
+        // Create a mock writing result with an empty payload
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -368,7 +374,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
      */
     public function testOnLanguageWrittenWithMissingId(): void
     {
-        // Create a mock write result with payload missing id
+        // Create a mock writing result with payload missing id
         $writeResult = $this->getMockBuilder(EntityWriteResult::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -447,6 +453,8 @@ class PaymentMethodCustomFieldsTest extends TestCase
         $paymentMethodId = Uuid::randomHex();
         $myBank = new MyBank();
 
+        // Use system context to create payment method without triggering subscriber
+        $systemContext = Context::createDefaultContext();
         $this->paymentMethodRepository->create([
             [
                 'id' => $paymentMethodId,
@@ -454,7 +462,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
                 'name' => 'MyBank Test',
                 'active' => true,
             ]
-        ], $this->context);
+        ], $systemContext);
 
         return $paymentMethodId;
     }
@@ -485,7 +493,9 @@ class PaymentMethodCustomFieldsTest extends TestCase
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('paymentMethodId', $paymentMethodId));
-        $translations = $this->translationRepository->search($criteria, $this->context);
+        // Use system context to avoid triggering the subscriber when clearing
+        $systemContext = Context::createDefaultContext();
+        $translations = $this->translationRepository->search($criteria, $systemContext);
 
         $updates = [];
         foreach ($translations as $translation) {
@@ -497,7 +507,8 @@ class PaymentMethodCustomFieldsTest extends TestCase
         }
 
         if (!empty($updates)) {
-            $this->translationRepository->upsert($updates, $this->context);
+            // Use system context to clear without triggering a subscriber
+            $this->translationRepository->upsert($updates, $systemContext);
         }
     }
 }

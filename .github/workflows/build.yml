@@ -26,7 +26,7 @@ jobs:
         uses: shopware/setup-shopware@main
         with:
           # Shopware version to use
-          shopware-version: 'v6.6.10.6'
+          shopware-version: 'v6.6.10.9'
           # PHP version to use
           php-version: 8.2
           # Environment in which Shopware will run

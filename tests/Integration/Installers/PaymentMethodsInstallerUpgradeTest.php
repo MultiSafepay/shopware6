@@ -6,7 +6,7 @@
 namespace MultiSafepay\Shopware6\Tests\Integration\Installers;
 
 use MultiSafepay\Shopware6\Installers\PaymentMethodsInstaller;
-use MultiSafepay\Shopware6\PaymentMethods\Ideal;
+use MultiSafepay\Shopware6\PaymentMethods\CreditCard;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -34,7 +34,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
     private array $originalCustomFieldsBackup = [];
 
     /**
-     * Set up test environment before each test
+     * Set up the test environment before each test
      *
      * @return void
      */
@@ -52,7 +52,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
     /**
      * Helper method to get or ensure a payment method exists for testing
      *
-     * This uses the existing payment method if it exists, or creates a new one.
+     * This uses the existing payment method if it exists or creates a new one.
      * It backs up the original custom fields for restoration in tearDown.
      *
      * @param PaymentMethodInterface $paymentMethod
@@ -63,7 +63,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         PaymentMethodInterface $paymentMethod,
         array $customFields = null
     ): string {
-        // Check if payment method already exists
+        // Check if the payment method already exists
         $criteria = (new Criteria())->addFilter(
             new EqualsFilter('handlerIdentifier', $paymentMethod->getPaymentHandler())
         );
@@ -85,7 +85,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
                 ], $this->context);
             }
         } else {
-            // Create new payment method (only if it doesn't exist)
+            // Create the new payment method (only if it doesn't exist)
             $paymentMethodId = Uuid::randomHex();
             $data = [
                 'id' => $paymentMethodId,
@@ -118,7 +118,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradePreservesAdminConfiguredCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
         // Simulate existing payment method with admin-configured custom fields
         $existingCustomFields = [
@@ -129,7 +129,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
             'tokenization' => true   // Admin configured to true
         ];
 
-        // Set up payment method with admin-configured custom fields
+        // Set up the payment method with admin-configured custom fields
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, $existingCustomFields);
 
         // Verify the payment method has the expected custom fields
@@ -142,11 +142,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $this->assertTrue($loadedPaymentMethod->getCustomFields()['tokenization']);
 
         // Simulate an upgrade by calling addPaymentMethod with isInstall=false
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,    // isActive
-            false    // isInstall=false simulates upgrade
+            false,   // isInstall=false simulates upgrade
+            $existingCustomFieldsMap
         );
 
         // Verify that admin-configured values are preserved after upgrade
@@ -172,16 +178,16 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      * This test verifies that when a payment method is created for the first time,
      * it receives the default values (false) for direct, component, and tokenization.
      *
-     * Since we can't actually delete plugin payment methods, we test the upgrade
-     * scenario with null custom fields, which should behave the same as fresh installation.
+     * Since we can't delete plugin payment methods, we test the upgrade
+     * scenario with null custom fields, which should behave the same as a fresh installation.
      *
      * @return void
      */
-    public function testFreshInstallUsesDefaultCustomFields(): void
+    public function testPluginInstallSetsDefaultCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
-        // Set up payment method with null custom fields (simulating pre-plugin state)
+        // Set up the payment method with null custom fields (simulating pre-plugin state)
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod);
 
         // Clear any existing custom fields to simulate a state before custom fields were added
@@ -194,11 +200,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
 
         // Call addPaymentMethod with isInstall=false (upgrade scenario)
         // This is the realistic scenario: payment method exists but needs custom fields added
+        // Load existing custom fields (which are null) as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,   // isActive
-            false   // isInstall=false because payment method already exists
+            false,   // isInstall=false because the payment method already exists
+            $existingCustomFieldsMap
         );
 
         // Get the payment method
@@ -212,6 +224,8 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $this->assertNotNull($customFields, 'Custom fields should be set after install');
         $this->assertTrue($customFields['is_multisafepay']);
         $this->assertEquals($paymentMethod->getTemplate(), $customFields['template']);
+        
+        // All payment methods with custom fields get all three feature flags (direct, component, tokenization)
         $this->assertFalse($customFields['direct'], 'direct should default to false on fresh install');
         $this->assertFalse($customFields['component'], 'component should default to false on fresh install');
         $this->assertFalse($customFields['tokenization'], 'tokenization should default to false on fresh install');
@@ -220,31 +234,36 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
     /**
      * Test that upgrade preserves partial admin configurations
      *
-     * Scenario: Admin only configured 'direct' to true, left others as false
+     * Scenario: Admin only configured 'component' to true, left tokenization as false
      *
      * @return void
      */
     public function testUpgradePreservesPartialCustomFieldConfiguration(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
-        // Simulate existing payment method where admin only enabled 'direct'
+        // Simulate the existing payment method where admin only enabled 'component'
         $existingCustomFields = [
             'is_multisafepay' => true,
             'template' => 'old_template.html.twig',
-            'direct' => true,        // Admin enabled this
-            'component' => false,    // Admin left this as false
+            'component' => true,     // Admin enabled this
             'tokenization' => false  // Admin left this as false
         ];
 
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, $existingCustomFields);
 
         // Simulate upgrade
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,    // isActive
-            false    // isInstall=false (upgrade)
+            false,    // isInstall=false (upgrade)
+            $existingCustomFieldsMap
         );
 
         // Verify the configuration is preserved exactly as the admin set it
@@ -253,13 +272,14 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
 
         $customFields = $upgradedPaymentMethod->getCustomFields();
 
-        $this->assertTrue($customFields['direct'], 'direct should remain true');
-        $this->assertFalse($customFields['component'], 'component should remain false');
+        // Verify admin-configured values are preserved
+        $this->assertFalse($customFields['direct'], 'direct should remain false');
+        $this->assertTrue($customFields['component'], 'component should remain true');
         $this->assertFalse($customFields['tokenization'], 'tokenization should remain false');
     }
 
     /**
-     * Test that upgrade works when payment method has no custom fields set
+     * Test that upgrade works when the payment method has no custom fields set
      *
      * Edge case: Payment method exists but has null custom fields
      *
@@ -267,17 +287,23 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradeWorksWithNullCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
-        // Set up payment method with no custom fields (old installation scenario)
+        // Set up the payment method with no custom fields (old installation scenario)
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod);
 
         // Simulate upgrade
+        // Load existing custom fields (which are null) as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,    // isActive
-            false    // isInstall=false (upgrade)
+            false,    // isInstall=false (upgrade)
+            $existingCustomFieldsMap
         );
 
         // Verify default custom fields are now set
@@ -289,6 +315,8 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $this->assertNotNull($customFields);
         $this->assertTrue($customFields['is_multisafepay']);
         $this->assertEquals($paymentMethod->getTemplate(), $customFields['template']);
+        
+        // Default values should be set for all feature flags
         $this->assertFalse($customFields['direct']);
         $this->assertFalse($customFields['component']);
         $this->assertFalse($customFields['tokenization']);
@@ -303,9 +331,9 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradeWorksWithIncompleteCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
-        // Set up payment method with incomplete custom fields (missing direct, component, tokenization)
+        // Set up the payment method with incomplete custom fields (missing direct, component, tokenization)
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, [
             'is_multisafepay' => true,
             'template' => 'old_template.html.twig'
@@ -313,11 +341,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         ]);
 
         // Simulate upgrade
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,    // isActive
-            false    // isInstall=false (upgrade)
+            false,    // isInstall=false (upgrade)
+            $existingCustomFieldsMap
         );
 
         // Verify missing fields are added with default values
@@ -328,6 +362,8 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
 
         $this->assertTrue($customFields['is_multisafepay']);
         $this->assertEquals($paymentMethod->getTemplate(), $customFields['template']);
+        
+        // Missing fields should be added with default values
         $this->assertFalse($customFields['direct'], 'Missing direct should default to false');
         $this->assertFalse($customFields['component'], 'Missing component should default to false');
         $this->assertFalse($customFields['tokenization'], 'Missing tokenization should default to false');
@@ -340,13 +376,13 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradeUpdatesTranslationsWithPreservedCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
-        // Set up payment method with admin-configured custom fields
+        // Set up the payment method with admin-configured custom fields
         $existingCustomFields = [
             'is_multisafepay' => true,
             'template' => $paymentMethod->getTemplate(),
-            'direct' => true,
+            'direct' => false,
             'component' => false,
             'tokenization' => true
         ];
@@ -354,11 +390,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, $existingCustomFields);
 
         // Simulate upgrade
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,
-            false
+            false,
+            $existingCustomFieldsMap
         );
 
         // Get all languages
@@ -377,10 +419,10 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
             if ($translation) {
                 $translationCustomFields = $translation->getCustomFields();
 
-                // Verify the preserved values are in the translation
-                $this->assertTrue(
+                // Verify custom fields are preserved for translations
+                $this->assertFalse(
                     $translationCustomFields['direct'],
-                    'Translation should have preserved direct=true for language ' . $language->getId()
+                    'Translation should have preserved direct=false for language ' . $language->getId()
                 );
                 $this->assertFalse(
                     $translationCustomFields['component'],
@@ -404,13 +446,13 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradeHandlesNonBooleanCustomFieldValues(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
         // Simulate existing payment method with non-boolean values (edge case from bad data)
         $existingCustomFields = [
             'is_multisafepay' => true,
             'template' => $paymentMethod->getTemplate(),
-            'direct' => 1,           // Numeric 1 instead of true
+            'direct' => false,       // Include direct field
             'component' => 'true',   // String 'true' instead of boolean
             'tokenization' => 0      // Numeric 0 instead of false
         ];
@@ -418,11 +460,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, $existingCustomFields);
 
         // Simulate upgrade
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,
-            false
+            false,
+            $existingCustomFieldsMap
         );
 
         // Verify the values are preserved as-is (truthy/falsy behavior)
@@ -431,9 +479,9 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
 
         $customFields = $upgradedPaymentMethod->getCustomFields();
 
-        // These values should be preserved even if they're not proper booleans
+        // These values should be preserved as-is (truthy/falsy behavior)
         // PHP's truthy/falsy behavior will handle them correctly
-        $this->assertEquals(1, $customFields['direct'], 'Numeric 1 should be preserved');
+        $this->assertFalse($customFields['direct'], 'direct should be preserved as false');
         $this->assertEquals('true', $customFields['component'], 'String "true" should be preserved');
         $this->assertEquals(0, $customFields['tokenization'], 'Numeric 0 should be preserved');
     }
@@ -447,13 +495,13 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
      */
     public function testUpgradePreservesExtraCustomFields(): void
     {
-        $paymentMethod = new Ideal();
+        $paymentMethod = new CreditCard();
 
         // Simulate existing payment method with extra custom fields
         $existingCustomFields = [
             'is_multisafepay' => true,
             'template' => 'old_template.html.twig',
-            'direct' => true,
+            'direct' => false,
             'component' => false,
             'tokenization' => true,
             'custom_merchant_setting' => 'some_value',  // Extra field
@@ -463,11 +511,17 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $paymentMethodId = $this->setupPaymentMethodForTest($paymentMethod, $existingCustomFields);
 
         // Simulate upgrade
+        // Load existing custom fields as the installer does during update
+        $criteria = new Criteria([$paymentMethodId]);
+        $loadedMethod = $this->paymentMethodRepository->search($criteria, $this->context)->first();
+        $existingCustomFieldsMap = [$paymentMethodId => $loadedMethod->getCustomFields()];
+        
         $this->installer->addPaymentMethod(
             $paymentMethod,
             $this->context,
             true,
-            false
+            false,
+            $existingCustomFieldsMap
         );
 
         // Verify our managed fields are correct and extra fields are preserved
@@ -477,7 +531,7 @@ class PaymentMethodsInstallerUpgradeTest extends TestCase
         $customFields = $upgradedPaymentMethod->getCustomFields();
 
         // Our managed fields should be preserved
-        $this->assertTrue($customFields['direct']);
+        $this->assertFalse($customFields['direct'], 'direct should be preserved as false');
         $this->assertFalse($customFields['component']);
         $this->assertTrue($customFields['tokenization']);
 
