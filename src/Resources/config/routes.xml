@@ -34,9 +34,4 @@
         <default key="csrf_protected"><list><bool>false</bool></list></default>
         <option key="seo">false</option>
     </route>
-    <route id="store-api.multisafepay.tokens" path="/store-api/multisafepay/tokenization/tokens" methods="GET POST">
-        <default key="_controller">MultiSafepay\Shopware6\Controllers\StoreApi\TokensRoute::load</default>
-        <default key="_routeScope"><list><string>store-api</string></list></default>
-        <default key="_loginRequired"><list><bool>true</bool></list></default>
-    </route>
 </routes>
