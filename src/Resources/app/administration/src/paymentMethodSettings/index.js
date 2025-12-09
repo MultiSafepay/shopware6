@@ -6,7 +6,9 @@ const { Component } = Shopware;
 // Shared constants for payment handlers that support component and tokenization
 const COMPONENT_SUPPORTED_HANDLERS = [
     'americanexpress',
+    'billink',
     'creditcard',
+    'in3b2b',
     'maestro',
     'mastercard',
     'mbway',
