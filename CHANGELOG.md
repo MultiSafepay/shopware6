@@ -1,15 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [4.2.0] - 2025-11-13
+## [4.2.0] - 2025-12-10
 ### Added
-+ PLGSHPS6-389: Add log exceptions on payment and refund process
++ PLGSHPS6-389: Add log exceptions on the payment and refund process
 + DAVAMS-910: Add compliance with the European Accessibility Act (EAA) 2025
 
 ### Fixed
++ PLGSHPS6-411: Fix issues in the installation process and overlogging in payments without customFields
 + PLGSHPS6-399: Fix language change breaks payment components, tokenization, and payment type
 
 ### Removed
++ PLGSHPS6-413: Remove the context token and access key from the base template
 + DAVAMS-927: Remove Sofort payment method
 + ZINIA-89: Remove Zinia payment method
 
@@ -387,7 +389,7 @@ PLGSHPS6-305: Fix shipping request not working
 
 ## [1.4.0] - - 2020-05-27
 ### Added
-+ Add Tokenization for Visa, Mastercard and Maestro.
++ Add Tokenization for Visa, Mastercard, and Maestro.
 
 ### Changed
 + Replace refund confirm dialog with modal.
