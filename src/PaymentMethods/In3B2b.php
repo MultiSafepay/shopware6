@@ -19,7 +19,7 @@ class In3B2b implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'in3 - Betaal in 3 delen (0 procent rente)';
+        return 'in3 - Betaal in 3 delen (0 procent rente) [B2B]';
     }
 
     /**

@@ -197,7 +197,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $handlerIdentifier = $paymentMethod->getPaymentHandler();
 
         // Only create customFields for payment methods that support at least one feature
-        // Methods not in any constant (PayPal, iDEAL, etc.) will have no customFields
+        // Methods not in any constant (PayPal, iDEAL | Wero, etc.) will have no customFields
         $customFieldsData = [];
 
         if (PaymentMethodCustomFields::supportsCustomFields($handlerIdentifier)) {
@@ -235,7 +235,7 @@ class PaymentMethodsInstaller implements InstallerInterface
             'technicalName' => $paymentMethod->getTechnicalName(),
             'afterOrderEnabled' => true
         ];
-        
+
         // Only add customFields if there's content (payment method supports features)
         if (!empty($customFieldsData)) {
             $paymentData['customFields'] = $customFieldsData;

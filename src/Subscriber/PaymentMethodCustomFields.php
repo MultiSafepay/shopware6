@@ -420,7 +420,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
         $handlerIdentifier = $paymentMethod->getHandlerIdentifier();
 
         // Only create customFields for payment methods that support features
-        // Methods not in any constant (PayPal, iDEAL, etc.) won't have customFields
+        // Methods not in any constant (PayPal, iDEAL | Wero, etc.) won't have customFields
         $customFields = [];
 
         if ($handlerIdentifier && self::supportsCustomFields($handlerIdentifier)) {
@@ -519,7 +519,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
 
         // Only process if this payment method supports custom fields
         if (!$handlerIdentifier || !self::supportsCustomFields($handlerIdentifier)) {
-            // This payment method doesn't support custom fields (PayPal, iDEAL, etc.)
+            // This payment method doesn't support custom fields (PayPal, iDEAL | Wero, etc.)
             // Don't add any custom fields
             return;
         }

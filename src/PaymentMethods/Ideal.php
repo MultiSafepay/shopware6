@@ -11,7 +11,7 @@ use MultiSafepay\Shopware6\Support\TechnicalName;
 /**
  * Class Ideal
  *
- * This class is used to define the details of iDEAL payment method
+ * This class is used to define the details of iDEAL | Wero payment method
  *
  * @package MultiSafepay\Shopware6\PaymentMethods
  */
@@ -26,7 +26,7 @@ class Ideal implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'iDEAL';
+        return 'iDEAL | Wero';
     }
 
     /**
