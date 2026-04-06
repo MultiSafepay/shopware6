@@ -5,6 +5,7 @@ import './components/multisafepay-support';
 import './paymentMethodSettings'
 import './override/sw-order-detail-general';
 import './override/sw-order-detail'
+import './override/sw-order-general-info'
 import MultiSafepayApiService from './service/MultiSafepayApi.service';
 import localeDE from './snippets/de_DE.json';
 import localeEN from './snippets/en_GB.json';

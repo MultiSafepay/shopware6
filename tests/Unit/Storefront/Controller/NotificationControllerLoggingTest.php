@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\Tests\Unit\Storefront\Controller;
 
 use MultiSafepay\Api\TransactionManager;
+use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
@@ -227,5 +228,167 @@ class NotificationControllerLoggingTest extends TestCase
 
         // Execute
         $controller->postNotification();
+    }
+
+    /**
+     * Test that notification() passes payment_details.type and payment_details.wallet
+     * to CheckoutHelper::transitionPaymentMethodIfNeeded
+     *
+     * @return void
+     * @throws Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testNotificationPassesWalletAndTypeToCheckoutHelper(): void
+    {
+        $orderNumber = '10058';
+        $salesChannelId = 'channel-10058';
+        $transactionId = 'transaction-id-10058';
+
+        $request = new Request(['transactionid' => $orderNumber]);
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn($request);
+
+        $checkoutHelperMock = $this->createMock(CheckoutHelper::class);
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getId')->willReturn($transactionId);
+
+        $transactionCollection = $this->createMock(OrderTransactionCollection::class);
+        $transactionCollection->method('first')->willReturn($transaction);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn($orderNumber);
+        $order->method('getSalesChannelId')->willReturn($salesChannelId);
+        $order->method('getTransactions')->willReturn($transactionCollection);
+
+        $this->orderUtilMock->expects($this->once())
+            ->method('getOrderFromNumber')
+            ->with($orderNumber)
+            ->willReturn($order);
+
+        $checkoutHelperMock->expects($this->once())
+            ->method('transitionPaymentState')
+            ->with('completed', $transactionId, $this->context);
+
+        $checkoutHelperMock->expects($this->once())
+            ->method('transitionPaymentMethodIfNeeded')
+            ->with($transaction, $this->context, 'VISA', 'GOOGLEPAY');
+
+        $transactionResponse = new TransactionResponse([
+            'status' => 'completed',
+            'payment_details' => [
+                'type' => 'VISA',
+                'wallet' => 'GOOGLEPAY',
+            ],
+        ]);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionResponse);
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->expects($this->once())
+            ->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactoryMock->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $controller = new NotificationController(
+            $checkoutHelperMock,
+            $this->sdkFactoryMock,
+            $requestUtilMock,
+            $this->orderUtilMock,
+            $this->createMock(SettingsService::class),
+            $this->loggerMock
+        );
+
+        $response = $controller->notification($this->context);
+
+        $this->assertSame('OK', $response->getContent());
+    }
+
+    /**
+     * Test that notification() passes null wallet when payment_details.wallet is missing
+     *
+     * @return void
+     * @throws Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testNotificationPassesNullWalletWhenMissing(): void
+    {
+        $orderNumber = '10059';
+        $salesChannelId = 'channel-10059';
+        $transactionId = 'transaction-id-10059';
+
+        $request = new Request(['transactionid' => $orderNumber]);
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn($request);
+
+        $checkoutHelperMock = $this->createMock(CheckoutHelper::class);
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getId')->willReturn($transactionId);
+
+        $transactionCollection = $this->createMock(OrderTransactionCollection::class);
+        $transactionCollection->method('first')->willReturn($transaction);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn($orderNumber);
+        $order->method('getSalesChannelId')->willReturn($salesChannelId);
+        $order->method('getTransactions')->willReturn($transactionCollection);
+
+        $this->orderUtilMock->expects($this->once())
+            ->method('getOrderFromNumber')
+            ->with($orderNumber)
+            ->willReturn($order);
+
+        $checkoutHelperMock->expects($this->once())
+            ->method('transitionPaymentState')
+            ->with('completed', $transactionId, $this->context);
+
+        $checkoutHelperMock->expects($this->once())
+            ->method('transitionPaymentMethodIfNeeded')
+            ->with($transaction, $this->context, 'VISA', null);
+
+        $transactionResponse = new TransactionResponse([
+            'status' => 'completed',
+            'payment_details' => [
+                'type' => 'VISA',
+            ],
+        ]);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionResponse);
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->expects($this->once())
+            ->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactoryMock->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $controller = new NotificationController(
+            $checkoutHelperMock,
+            $this->sdkFactoryMock,
+            $requestUtilMock,
+            $this->orderUtilMock,
+            $this->createMock(SettingsService::class),
+            $this->loggerMock
+        );
+
+        $response = $controller->notification($this->context);
+
+        $this->assertSame('OK', $response->getContent());
     }
 }

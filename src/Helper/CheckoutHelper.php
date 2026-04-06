@@ -10,6 +10,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -28,6 +29,11 @@ use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
  */
 class CheckoutHelper
 {
+    private const WALLET_APPLE_PAY = 'APPLEPAY';
+    private const WALLET_GOOGLE_PAY = 'GOOGLEPAY';
+    private const WALLET_DISPLAY = 'multisafepay_payment_method_display';
+    private const WALLET_DISPLAY_ADMIN = 'multisafepay_payment_method_display_admin';
+
     /**
      * @var OrderTransactionStateHandler $orderTransactionStateHandler
      */
@@ -118,7 +124,7 @@ class CheckoutHelper
             $stateMachineState = $transaction->getStateMachineState();
             $currentState = !is_null($stateMachineState) ? $stateMachineState->getName() : 'null';
 
-            // Check if order is available through associations
+            // Check if the order is available through associations
             $criteria = new Criteria([$transaction->getId()]);
             $criteria->addAssociation('order');
             $loadedTransaction = $this->transactionRepository->search($criteria, $context)->first();
@@ -194,7 +200,7 @@ class CheckoutHelper
             return true;
         }
 
-        // Note: DO THIS CHECK TO PREVENT ERRORS ON 6.3
+        // Note: Perform this check to prevent errors on Shopware 6.3
         $getStateMachineState = $transaction->getStateMachineState();
         if (!is_null($getStateMachineState)) {
             return $getStateMachineState->getTechnicalName() === $actionStatusTransition->getTechnicalName();
@@ -241,19 +247,50 @@ class CheckoutHelper
      * @param OrderTransactionEntity $transaction
      * @param Context $context
      * @param string $gatewayCode
+     * @param string|null $wallet
      */
     public function transitionPaymentMethodIfNeeded(
         OrderTransactionEntity $transaction,
         Context $context,
-        string $gatewayCode
+        string $gatewayCode,
+        ?string $wallet = null
     ): void {
         $paymentMethodId = $transaction->getPaymentMethodId();
         $criteria = new Criteria([$paymentMethodId]);
         $paymentMethod = $this->paymentMethodRepository->search($criteria, $context)->get($paymentMethodId);
+
+        if ($paymentMethod === null) {
+            $this->logger->warning('Payment method not found while attempting to transition payment method for transaction.', [
+                'paymentMethodId' => $paymentMethodId,
+                'transactionId' => $transaction->getId(),
+            ]);
+
+            return;
+        }
+
         $expectedPaymentHandler = $paymentMethod->getHandlerIdentifier();
-        $usedPaymentHandler = $this->paymentUtil->getHandlerIdentifierForGatewayCode($gatewayCode);
+        $resolvedGatewayCode = $this->resolveGatewayCode($gatewayCode, $wallet);
+        $usedPaymentHandler = $this->paymentUtil->getHandlerIdentifierForGatewayCode($resolvedGatewayCode);
+        $walletPaymentMethodDisplay = $this->buildWalletPaymentMethodDisplay($wallet, $gatewayCode);
+        $walletPaymentMethodDisplayAdmin = $this->buildWalletPaymentMethodDisplayForAdmin(
+            $walletPaymentMethodDisplay,
+            $this->resolvePaymentMethodDisplayName($paymentMethod)
+        );
 
         if ($expectedPaymentHandler === $usedPaymentHandler) {
+            // Even without a handler switch, wallet display keys may need cleanup.
+            $this->updateTransactionPaymentData(
+                $transaction,
+                $context,
+                null,
+                $walletPaymentMethodDisplay,
+                $walletPaymentMethodDisplayAdmin
+            );
+
+            return;
+        }
+
+        if (!$usedPaymentHandler) {
             return;
         }
 
@@ -265,11 +302,196 @@ class CheckoutHelper
             return;
         }
 
+        $this->updateTransactionPaymentData(
+            $transaction,
+            $context,
+            $newPaymentMethod->getId(),
+            $walletPaymentMethodDisplay,
+            $this->buildWalletPaymentMethodDisplayForAdmin(
+                $walletPaymentMethodDisplay,
+                $this->resolvePaymentMethodDisplayName($newPaymentMethod)
+            )
+        );
+    }
+
+    /**
+     * Persists payment method changes and/or the display custom field on the transaction.
+     *
+     * @param OrderTransactionEntity $transaction
+     * @param Context $context
+     * @param string|null $newPaymentMethodId
+     * @param string|null $walletPaymentMethodDisplay
+     * @param string|null $walletPaymentMethodDisplayAdmin
+     */
+    private function updateTransactionPaymentData(
+        OrderTransactionEntity $transaction,
+        Context $context,
+        ?string $newPaymentMethodId,
+        ?string $walletPaymentMethodDisplay,
+        ?string $walletPaymentMethodDisplayAdmin
+    ): void {
         $updateData = [
             'id' => $transaction->getId(),
-            'paymentMethodId' => $newPaymentMethod->getId(),
         ];
+
+        if ($newPaymentMethodId !== null) {
+            $updateData['paymentMethodId'] = $newPaymentMethodId;
+        }
+
+        $customFields = $transaction->getCustomFields() ?? [];
+        $originalCustomFields = $customFields;
+
+        if ($walletPaymentMethodDisplay !== null) {
+            $customFields[self::WALLET_DISPLAY] = $walletPaymentMethodDisplay;
+
+            if ($walletPaymentMethodDisplayAdmin !== null) {
+                $customFields[self::WALLET_DISPLAY_ADMIN] = $walletPaymentMethodDisplayAdmin;
+            }
+        } else {
+            unset($customFields[self::WALLET_DISPLAY], $customFields[self::WALLET_DISPLAY_ADMIN]);
+        }
+
+        if ($customFields !== $originalCustomFields) {
+            $updateData['customFields'] = $customFields;
+        }
+
+        if (!array_key_exists('paymentMethodId', $updateData) && !array_key_exists('customFields', $updateData)) {
+            return;
+        }
+
         $this->transactionRepository->update([$updateData], $context);
+    }
+
+    /**
+     * Resolves the effective gateway code, prioritizing wallet codes when applicable.
+     *
+     * @param string $gatewayCode
+     * @param string|null $wallet
+     * @return string
+     */
+    private function resolveGatewayCode(string $gatewayCode, ?string $wallet): string
+    {
+        $walletCode = strtoupper((string)$wallet);
+
+        return match ($walletCode) {
+            self::WALLET_APPLE_PAY, self::WALLET_GOOGLE_PAY => $walletCode,
+            default => $gatewayCode,
+        };
+    }
+
+    /**
+     * Builds the "Wallet (Card)" display text stored in transaction custom fields.
+     *
+     * Returns null for non-wallet payments or unknown instruments.
+     *
+     * @param string|null $wallet
+     * @param string $gatewayCode
+     * @return string|null
+     */
+    private function buildWalletPaymentMethodDisplay(?string $wallet, string $gatewayCode): ?string
+    {
+        $walletName = match (strtoupper((string)$wallet)) {
+            self::WALLET_APPLE_PAY => 'Apple Pay',
+            self::WALLET_GOOGLE_PAY => 'Google Pay',
+            default => null,
+        };
+
+        if ($walletName === null) {
+            return null;
+        }
+
+        $paymentMethodName = match (strtoupper($gatewayCode)) {
+            'AMEX' => 'American Express',
+            'VISA' => 'Visa',
+            'MASTERCARD' => 'Mastercard',
+            default => null,
+        };
+
+        if ($paymentMethodName === null) {
+            return null;
+        }
+
+        return sprintf('%s (%s)', $walletName, $paymentMethodName);
+    }
+
+    /**
+     * Builds the administration display text by reusing the payment method
+     * suffix after "|" from the configured payment method name.
+     *
+     * Example:
+     * Payment method name: "Google Pay | MultiSafepay module for Shopware 6"
+     * Wallet display: "Google Pay (Visa)"
+     * Result: "Google Pay (Visa) | MultiSafepay module for Shopware 6"
+     *
+     * @param string|null $walletPaymentMethodDisplay
+     * @param string|null $paymentMethodDisplayName
+     * @return string|null
+     */
+    private function buildWalletPaymentMethodDisplayForAdmin(
+        ?string $walletPaymentMethodDisplay,
+        ?string $paymentMethodDisplayName
+    ): ?string {
+        if ($walletPaymentMethodDisplay === null) {
+            return null;
+        }
+
+        if ($paymentMethodDisplayName === null) {
+            return $walletPaymentMethodDisplay;
+        }
+
+        $separatorPosition = strpos($paymentMethodDisplayName, '|');
+
+        if ($separatorPosition === false) {
+            return $walletPaymentMethodDisplay;
+        }
+
+        $paymentMethodSuffix = trim(substr($paymentMethodDisplayName, $separatorPosition + 1));
+
+        if ($paymentMethodSuffix === '') {
+            return $walletPaymentMethodDisplay;
+        }
+
+        return sprintf('%s | %s', $walletPaymentMethodDisplay, $paymentMethodSuffix);
+    }
+
+    /**
+     * Resolves the display name for a payment method using the same preference
+     * order as administration rendering.
+     *
+     * @param PaymentMethodEntity|null $paymentMethod
+     * @return string|null
+     */
+    private function resolvePaymentMethodDisplayName(?PaymentMethodEntity $paymentMethod): ?string
+    {
+        if ($paymentMethod === null) {
+            return null;
+        }
+
+        $translated = $paymentMethod->getTranslated();
+
+        if (is_array($translated)) {
+            if (isset($translated['distinguishableName'])
+                && is_string($translated['distinguishableName'])
+                && trim($translated['distinguishableName']) !== ''
+            ) {
+                return $translated['distinguishableName'];
+            }
+
+            if (isset($translated['name'])
+                && is_string($translated['name'])
+                && trim($translated['name']) !== ''
+            ) {
+                return $translated['name'];
+            }
+        }
+
+        $paymentMethodName = $paymentMethod->getName();
+
+        if (is_string($paymentMethodName) && trim($paymentMethodName) !== '') {
+            return $paymentMethodName;
+        }
+
+        return null;
     }
 
     /**

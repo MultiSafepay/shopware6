@@ -137,10 +137,15 @@ class NotificationController extends StorefrontController
         }
 
         $this->checkoutHelper->transitionPaymentState($result->getStatus(), $transactionId, $context);
+        $paymentDetails = $result->getPaymentDetails();
+        $wallet = $paymentDetails->get('wallet');
+        $wallet = is_string($wallet) ? trim($wallet) : null;
+        $wallet = $wallet !== '' ? $wallet : null;
         $this->checkoutHelper->transitionPaymentMethodIfNeeded(
             $transaction,
             $context,
-            $result->getPaymentDetails()->getType()
+            $paymentDetails->getType(),
+            $wallet
         );
 
         return $response->setContent('OK');
@@ -220,10 +225,15 @@ class NotificationController extends StorefrontController
 
         $context = Context::createDefaultContext();
         $this->checkoutHelper->transitionPaymentState($transaction->getStatus(), $transactionId, $context);
+        $paymentDetails = $transaction->getPaymentDetails();
+        $wallet = $paymentDetails->get('wallet');
+        $wallet = is_string($wallet) ? trim($wallet) : null;
+        $wallet = $wallet !== '' ? $wallet : null;
         $this->checkoutHelper->transitionPaymentMethodIfNeeded(
             $shopwareTransaction,
             $context,
-            $transaction->getPaymentDetails()->getType()
+            $paymentDetails->getType(),
+            $wallet
         );
 
         return $response->setContent('OK');

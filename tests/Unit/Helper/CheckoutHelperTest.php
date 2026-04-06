@@ -430,10 +430,482 @@ class CheckoutHelperTest extends TestCase
         $transactionRepositoryMock = $this->createMock(EntityRepository::class);
         $transactionRepositoryMock->expects($this->once())
             ->method('update')
-            ->with($this->callback(function ($updateData) use ($transactionId, $newPaymentMethodId) {
-                $item = $updateData[0];
-                return $item['id'] === $transactionId && $item['paymentMethodId'] === $newPaymentMethodId;
-            }));
+            ->with(
+                $this->callback(function ($updateData) use ($transactionId, $newPaymentMethodId) {
+                    $item = $updateData[0];
+                    return $item['id'] === $transactionId && $item['paymentMethodId'] === $newPaymentMethodId;
+                }),
+                $this->isInstanceOf(Context::class)
+            );
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'IDEAL');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded returns early when current payment method cannot be loaded
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededReturnsEarlyWhenCurrentPaymentMethodMissing(): void
+    {
+        $transactionId = 'transaction-id-missing-payment-method';
+        $paymentMethodId = 'missing-payment-method-id';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn(null);
+        $paymentMethodRepositoryMock->expects($this->once())
+            ->method('search')
+            ->willReturn($searchResultMock);
+
+        $loggerMock = $this->createMock(LoggerInterface::class);
+        $loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Payment method not found while attempting to transition payment method for transaction.',
+                $this->callback(function (array $context) use ($paymentMethodId, $transactionId) {
+                    return $context['paymentMethodId'] === $paymentMethodId
+                        && $context['transactionId'] === $transactionId;
+                })
+            );
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->never())->method('getHandlerIdentifierForGatewayCode');
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $loggerMock,
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->never())->method('update');
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'IDEAL');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded stores wallet + card display
+     * when expected and used handler match
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededStoresWalletDisplayWhenHandlersMatch(): void
+    {
+        $transactionId = 'transaction-id-wallet-match';
+        $paymentMethodId = 'payment-method-googlepay-id';
+        $googlePayHandler = 'MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($googlePayHandler);
+        $paymentMethodMock->method('getTranslated')->willReturn([
+            'name' => 'Google Pay | MultiSafepay module for Shopware 6',
+        ]);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+        $paymentMethodRepositoryMock->method('search')->willReturn($searchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('GOOGLEPAY')
+            ->willReturn($googlePayHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(function (array $updateData) use ($transactionId) {
+                    $item = $updateData[0];
+
+                    return $item['id'] === $transactionId
+                        && isset($item['customFields']['multisafepay_payment_method_display'])
+                        && $item['customFields']['multisafepay_payment_method_display'] === 'Google Pay (Visa)'
+                        && isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                        && $item['customFields']['multisafepay_payment_method_display_admin'] === 'Google Pay (Visa) | MultiSafepay module for Shopware 6'
+                        && !isset($item['paymentMethodId']);
+                }),
+                $this->isInstanceOf(Context::class)
+            );
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'VISA', 'GOOGLEPAY');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded uses wallet for replacement payment method
+     * and stores Apple Pay (American Express)
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededUsesWalletAndStoresAmexDisplay(): void
+    {
+        $transactionId = 'transaction-id-wallet-replacement';
+        $paymentMethodId = 'payment-method-visa-id';
+        $expectedHandler = 'MultiSafepay\Shopware6\Handlers\VisaPaymentHandler';
+        $applePayHandler = 'MultiSafepay\Shopware6\Handlers\ApplePayPaymentHandler';
+        $newPaymentMethodId = 'payment-method-applepay-id';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($expectedHandler);
+
+        $newPaymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $newPaymentMethodMock->method('getId')->willReturn($newPaymentMethodId);
+        $newPaymentMethodMock->method('getTranslated')->willReturn([
+            'name' => 'Apple Pay | MultiSafepay module for Shopware 6',
+        ]);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+
+        $replacementSearchResultMock = $this->createMock(EntitySearchResult::class);
+        $replacementSearchResultMock->method('first')->willReturn($newPaymentMethodMock);
+
+        $paymentMethodRepositoryMock->method('search')
+            ->willReturnOnConsecutiveCalls($searchResultMock, $replacementSearchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('APPLEPAY')
+            ->willReturn($applePayHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(function (array $updateData) use ($transactionId, $newPaymentMethodId) {
+                    $item = $updateData[0];
+
+                    return $item['id'] === $transactionId
+                        && $item['paymentMethodId'] === $newPaymentMethodId
+                        && isset($item['customFields']['multisafepay_payment_method_display'])
+                        && $item['customFields']['multisafepay_payment_method_display'] === 'Apple Pay (American Express)'
+                        && isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                        && $item['customFields']['multisafepay_payment_method_display_admin'] === 'Apple Pay (American Express) | MultiSafepay module for Shopware 6';
+                }),
+                $this->isInstanceOf(Context::class)
+            );
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'AMEX', 'APPLEPAY');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded stores Apple Pay (Mastercard)
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededStoresMastercardDisplay(): void
+    {
+        $transactionId = 'transaction-id-wallet-mastercard';
+        $paymentMethodId = 'payment-method-applepay-id';
+        $applePayHandler = 'MultiSafepay\Shopware6\Handlers\ApplePayPaymentHandler';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($applePayHandler);
+        $paymentMethodMock->method('getTranslated')->willReturn([
+            'name' => 'Apple Pay | MultiSafepay module for Shopware 6',
+        ]);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+        $paymentMethodRepositoryMock->method('search')->willReturn($searchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('APPLEPAY')
+            ->willReturn($applePayHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(function (array $updateData) use ($transactionId) {
+                    $item = $updateData[0];
+
+                    return $item['id'] === $transactionId
+                        && isset($item['customFields']['multisafepay_payment_method_display'])
+                        && $item['customFields']['multisafepay_payment_method_display'] === 'Apple Pay (Mastercard)'
+                        && isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                        && $item['customFields']['multisafepay_payment_method_display_admin'] === 'Apple Pay (Mastercard) | MultiSafepay module for Shopware 6';
+                }),
+                $this->isInstanceOf(Context::class)
+            );
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'MASTERCARD', 'APPLEPAY');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded does not store display label
+     * for unknown wallet instruments
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededDoesNotStoreUnknownWalletInstrumentDisplay(): void
+    {
+        $transactionId = 'transaction-id-wallet-unknown-instrument';
+        $paymentMethodId = 'payment-method-googlepay-id';
+        $googlePayHandler = 'MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($googlePayHandler);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+        $paymentMethodRepositoryMock->method('search')->willReturn($searchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('GOOGLEPAY')
+            ->willReturn($googlePayHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->never())->method('update');
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'JCB', 'GOOGLEPAY');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded clears stale wallet display custom fields
+     * when handlers match but wallet display cannot be built.
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededClearsStaleWalletDisplayWhenHandlersMatch(): void
+    {
+        $transactionId = 'transaction-id-clear-stale-wallet-display-match';
+        $paymentMethodId = 'payment-method-googlepay-id';
+        $googlePayHandler = 'MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([
+            'multisafepay_payment_method_display' => 'Google Pay (Visa)',
+            'multisafepay_payment_method_display_admin' => 'Google Pay (Visa) | MultiSafepay module for Shopware 6',
+            'some_other_custom_field' => 'keep-me',
+        ]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($googlePayHandler);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+        $paymentMethodRepositoryMock->method('search')->willReturn($searchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('GOOGLEPAY')
+            ->willReturn($googlePayHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(function (array $updateData) use ($transactionId) {
+                    $item = $updateData[0];
+
+                    return $item['id'] === $transactionId
+                        && !isset($item['paymentMethodId'])
+                        && isset($item['customFields'])
+                        && !isset($item['customFields']['multisafepay_payment_method_display'])
+                        && !isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                        && isset($item['customFields']['some_other_custom_field'])
+                        && $item['customFields']['some_other_custom_field'] === 'keep-me';
+                }),
+                $this->isInstanceOf(Context::class)
+            );
+
+        $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
+        $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);
+
+        $contextMock = $this->createMock(Context::class);
+
+        // Unknown instrument for a wallet keeps handler equal but should clear stale display fields.
+        $checkoutHelper->transitionPaymentMethodIfNeeded($transactionMock, $contextMock, 'JCB', 'GOOGLEPAY');
+    }
+
+    /**
+     * Test transitionPaymentMethodIfNeeded clears stale wallet display custom fields
+     * when transitioning to a non-wallet payment method.
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentMethodIfNeededClearsStaleWalletDisplayOnNonWalletTransition(): void
+    {
+        $transactionId = 'transaction-id-clear-stale-wallet-display';
+        $paymentMethodId = 'payment-method-googlepay-id';
+        $newPaymentMethodId = 'payment-method-ideal-id';
+        $googlePayHandler = 'MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler';
+        $idealHandler = 'MultiSafepay\Shopware6\Handlers\IdealPaymentHandler';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($transactionId);
+        $transactionMock->method('getPaymentMethodId')->willReturn($paymentMethodId);
+        $transactionMock->method('getCustomFields')->willReturn([
+            'multisafepay_payment_method_display' => 'Google Pay (Visa)',
+            'multisafepay_payment_method_display_admin' => 'Google Pay (Visa) | MultiSafepay module for Shopware 6',
+            'some_other_custom_field' => 'keep-me',
+        ]);
+
+        $paymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethodMock->method('getHandlerIdentifier')->willReturn($googlePayHandler);
+
+        $newPaymentMethodMock = $this->createMock(PaymentMethodEntity::class);
+        $newPaymentMethodMock->method('getId')->willReturn($newPaymentMethodId);
+
+        $paymentMethodRepositoryMock = $this->createMock(EntityRepository::class);
+        $searchResultMock = $this->createMock(EntitySearchResult::class);
+        $searchResultMock->method('get')->with($paymentMethodId)->willReturn($paymentMethodMock);
+
+        $replacementSearchResultMock = $this->createMock(EntitySearchResult::class);
+        $replacementSearchResultMock->method('first')->willReturn($newPaymentMethodMock);
+
+        $paymentMethodRepositoryMock->method('search')
+            ->willReturnOnConsecutiveCalls($searchResultMock, $replacementSearchResultMock);
+
+        $paymentUtilMock = $this->createMock(PaymentUtil::class);
+        $paymentUtilMock->expects($this->once())
+            ->method('getHandlerIdentifierForGatewayCode')
+            ->with('IDEAL')
+            ->willReturn($idealHandler);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $paymentMethodRepositoryMock,
+            $paymentUtilMock
+        );
+
+        $transactionRepositoryMock = $this->createMock(EntityRepository::class);
+        $transactionRepositoryMock->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(function (array $updateData) use ($transactionId, $newPaymentMethodId) {
+                    $item = $updateData[0];
+
+                    return $item['id'] === $transactionId
+                        && $item['paymentMethodId'] === $newPaymentMethodId
+                        && isset($item['customFields'])
+                        && !isset($item['customFields']['multisafepay_payment_method_display'])
+                        && !isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                        && isset($item['customFields']['some_other_custom_field'])
+                        && $item['customFields']['some_other_custom_field'] === 'keep-me';
+                }),
+                $this->isInstanceOf(Context::class)
+            );
 
         $reflectionProperty = new ReflectionProperty(CheckoutHelper::class, 'transactionRepository');
         $reflectionProperty->setValue($checkoutHelper, $transactionRepositoryMock);

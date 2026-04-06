@@ -1,0 +1,31 @@
+{% sw_extends '@Storefront/storefront/page/checkout/finish/finish-details.html.twig' %}
+
+{% block page_checkout_finish_subtitle %}
+    {% if page.changedPayment == true %}
+        {% if feature('v6.8.0.0') %}
+            {% set paymentMethodDisplay = page.order.primaryOrderTransaction.customFields.multisafepay_payment_method_display ?? page.order.primaryOrderTransaction.paymentMethod.translated.name %}
+        {% else %}
+            {% set paymentMethodDisplay = page.order.transactions|last.customFields.multisafepay_payment_method_display ?? page.order.transactions|last.paymentMethod.translated.name %}
+        {% endif %}
+
+        <p class="finish-order-subtitle">
+            {{ 'checkout.finishPaymentHeader'|trans({'%paymentName%': paymentMethodDisplay})|sw_sanitize }}
+        </p>
+    {% endif %}
+{% endblock %}
+
+{% block page_checkout_finish_order_payment_method %}
+    {% if feature('v6.8.0.0') %}
+        {% set paymentMethodDisplay = page.order.primaryOrderTransaction.customFields.multisafepay_payment_method_display ?? page.order.primaryOrderTransaction.paymentMethod.translated.name %}
+        <p>
+            <strong>{{ 'checkout.finishInfoPayment'|trans|sw_sanitize }}</strong>
+            {{ paymentMethodDisplay }}
+        </p>
+    {% else %}
+        {% set paymentMethodDisplay = page.order.transactions|last.customFields.multisafepay_payment_method_display ?? page.order.transactions|last.paymentMethod.translated.name %}
+        <p>
+            <strong>{{ 'checkout.finishInfoPayment'|trans|sw_sanitize }}</strong>
+            {{ paymentMethodDisplay }}
+        </p>
+    {% endif %}
+{% endblock %}

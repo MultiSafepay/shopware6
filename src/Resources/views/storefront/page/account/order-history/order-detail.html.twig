@@ -1,0 +1,13 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
+
+{% block page_account_order_item_detail_payment_method_value %}
+    {% if feature('v6.8.0.0') %}
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            {{ order.primaryOrderTransaction.customFields.multisafepay_payment_method_display ?? order.primaryOrderTransaction.paymentMethod.translated.name }}
+        </dd>
+    {% else %}
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            {{ order.transactions|last.customFields.multisafepay_payment_method_display ?? order.transactions|last.paymentMethod.translated.name }}
+        </dd>
+    {% endif %}
+{% endblock %}
