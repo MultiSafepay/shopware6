@@ -1,0 +1,8 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
+
+{% block page_account_order_item_detail_payment_method_value %}
+    {% set lastTransaction = order.transactions|last %}
+    <dd class="col-6 col-md-7 order-item-detail-labels-value">
+        {{ lastTransaction.customFields.multisafepay_payment_method_display ?? lastTransaction.paymentMethod.translated.name }}
+    </dd>
+{% endblock %}

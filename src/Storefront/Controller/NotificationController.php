@@ -111,10 +111,13 @@ class NotificationController extends StorefrontController
         }
 
         $this->checkoutHelper->transitionPaymentState($result->getStatus(), $transactionId, $context);
+        $paymentDetails = $result->getPaymentDetails();
+        $wallet = $this->normalizeWallet($paymentDetails->get('wallet'));
         $this->checkoutHelper->transitionPaymentMethodIfNeeded(
             $transaction,
             $context,
-            $result->getPaymentDetails()->getType()
+            $paymentDetails->getType(),
+            $wallet
         );
 
         return $response->setContent('OK');
@@ -170,12 +173,32 @@ class NotificationController extends StorefrontController
 
         $context = Context::createDefaultContext();
         $this->checkoutHelper->transitionPaymentState($transaction->getStatus(), $transactionId, $context);
+        $paymentDetails = $transaction->getPaymentDetails();
+        $wallet = $this->normalizeWallet($paymentDetails->get('wallet'));
         $this->checkoutHelper->transitionPaymentMethodIfNeeded(
             $shopwareTransaction,
             $context,
-            $transaction->getPaymentDetails()->getType()
+            $paymentDetails->getType(),
+            $wallet
         );
 
         return $response->setContent('OK');
+    }
+
+    /**
+     * Normalize wallet string values from callbacks.
+     *
+     * @param mixed $wallet
+     * @return string|null
+     */
+    private function normalizeWallet(mixed $wallet): ?string
+    {
+        if (!is_string($wallet)) {
+            return null;
+        }
+
+        $wallet = trim($wallet);
+
+        return $wallet !== '' ? $wallet : null;
     }
 }

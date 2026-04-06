@@ -1,0 +1,11 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-item.html.twig' %}
+
+{% block page_account_order_item_order_table_body_cell_payment_method %}
+    {% set lastTransaction = order.transactions|last %}
+    <div class="col-12 col-sm order-table-header-order-table-body-cell">
+        <strong class="order-table-header-label">
+            {{ 'account.orderPaymentMethod'|trans|sw_sanitize }}{{ 'account.colonCharacter'|trans|sw_sanitize }}
+        </strong>
+        <span class="order-table-body-value">{{ lastTransaction.customFields.multisafepay_payment_method_display ?? lastTransaction.paymentMethod.translated.name }}</span>
+    </div>
+{% endblock %}

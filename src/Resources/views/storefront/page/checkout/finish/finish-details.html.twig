@@ -1,0 +1,19 @@
+{% sw_extends '@Storefront/storefront/page/checkout/finish/finish-details.html.twig' %}
+
+{% set lastTransaction = page.order.transactions|last %}
+{% set paymentMethodDisplay = lastTransaction ? (lastTransaction.customFields.multisafepay_payment_method_display ?? lastTransaction.paymentMethod.translated.name) : '' %}
+
+{% block page_checkout_finish_subtitle %}
+    {% if page.changedPayment == true %}
+        <p class="finish-order-subtitle">
+            {{ 'checkout.finishPaymentHeader'|trans({'%paymentName%': paymentMethodDisplay})|sw_sanitize }}
+        </p>
+    {% endif %}
+{% endblock %}
+
+{% block page_checkout_finish_order_payment_method %}
+    <p>
+        <strong>{{ 'checkout.finishInfoPayment'|trans|sw_sanitize }}</strong>
+        {{ paymentMethodDisplay }}
+    </p>
+{% endblock %}
