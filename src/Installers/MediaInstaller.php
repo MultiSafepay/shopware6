@@ -5,8 +5,8 @@
  */
 namespace MultiSafepay\Shopware6\Installers;
 
-use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
+use MultiSafepay\Shopware6\Util\MediaNameUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\File\FileSaver;
 use Shopware\Core\Content\Media\File\MediaFile;
@@ -189,11 +189,7 @@ class MediaInstaller implements InstallerInterface
      */
     private function getMediaName(PaymentMethodInterface $paymentMethod): string
     {
-        if ($paymentMethod->getName() === (new IngHomePay())->getName()) {
-            return 'msp_ING-HomePay';
-        }
-
-        return 'msp_' . $paymentMethod->getName();
+        return MediaNameUtil::getMediaName($paymentMethod);
     }
 
     /**

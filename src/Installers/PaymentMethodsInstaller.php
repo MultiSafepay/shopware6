@@ -6,10 +6,10 @@
 namespace MultiSafepay\Shopware6\Installers;
 
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
-use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Subscriber\PaymentMethodCustomFields;
+use MultiSafepay\Shopware6\Util\MediaNameUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\Context;
@@ -197,7 +197,7 @@ class PaymentMethodsInstaller implements InstallerInterface
         $handlerIdentifier = $paymentMethod->getPaymentHandler();
 
         // Only create customFields for payment methods that support at least one feature
-        // Methods not in any constant (PayPal, iDEAL, etc.) will have no customFields
+        // Methods not in any constant (PayPal, iDEAL | Wero, etc.) will have no customFields
         $customFieldsData = [];
 
         if (PaymentMethodCustomFields::supportsCustomFields($handlerIdentifier)) {
@@ -235,7 +235,7 @@ class PaymentMethodsInstaller implements InstallerInterface
             'technicalName' => $paymentMethod->getTechnicalName(),
             'afterOrderEnabled' => true
         ];
-        
+
         // Only add customFields if there's content (payment method supports features)
         if (!empty($customFieldsData)) {
             $paymentData['customFields'] = $customFieldsData;
@@ -404,11 +404,7 @@ class PaymentMethodsInstaller implements InstallerInterface
      */
     private function getMediaName(PaymentMethodInterface $paymentMethod): string
     {
-        if ($paymentMethod->getName() === (new IngHomePay())->getName()) {
-            return 'msp_ING-HomePay';
-        }
-
-        return 'msp_' . $paymentMethod->getName();
+        return MediaNameUtil::getMediaName($paymentMethod);
     }
 
     /**

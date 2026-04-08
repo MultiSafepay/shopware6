@@ -26,7 +26,7 @@ class In3 implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'iDEAL+in3 - Betaal in 3 delen (0 procent rente)';
+        return 'in3 - Betaal in 3 delen (0 procent rente)';
     }
 
     /**

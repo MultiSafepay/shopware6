@@ -51,7 +51,7 @@
         },
         "description": {
             "de-DE": "MultiSafepay Online-Bezahlung (Gratis plugin mit +20 Bezahlmethoden)",
-            "en-GB": "MultiSafepay online payments for Shopware (iDEAL, Cards, Klarna, Alipay etc.)"
+            "en-GB": "MultiSafepay online payments for Shopware (iDEAL | Wero, Cards, Klarna, Alipay etc.)"
         },
         "manufacturerLink": {
             "de-DE": "https://store.shopware.com/multisafepay.html",
