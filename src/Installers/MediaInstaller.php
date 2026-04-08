@@ -5,10 +5,9 @@
  */
 namespace MultiSafepay\Shopware6\Installers;
 
-use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
+use MultiSafepay\Shopware6\Util\MediaNameUtil;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
-use Random\RandomException;
 use Shopware\Core\Content\Media\File\FileSaver;
 use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaEntity;
@@ -34,13 +33,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class MediaInstaller implements InstallerInterface
 {
-    /**
-     * Characters that are not allowed in media file names
-     */
-    private const RESTRICTED_MEDIA_NAME_CHARACTERS = [
-        '\\', '/', '?', '*', '%', '&', ':', '|', '"', '\'', '<', '>', '$', '#', '{', '}'
-    ];
-
     /**
      * @var EntityRepository
      */
@@ -197,28 +189,7 @@ class MediaInstaller implements InstallerInterface
      */
     private function getMediaName(PaymentMethodInterface $paymentMethod): string
     {
-        if ($paymentMethod->getName() === (new IngHomePay())->getName()) {
-            return $this->sanitizeMediaName('msp_ING-HomePay');
-        }
-
-        return $this->sanitizeMediaName('msp_' . $paymentMethod->getName());
-    }
-
-    /**
-     * Normalize media file names to comply with Shopware filename restrictions.
-     *
-     * @throws RandomException
-     */
-    private function sanitizeMediaName(string $name): string
-    {
-        $sanitized = str_replace(self::RESTRICTED_MEDIA_NAME_CHARACTERS, '-', $name);
-        $sanitized = preg_replace('/\s+/', ' ', $sanitized) ?? $sanitized;
-        $sanitized = trim($sanitized, ' .');
-
-        if ($sanitized === '') {
-            return 'msp_media_' . bin2hex(random_bytes(16));
-        }
-        return $sanitized;
+        return MediaNameUtil::getMediaName($paymentMethod);
     }
 
     /**
