@@ -6,19 +6,26 @@
 namespace MultiSafepay\Shopware6\Handlers;
 
 use Exception;
+use MultiSafepay\Api\Transactions\RefundRequest;
 use MultiSafepay\Api\Transactions\UpdateRequest;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\ValueObject\CartItem;
+use MultiSafepay\ValueObject\Money;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\RefundPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -77,6 +84,21 @@ class PaymentHandler extends AbstractPaymentHandler
     private EntityRepository $orderTransactionRepository;
 
     /**
+     * @var EntityRepository
+     */
+    private EntityRepository $orderRepository;
+
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $refundRepository;
+
+    /**
+     * @var OrderTransactionCaptureRefundStateHandler
+     */
+    private OrderTransactionCaptureRefundStateHandler $refundStateHandler;
+
+    /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
@@ -92,6 +114,8 @@ class PaymentHandler extends AbstractPaymentHandler
      * @param SettingsService $settingsService
      * @param EntityRepository $orderTransactionRepository
      * @param EntityRepository $orderRepository
+     * @param EntityRepository $refundRepository
+     * @param OrderTransactionCaptureRefundStateHandler $refundStateHandler
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -103,13 +127,9 @@ class PaymentHandler extends AbstractPaymentHandler
         SettingsService $settingsService,
         EntityRepository $orderTransactionRepository,
         EntityRepository $orderRepository,
+        EntityRepository $refundRepository,
+        OrderTransactionCaptureRefundStateHandler $refundStateHandler,
         LoggerInterface $logger
-        // The order repository is required as a dependency for Shopware's transaction management system
-        // even though it's not directly used within this class.
-        //
-        // Removing this dependency would break payment transaction processing as the framework relies
-        // on it being properly injected for maintaining data consistency and state management during payment
-        // operations.
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
@@ -118,6 +138,9 @@ class PaymentHandler extends AbstractPaymentHandler
         $this->cachedSalesChannelContextFactory = $cachedSalesChannelContextFactory;
         $this->settingsService = $settingsService;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->orderRepository = $orderRepository;
+        $this->refundRepository = $refundRepository;
+        $this->refundStateHandler = $refundStateHandler;
         $this->logger = $logger;
     }
 
@@ -135,7 +158,7 @@ class PaymentHandler extends AbstractPaymentHandler
         Context $context
     ): bool {
         return match ($type) {
-            PaymentHandlerType::RECURRING, PaymentHandlerType::REFUND => false,
+            PaymentHandlerType::RECURRING => false,
             default => true,
         };
     }
@@ -407,6 +430,87 @@ class PaymentHandler extends AbstractPaymentHandler
     }
 
     /**
+     * Execute a refund via MultiSafepay and update Shopware refund/transaction states.
+     *
+     * @param RefundPaymentTransactionStruct $transaction
+     * @param Context $context
+     * @return void
+     * @throws ApiException
+     * @throws ClientExceptionInterface
+     */
+    public function refund(RefundPaymentTransactionStruct $transaction, Context $context): void
+    {
+        $refundId = $transaction->getRefundId();
+        $refund = $this->getRefundEntity($refundId, $context);
+
+        $transactionCapture = $refund->getTransactionCapture();
+        $orderTransaction = $transactionCapture?->getTransaction();
+        $order = $orderTransaction?->getOrder();
+
+        if (!$orderTransaction || !$order) {
+            throw PaymentException::unknownRefund($refundId);
+        }
+
+        $orderNumber = $order->getOrderNumber();
+        $salesChannelId = $order->getSalesChannelId();
+        $currency = $order->getCurrency();
+
+        if (!$currency) {
+            throw PaymentException::invalidTransaction($orderTransaction->getId());
+        }
+
+        $refundAmountUnits = $refund->getAmount()?->getTotalPrice() ?? 0.0;
+        $refundAmountInCents = (int)round($refundAmountUnits * 100);
+
+        try {
+            $transactionManager = $this->sdkFactory->create($salesChannelId)->getTransactionManager();
+            $transactionData = $transactionManager->get($orderNumber);
+
+            if ($transactionData->requiresShoppingCart()) {
+                $refundRequest = $transactionManager->createRefundRequest($transactionData);
+                $merchantItemId = 'refund_id_' . $orderNumber . '_' . time();
+
+                $refundItem = (new CartItem())
+                    ->addName('Refund')
+                    ->addQuantity(1)
+                    ->addUnitPrice((new Money($refundAmountInCents, $currency->getIsoCode()))->negative())
+                    ->addMerchantItemId($merchantItemId)
+                    ->addTaxRate(0);
+
+                $refundRequest->getCheckoutData()->addItem($refundItem);
+            } else {
+                $refundRequest = (new RefundRequest())->addMoney(
+                    new Money(
+                        $refundAmountInCents,
+                        $currency->getIsoCode()
+                    )
+                );
+            }
+
+            $transactionManager->refund($transactionData, $refundRequest);
+
+            $this->refundStateHandler->complete($refundId, $context);
+
+            $this->persistRefundedAmountInOrderCustomFields(
+                $order,
+                $refundAmountInCents,
+                $context
+            );
+        } catch (ApiException | ClientExceptionInterface | Exception $exception) {
+            $this->logger->error('PaymentHandler: Refund failed', [
+                'refundId' => $refundId,
+                'orderNumber' => $orderNumber,
+                'orderTransactionId' => $orderTransaction->getId(),
+                'message' => $exception->getMessage(),
+                'code' => $exception->getCode(),
+                'exceptionClass' => get_class($exception)
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    /**
      * @param string $salesChannelId
      * @param string $orderId
      * @return void
@@ -434,6 +538,64 @@ class PaymentHandler extends AbstractPaymentHandler
                 'orderNumber' => $orderId,
                 'message' => $exception->getMessage(),
                 'exceptionClass' => get_class($exception)
+            ]);
+        }
+    }
+
+    /**
+     * Load refund entity with required associations.
+     *
+     * @param string $refundId
+     * @param Context $context
+     * @return OrderTransactionCaptureRefundEntity
+     */
+    private function getRefundEntity(string $refundId, Context $context): OrderTransactionCaptureRefundEntity
+    {
+        $criteria = new Criteria([$refundId]);
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('transactionCapture.transaction.order');
+        $criteria->addAssociation('transactionCapture.transaction.order.currency');
+        $criteria->addAssociation('transactionCapture.transaction.stateMachineState');
+
+        $refund = $this->refundRepository->search($criteria, $context)->getEntities()->first();
+
+        if (!$refund instanceof OrderTransactionCaptureRefundEntity) {
+            throw PaymentException::unknownRefund($refundId);
+        }
+
+        return $refund;
+    }
+
+    /**
+     * Persist refunded amount accumulator in order customFields.
+     *
+     * @param OrderEntity $order
+     * @param int $amountInCents
+     * @param Context $context
+     * @return void
+     */
+    private function persistRefundedAmountInOrderCustomFields(
+        OrderEntity $order,
+        int $amountInCents,
+        Context $context
+    ): void {
+        $customFields = $order->getCustomFields() ?? [];
+        $currentRefundedAmountInCents = (int)($customFields['multisafepay_refunded_amount'] ?? 0);
+        $newRefundedAmountInCents = $currentRefundedAmountInCents + $amountInCents;
+        $customFields['multisafepay_refunded_amount'] = $newRefundedAmountInCents;
+
+        try {
+            $this->orderRepository->update([
+                [
+                    'id' => $order->getId(),
+                    'customFields' => $customFields,
+                ],
+            ], $context);
+        } catch (Exception $customFieldException) {
+            $this->logger->warning('Refund succeeded but failed to persist refunded amount in order customFields', [
+                'message' => $customFieldException->getMessage(),
+                'orderId' => $order->getId(),
+                'orderNumber' => $order->getOrderNumber(),
             ]);
         }
     }

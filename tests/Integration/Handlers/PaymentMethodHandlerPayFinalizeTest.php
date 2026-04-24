@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
@@ -90,6 +91,8 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
         $settingsService = $this->createMock(SettingsService::class);
         $orderTransactionRepository = $this->createMock(EntityRepository::class);
         $orderRepository = $this->createMock(EntityRepository::class);
+        $refundRepository = $this->createMock(EntityRepository::class);
+        $refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $logger = $this->createMock(LoggerInterface::class);
 
         // Create the handler instance
@@ -102,6 +105,8 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
             $settingsService,
             $orderTransactionRepository,
             $orderRepository,
+            $refundRepository,
+            $refundStateHandler,
             $logger
         );
 

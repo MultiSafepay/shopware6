@@ -7,6 +7,8 @@ namespace MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\TaxTable\TaxRate;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\TaxTable\TaxRule;
 use MultiSafepay\Exception\InvalidArgumentException;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
@@ -61,6 +63,42 @@ class ShoppingCartBuilder implements OrderRequestBuilderInterface
             $items[] = $shoppingCartBuilder->build($order, $currency);
         }
 
-        $orderRequest->addShoppingCart(new ShoppingCart(array_merge([], ...$items)));
+        $shoppingCart = new ShoppingCart(array_merge([], ...$items));
+        $orderRequest->addShoppingCart($shoppingCart);
+        $this->ensureNoneTaxRuleExists($orderRequest);
+    }
+
+    /**
+     * Ensure a 0% VAT rule exists (selector/name "0").
+     *
+     * Transactions that do not contain any 0% items will not have a
+     * "0" rule in the generated tax table, but refunds may introduce
+     * a 0% item later.
+     *
+     * @throws InvalidArgumentException
+     */
+    private function ensureNoneTaxRuleExists(OrderRequest $orderRequest): void
+    {
+        $checkoutOptions = $orderRequest->getCheckoutOptions();
+        $taxTable = $checkoutOptions->getTaxTable();
+
+        try {
+            $taxTableData = $taxTable->getData();
+            foreach (($taxTableData['alternate'] ?? []) as $ruleData) {
+                if (($ruleData['name'] ?? '') === '0') {
+                    return;
+                }
+            }
+        } catch (InvalidArgumentException) {
+            // No tax rules yet; we'll add the 0% rule below.
+        }
+
+        $taxRate = (new TaxRate())->addRate(0);
+        $taxRule = (new TaxRule())
+            ->addName('0')
+            ->addTaxRate($taxRate);
+
+        $taxTable->addTaxRule($taxRule);
+        $orderRequest->addCheckoutOptions($checkoutOptions);
     }
 }

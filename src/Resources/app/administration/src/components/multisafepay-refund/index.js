@@ -18,7 +18,8 @@ Component.register('multisafepay-refund', {
         'repositoryFactory',
         'orderService',
         'stateStyleDataProviderService',
-        'multiSafepayApiService'
+        'multiSafepayApiService',
+        'swOrderDetailOnReloadEntityData'
     ],
 
     // Define the mixins that this component will use
@@ -55,16 +56,70 @@ Component.register('multisafepay-refund', {
         orderId() {
             this.createdComponent();
         },
-        amount() {
-            this.amount = parseFloat(this.amount).toFixed(2);
-        },
-        refundedAmount() {
-            this.refundedAmount = parseFloat(this.refundedAmount).toFixed(2);
+        amount(value) {
+            if (value === null || value === '' || typeof value === 'undefined') {
+                return;
+            }
+
+            const rounded = this.fromCents(this.toCents(value));
+            if (Number.isFinite(rounded) && rounded !== value) {
+                this.amount = rounded;
+            }
         }
     },
 
     // Define the methods that this component will use
     methods: {
+        refreshShopwareOrderDetailVersion() {
+            const swOrderDetailStore = Shopware?.Store?.get('swOrderDetail');
+            const canReloadViaParent = typeof this.swOrderDetailOnReloadEntityData === 'function';
+
+            if (!swOrderDetailStore || !canReloadViaParent) {
+                return Promise.resolve();
+            }
+
+            const oldContext = swOrderDetailStore.versionContext;
+            const oldVersionId = oldContext?.versionId;
+
+            swOrderDetailStore.versionContext = Shopware.Context.api;
+
+            const liveVersionId = Shopware?.Context?.api?.versionId;
+            const shouldDeleteOldVersion = Boolean(oldVersionId) && oldVersionId !== liveVersionId;
+
+            const deletePromise = shouldDeleteOldVersion
+                ? this.orderRepository.deleteVersion(this.orderId, oldVersionId).catch(() => null)
+                : Promise.resolve();
+
+            return deletePromise
+                .then(() => this.orderRepository.createVersion(this.orderId, Shopware.Context.api))
+                .then((newContext) => {
+                    swOrderDetailStore.versionContext = newContext;
+                    this.versionContext = newContext;
+                })
+                .then(() => this.swOrderDetailOnReloadEntityData(false));
+        },
+        toCents(value) {
+            const numberValue = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value);
+            if (!Number.isFinite(numberValue)) {
+                return 0;
+            }
+
+            return Math.round((numberValue + Number.EPSILON) * 100);
+        },
+
+        fromCents(cents) {
+            const numberValue = Number(cents);
+            if (!Number.isFinite(numberValue)) {
+                return 0;
+            }
+
+            return numberValue / 100;
+        },
+
+        formatAmount(value) {
+            return this.fromCents(this.toCents(value)).toFixed(2);
+        },
+
         // This method is used to close the refund modal
         closeModal() {
             this.showModal = false;
@@ -78,6 +133,14 @@ Component.register('multisafepay-refund', {
                 this.createNotificationWarning({
                     title: 'Invalid amount',
                     message: 'Fill in a valid amount'
+                });
+                return;
+            }
+
+            if (this.maxRefundableAmount > 0 && this.amount > this.maxRefundableAmount) {
+                this.createNotificationWarning({
+                    title: 'Invalid amount',
+                    message: 'The amount exceeds the refundable total'
                 });
                 return;
             }
@@ -112,7 +175,9 @@ Component.register('multisafepay-refund', {
                         message: 'Successfully refunded'
                     });
 
-                    this.reloadEntityData();
+                    return this.refreshShopwareOrderDetailVersion()
+                        .catch(() => null)
+                        .then(() => this.reloadEntityData());
                 })
                 .catch((error) => {
                     this.createNotificationError({
@@ -138,13 +203,21 @@ Component.register('multisafepay-refund', {
         // It fetches the order data and refunds data from the API.
         reloadEntityData() {
             this.isLoading = true;
+            const swOrderDetailStore = Shopware?.Store?.get('swOrderDetail');
+            this.versionContext = swOrderDetailStore?.versionContext || this.versionContext || Shopware.Context.api;
             return this.orderRepository.get(this.orderId, this.versionContext, this.orderCriteria).then((response) => {
                 this.order = response;
+                this.propagateOrderUpdate(response);
                 this.multiSafepayApiService.getRefundData(this.order.id).then((data) => {
                     this.isRefundAllowed = data.isAllowed;
-                    this.refundedAmount = data.refundedAmount;
-                    this.maxRefundableAmount = this.order.amountTotal - this.refundedAmount;
-                    this.isRefundDisabled = (this.order.amountTotal - this.refundedAmount === 0);
+
+                    const refundedCents = this.toCents(data.refundedAmount || 0);
+                    const orderTotalCents = this.toCents(this.order.amountTotal || 0);
+                    const maxRefundableCents = Math.max(0, orderTotalCents - refundedCents);
+
+                    this.refundedAmount = this.fromCents(refundedCents);
+                    this.maxRefundableAmount = this.fromCents(maxRefundableCents);
+                    this.isRefundDisabled = maxRefundableCents === 0;
                     this.isLoading = false;
                 }).catch(() => {
                     this.isRefundAllowed = false;
@@ -153,6 +226,20 @@ Component.register('multisafepay-refund', {
             }).catch(() => {
                 return Promise.reject();
             });
+        },
+
+        propagateOrderUpdate(order) {
+            try {
+                if (Shopware.State && typeof Shopware.State.commit === 'function') {
+                    Shopware.State.commit('swOrderDetail/setOrder', order);
+                }
+            } catch (e) {
+                // Ignore if the state module is not available
+            }
+
+            if (this.$root && typeof this.$root.$emit === 'function') {
+                this.$root.$emit('multisafepay-refund-order-updated', order);
+            }
         },
 
         // Handle keyboard events for closing modal with Escape key and Tab navigation
@@ -182,6 +269,12 @@ Component.register('multisafepay-refund', {
     computed: {
         orderRepository() {
             return this.repositoryFactory.create('order');
+        },
+        refundedAmountFormatted() {
+            return this.formatAmount(this.refundedAmount);
+        },
+        amountFormatted() {
+            return this.formatAmount(this.amount || 0);
         },
         orderCriteria() {
             const criteria = new Criteria(this.page, this.limit);

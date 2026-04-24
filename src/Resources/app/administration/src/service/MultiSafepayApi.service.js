@@ -16,11 +16,16 @@ export default class MultiSafepayApiService extends ApiService {
         // Define the API route for refund
         const apiRoute = `${this.getApiBasePath()}/refund`;
 
+        const numericAmount = typeof amount === 'string' ? Number(amount.replace(',', '.')) : Number(amount);
+        const amountInCents = Number.isFinite(numericAmount)
+            ? Math.round((numericAmount + Number.EPSILON) * 100)
+            : 0;
+
         // Make a POST request to the refund API route
         return this.httpClient.post(
             apiRoute,
             {
-                amount: amount * 100, // Convert the amount to cents
+                amount: amountInCents,
                 orderId: orderId // The ID of the order to refund
             },
             {

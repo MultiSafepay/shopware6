@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -75,6 +76,16 @@ class MyBankPaymentHandlerTest extends TestCase
     private EntityRepository|MockObject $orderRepository;
 
     /**
+     * @var EntityRepository|MockObject
+     */
+    private EntityRepository|MockObject $refundRepository;
+
+    /**
+     * @var OrderTransactionCaptureRefundStateHandler|MockObject
+     */
+    private OrderTransactionCaptureRefundStateHandler|MockObject $refundStateHandler;
+
+    /**
      * @var LoggerInterface|MockObject
      */
     private LoggerInterface|MockObject $logger;
@@ -95,6 +106,8 @@ class MyBankPaymentHandlerTest extends TestCase
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
         $this->orderRepository = $this->createMock(EntityRepository::class);
+        $this->refundRepository = $this->createMock(EntityRepository::class);
+        $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->myBankPaymentHandler = new MyBankPaymentHandler(
@@ -106,6 +119,8 @@ class MyBankPaymentHandlerTest extends TestCase
             $this->settingsService,
             $this->orderTransactionRepository,
             $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
             $this->logger
         );
     }
@@ -160,6 +175,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->settingsService,
                     $this->orderTransactionRepository,
                     $this->orderRepository,
+                    $this->refundRepository,
+                    $this->refundStateHandler,
                     $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
@@ -219,6 +236,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->settingsService,
                     $this->orderTransactionRepository,
                     $this->orderRepository,
+                    $this->refundRepository,
+                    $this->refundStateHandler,
                     $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
@@ -278,6 +297,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->settingsService,
                     $this->orderTransactionRepository,
                     $this->orderRepository,
+                    $this->refundRepository,
+                    $this->refundStateHandler,
                     $this->logger
                 ])
                 ->onlyMethods(['getDataBagItem'])
@@ -347,6 +368,8 @@ class MyBankPaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getClassName'])

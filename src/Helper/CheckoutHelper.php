@@ -7,6 +7,7 @@ namespace MultiSafepay\Shopware6\Helper;
 
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -107,6 +108,28 @@ class CheckoutHelper
             return;
         }
 
+        // If the transaction was (partially) refunded, don't allow later notifications to regress it back to paid/cancel/open.
+        $transaction = $this->getTransaction($orderTransactionId, $context);
+        $currentTechnicalState = $transaction->getStateMachineState()?->getTechnicalName();
+        $isRefundedState = in_array(
+            $currentTechnicalState,
+            [OrderTransactionStates::STATE_REFUNDED, OrderTransactionStates::STATE_PARTIALLY_REFUNDED],
+            true
+        );
+
+        if ($isRefundedState && in_array(
+            $transitionAction,
+            [
+                StateMachineTransitionActions::ACTION_PAID,
+                StateMachineTransitionActions::ACTION_CANCEL,
+                StateMachineTransitionActions::ACTION_REOPEN
+            ],
+            true
+        )
+        ) {
+            return;
+        }
+
         /**
          * Check if the status is the same, so we don't need to update it
          */
@@ -137,6 +160,19 @@ class CheckoutHelper
                 'orderNumber' => $orderNumber,
                 'status' => $status
             ]);
+
+            // Never force a reopen() for refund transitions. If the refund transition is illegal
+            // (e.g., wrong transaction selected), reopening can leave the order transaction in "open".
+            if (in_array(
+                $transitionAction,
+                [
+                    StateMachineTransitionActions::ACTION_REFUND,
+                    StateMachineTransitionActions::ACTION_REFUND_PARTIALLY
+                ],
+                true
+            )) {
+                return;
+            }
 
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
@@ -173,6 +209,7 @@ class CheckoutHelper
     {
         $criteria = new Criteria([$transactionId]);
         $criteria->addAssociation('order');
+        $criteria->addAssociation('stateMachineState');
 
         /** @var OrderTransactionEntity $transaction */
         return $this->transactionRepository->search($criteria, $context)
@@ -221,9 +258,16 @@ class CheckoutHelper
     {
         $stateName = $this->getOrderTransactionStatesNameFromAction($actionName);
         $criteria = new Criteria();
+        $criteria->addAssociation('stateMachine');
         $criteria->addFilter(new EqualsFilter('technicalName', $stateName));
+        $criteria->addFilter(new EqualsFilter('stateMachine.technicalName', 'order_transaction.state'));
 
-        return $this->stateMachineRepository->search($criteria, $context)->first();
+        $state = $this->stateMachineRepository->search($criteria, $context)->first();
+        if (!$state instanceof StateMachineStateEntity) {
+            throw new RuntimeException(sprintf('Could not resolve state "%s" for order_transaction.state', $stateName));
+        }
+
+        return $state;
     }
 
     /**
@@ -237,6 +281,8 @@ class CheckoutHelper
         return match ($actionName) {
             StateMachineTransitionActions::ACTION_PAID => OrderTransactionStates::STATE_PAID,
             StateMachineTransitionActions::ACTION_CANCEL => OrderTransactionStates::STATE_CANCELLED,
+            StateMachineTransitionActions::ACTION_REFUND => OrderTransactionStates::STATE_REFUNDED,
+            StateMachineTransitionActions::ACTION_REFUND_PARTIALLY => OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
             default => OrderTransactionStates::STATE_OPEN,
         };
     }

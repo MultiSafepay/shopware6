@@ -12,6 +12,8 @@
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="order.repository"/>
+            <argument type="service" id="order_transaction_capture_refund.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler"/>
             <argument type="service" id="multisafepay.logger"/>
         </service>
     </services>

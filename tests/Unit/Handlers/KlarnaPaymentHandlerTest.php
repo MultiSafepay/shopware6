@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\Salutation\SalutationEntity;
@@ -47,6 +48,8 @@ class KlarnaPaymentHandlerTest extends TestCase
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
         $orderRepositoryMock = $this->createMock(EntityRepository::class);
+        $refundRepositoryMock = $this->createMock(EntityRepository::class);
+        $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(LoggerInterface::class);
 
         $this->paymentHandler = new KlarnaPaymentHandler(
@@ -58,6 +61,8 @@ class KlarnaPaymentHandlerTest extends TestCase
             $settingsServiceMock,
             $orderTransactionRepositoryMock,
             $orderRepositoryMock,
+            $refundRepositoryMock,
+            $refundStateHandlerMock,
             $loggerMock
         );
     }

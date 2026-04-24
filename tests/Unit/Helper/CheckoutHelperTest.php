@@ -12,8 +12,10 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionProperty;
+use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
@@ -21,6 +23,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 
 /**
  * Class CheckoutHelperTest
@@ -279,6 +282,40 @@ class CheckoutHelperTest extends TestCase
         $result = $checkoutHelper->getCorrectTransitionAction('unknown_status');
 
         $this->assertNull($result);
+    }
+
+    /**
+     * Test getCorrectTransitionAction returns expected mappings
+     *
+     * @throws Exception
+     */
+    public function testGetCorrectTransitionActionReturnsMappings(): void
+    {
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_CANCEL,
+            $checkoutHelper->getCorrectTransitionAction('declined')
+        );
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_REFUND,
+            $checkoutHelper->getCorrectTransitionAction('refunded')
+        );
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_REFUND_PARTIALLY,
+            $checkoutHelper->getCorrectTransitionAction('partial_refunded')
+        );
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_REOPEN,
+            $checkoutHelper->getCorrectTransitionAction('initialized')
+        );
     }
 
     /**
@@ -953,5 +990,233 @@ class CheckoutHelperTest extends TestCase
                 'status' => $status
             ]
         );
+    }
+
+    public function testTransitionPaymentStateReturnsWhenNoAction(): void
+    {
+        $orderTransactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $orderTransactionStateHandler->expects($this->never())->method($this->anything());
+
+        $checkoutHelper = new CheckoutHelper(
+            $orderTransactionStateHandler,
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $checkoutHelper->transitionPaymentState('unknown', 'tx-1', $this->contextMock);
+    }
+
+    public function testTransitionPaymentStateSkipsRefundedRegression(): void
+    {
+        $orderTransactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $orderTransactionStateHandler->expects($this->never())->method($this->anything());
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $stateMachineState = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineState->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_REFUNDED);
+        $transaction->method('getStateMachineState')->willReturn($stateMachineState);
+
+        $searchResult = $this->createMock(EntitySearchResult::class);
+        $searchResult->method('get')->willReturn($transaction);
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->method('search')->willReturn($searchResult);
+
+        $checkoutHelper = new CheckoutHelper(
+            $orderTransactionStateHandler,
+            $transactionRepository,
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $checkoutHelper->transitionPaymentState('completed', 'tx-1', $this->contextMock);
+    }
+
+    public function testTransitionPaymentStateReturnsWhenSameStateId(): void
+    {
+        $orderTransactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $orderTransactionStateHandler->expects($this->never())->method($this->anything());
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getStateMachineState')->willReturn(null);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')->with('tx-1')->willReturn($transaction);
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->method('search')->willReturn($transactionSearchResult);
+
+        $checkoutHelper = new class(
+            $orderTransactionStateHandler,
+            $transactionRepository,
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        ) extends CheckoutHelper {
+            public function isSameStateId(string $actionName, string $orderTransactionId, Context $context): bool
+            {
+                return true;
+            }
+        };
+
+        $checkoutHelper->transitionPaymentState('completed', 'tx-1', $this->contextMock);
+    }
+
+    public function testIsSameStateIdReturnsTrueWhenStateIdMatches(): void
+    {
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getStateId')->willReturn('state-1');
+        $transaction->method('getStateMachineState')->willReturn(null);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')->willReturn($transaction);
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->method('search')->willReturn($transactionSearchResult);
+
+        $state = $this->createMock(StateMachineStateEntity::class);
+        $state->method('getId')->willReturn('state-1');
+        $state->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PAID);
+
+        $stateSearchResult = $this->createMock(EntitySearchResult::class);
+        $stateSearchResult->method('first')->willReturn($state);
+
+        $stateMachineRepository = $this->createMock(EntityRepository::class);
+        $stateMachineRepository->method('search')->willReturn($stateSearchResult);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $transactionRepository,
+            $stateMachineRepository,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $result = $checkoutHelper->isSameStateId(StateMachineTransitionActions::ACTION_PAID, 'tx-1', $this->contextMock);
+        $this->assertTrue($result);
+    }
+
+    public function testIsSameStateIdReturnsFalseWhenNoStateMachineState(): void
+    {
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getStateId')->willReturn('state-1');
+        $transaction->method('getStateMachineState')->willReturn(null);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')->willReturn($transaction);
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->method('search')->willReturn($transactionSearchResult);
+
+        $state = $this->createMock(StateMachineStateEntity::class);
+        $state->method('getId')->willReturn('state-2');
+        $state->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PAID);
+
+        $stateSearchResult = $this->createMock(EntitySearchResult::class);
+        $stateSearchResult->method('first')->willReturn($state);
+
+        $stateMachineRepository = $this->createMock(EntityRepository::class);
+        $stateMachineRepository->method('search')->willReturn($stateSearchResult);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $transactionRepository,
+            $stateMachineRepository,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $result = $checkoutHelper->isSameStateId(
+            StateMachineTransitionActions::ACTION_PAID,
+            'tx-1',
+            $this->contextMock
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsSameStateIdReturnsTrueWhenTechnicalNameMatches(): void
+    {
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getStateId')->willReturn('state-1');
+
+        $stateMachineState = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineState->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PAID);
+        $transaction->method('getStateMachineState')->willReturn($stateMachineState);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')->willReturn($transaction);
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->method('search')->willReturn($transactionSearchResult);
+
+        $state = $this->createMock(StateMachineStateEntity::class);
+        $state->method('getId')->willReturn('state-2');
+        $state->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PAID);
+
+        $stateSearchResult = $this->createMock(EntitySearchResult::class);
+        $stateSearchResult->method('first')->willReturn($state);
+
+        $stateMachineRepository = $this->createMock(EntityRepository::class);
+        $stateMachineRepository->method('search')->willReturn($stateSearchResult);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $transactionRepository,
+            $stateMachineRepository,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $result = $checkoutHelper->isSameStateId(StateMachineTransitionActions::ACTION_PAID, 'tx-1', $this->contextMock);
+        $this->assertTrue($result);
+    }
+
+    public function testGetTransitionFromActionNameThrowsWhenMissingState(): void
+    {
+        $stateSearchResult = $this->createMock(EntitySearchResult::class);
+        $stateSearchResult->method('first')->willReturn(null);
+
+        $stateMachineRepository = $this->createMock(EntityRepository::class);
+        $stateMachineRepository->method('search')->willReturn($stateSearchResult);
+
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $stateMachineRepository,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $this->expectException(RuntimeException::class);
+        $checkoutHelper->getTransitionFromActionName(StateMachineTransitionActions::ACTION_PAID, $this->contextMock);
+    }
+
+    public function testGetOrderTransactionStatesNameFromAction(): void
+    {
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $this->assertSame(OrderTransactionStates::STATE_PAID, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_PAID));
+        $this->assertSame(OrderTransactionStates::STATE_CANCELLED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_CANCEL));
+        $this->assertSame(OrderTransactionStates::STATE_REFUNDED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_REFUND));
+        $this->assertSame(OrderTransactionStates::STATE_PARTIALLY_REFUNDED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_REFUND_PARTIALLY));
+        $this->assertSame(OrderTransactionStates::STATE_OPEN, $checkoutHelper->getOrderTransactionStatesNameFromAction('unknown'));
     }
 }

@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -348,6 +349,63 @@ class CheckoutHelperComprehensiveTest extends TestCase
         );
 
         // Call the method
+        $this->checkoutHelper->transitionPaymentState($status, $orderTransactionId, $this->contextMock);
+    }
+
+    /**
+     * Ensure we don't regress refunded states to paid when a late "completed" notification arrives.
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentStateDoesNotRegressRefundedPartiallyToPaid(): void
+    {
+        $orderTransactionId = 'test-transaction-id';
+        $status = 'completed';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $stateMachineStateMock = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineStateMock->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PARTIALLY_REFUNDED);
+        $transactionMock->method('getStateMachineState')->willReturn($stateMachineStateMock);
+
+        $this->checkoutHelper->method('getTransaction')
+            ->with($orderTransactionId, $this->contextMock)
+            ->willReturn($transactionMock);
+
+        $this->orderTransactionStateHandlerMock->expects($this->never())
+            ->method('paid');
+        $this->orderTransactionStateHandlerMock->expects($this->never())
+            ->method('reopen');
+
+        $this->checkoutHelper->transitionPaymentState($status, $orderTransactionId, $this->contextMock);
+    }
+
+    /**
+     * Ensure we don't force a reopen() fallback for refund transitions.
+     * Otherwise, a failed refund transition can leave the transaction stuck in "open".
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentStateDoesNotReopenOnIllegalRefundTransition(): void
+    {
+        $orderTransactionId = 'test-transaction-id';
+        $status = 'refunded';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $transactionMock->method('getId')->willReturn($orderTransactionId);
+        $transactionMock->method('getStateMachineState')->willReturn(null);
+
+        $this->checkoutHelper->method('getTransaction')
+            ->with($orderTransactionId, $this->contextMock)
+            ->willReturn($transactionMock);
+
+        $this->orderTransactionStateHandlerMock->expects($this->once())
+            ->method('refund')
+            ->with($orderTransactionId, $this->contextMock)
+            ->willThrowException(new IllegalTransitionException('open', 'refund', []));
+
+        $this->orderTransactionStateHandlerMock->expects($this->never())
+            ->method('reopen');
+
         $this->checkoutHelper->transitionPaymentState($status, $orderTransactionId, $this->contextMock);
     }
 }

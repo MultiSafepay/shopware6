@@ -8,7 +8,10 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Handlers;
 use Exception;
 use MultiSafepay\Api\TransactionManager;
 use MultiSafepay\Api\Transactions\OrderRequest;
+use MultiSafepay\Api\Transactions\RefundRequest;
+use MultiSafepay\Api\Transactions\RefundRequest\Arguments\CheckoutData;
 use MultiSafepay\Api\Transactions\TransactionResponse;
+use MultiSafepay\Api\Transactions\UpdateRequest;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
@@ -22,13 +25,21 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCapture\OrderTransactionCaptureEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\RefundPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -36,6 +47,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\Salutation\SalutationEntity;
@@ -93,6 +105,16 @@ class PaymentHandlerTest extends TestCase
      * @var EntityRepository|MockObject
      */
     private EntityRepository|MockObject $orderRepository;
+
+    /**
+     * @var EntityRepository|MockObject
+     */
+    private EntityRepository|MockObject $refundRepository;
+
+    /**
+     * @var OrderTransactionCaptureRefundStateHandler|MockObject
+     */
+    private OrderTransactionCaptureRefundStateHandler|MockObject $refundStateHandler;
 
     /**
      * @var LoggerInterface|MockObject
@@ -160,6 +182,8 @@ class PaymentHandlerTest extends TestCase
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
         $this->orderRepository = $this->createMock(EntityRepository::class);
+        $this->refundRepository = $this->createMock(EntityRepository::class);
+        $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->context = $this->createMock(Context::class);
         $this->paymentTransaction = $this->createMock(PaymentTransactionStruct::class);
@@ -181,6 +205,8 @@ class PaymentHandlerTest extends TestCase
             $this->settingsService,
             $this->orderTransactionRepository,
             $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
             $this->logger
         );
 
@@ -258,6 +284,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
@@ -595,7 +623,7 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test the supports method returns false for REFUND payment type
+     * Test the supports method returns true for REFUND payment type
      *
      * @return void
      */
@@ -605,10 +633,10 @@ class PaymentHandlerTest extends TestCase
         $paymentHandlerType = PaymentHandlerType::REFUND;
         $paymentMethodId = 'test-payment-method-id';
 
-        // The supports method should return false for REFUND as this handler doesn't support refund operations
+        // The supports method should return true for REFUND as this handler supports refund operations
         $result = $this->paymentHandler->supports($paymentHandlerType, $paymentMethodId, $this->context);
 
-        $this->assertFalse($result);
+        $this->assertTrue($result);
     }
 
     /**
@@ -780,6 +808,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
@@ -870,6 +900,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers', 'requiresGender'])
@@ -1077,6 +1109,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
@@ -1207,6 +1241,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getIssuers'])
@@ -1244,6 +1280,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getClassName'])
@@ -1286,6 +1324,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getClassName'])
@@ -1328,6 +1368,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getClassName'])
@@ -1366,6 +1408,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
@@ -1409,6 +1453,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getClassName'])
@@ -1523,7 +1569,7 @@ class PaymentHandlerTest extends TestCase
         $resultRefund = $this->paymentHandler->supports($refundPaymentType, $paymentMethodId, $this->context);
 
         $this->assertFalse($resultRecurring);
-        $this->assertFalse($resultRefund);
+        $this->assertTrue($resultRefund);
     }
 
     /**
@@ -1576,6 +1622,8 @@ class PaymentHandlerTest extends TestCase
             $this->settingsService,
             $this->orderTransactionRepository,
             $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
             $this->logger
         );
 
@@ -1644,6 +1692,8 @@ class PaymentHandlerTest extends TestCase
             $this->settingsService,
             $this->orderTransactionRepository,
             $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
             $this->logger
         );
 
@@ -1686,6 +1736,8 @@ class PaymentHandlerTest extends TestCase
             $this->settingsService,
             $this->orderTransactionRepository,
             $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
             $this->logger
         );
 
@@ -1780,6 +1832,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'requiresGender', 'getGender', 'getTypeFromPaymentMethod', 'getIssuers'])
@@ -1824,8 +1878,23 @@ class PaymentHandlerTest extends TestCase
         $entitySearchResult->method('first')
             ->willReturn($orderTransaction);
 
-        $this->orderTransactionRepository->method('search')
+        $orderTransactionRepository = $this->createMock(EntityRepository::class);
+        $orderTransactionRepository->method('search')
             ->willReturn($entitySearchResult);
+
+        $paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $orderTransactionRepository,
+            $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger
+        );
 
         // Create a request with parameters
         $request = new Request(['transactionid' => 'some-transaction-id']);
@@ -1834,7 +1903,7 @@ class PaymentHandlerTest extends TestCase
         $this->expectException(PaymentException::class);
 
         // Call the finalize method
-        $this->paymentHandler->finalize($request, $this->paymentTransaction, $this->context);
+        $paymentHandler->finalize($request, $this->paymentTransaction, $this->context);
     }
 
     /**
@@ -1899,6 +1968,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
@@ -1963,6 +2034,8 @@ class PaymentHandlerTest extends TestCase
                 $this->settingsService,
                 $this->orderTransactionRepository,
                 $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
                 $this->logger
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
@@ -1987,5 +2060,792 @@ class PaymentHandlerTest extends TestCase
 
         // Call the pay method
         $paymentHandlerMock->pay(new Request(), $this->paymentTransaction, $this->context, null);
+    }
+
+    /**
+     * Test getGatewayFromPaymentMethod logs warning when class is missing
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    public function testGetGatewayFromPaymentMethodLogsWhenClassMissing(): void
+    {
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                'PaymentHandler: Payment method class not found or invalid',
+                $this->arrayHasKey('orderTransactionId')
+            );
+
+        $reflectionClass = new ReflectionClass(PaymentHandler::class);
+        $method = $reflectionClass->getMethod('getGatewayFromPaymentMethod');
+
+        $result = $method->invoke($this->paymentHandler, $this->paymentTransaction, $this->context);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Test getGatewayFromPaymentMethod handles gateway exceptions
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    public function testGetGatewayFromPaymentMethodHandlesGatewayException(): void
+    {
+        $paymentHandlerMock = $this->getMockBuilder(PaymentHandler::class)
+            ->setConstructorArgs([
+                $this->sdkFactory,
+                $this->orderRequestBuilder,
+                $this->eventDispatcher,
+                $this->transactionStateHandler,
+                $this->cachedSalesChannelContextFactory,
+                $this->settingsService,
+                $this->orderTransactionRepository,
+                $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
+                $this->logger
+            ])
+            ->onlyMethods(['getClassName'])
+            ->getMock();
+
+        $paymentHandlerMock->method('getClassName')
+            ->willReturn(PaymentHandlerTestGatewayThrowing::class);
+
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                'PaymentHandler: Failed to get gateway from payment method',
+                $this->arrayHasKey('className')
+            );
+
+        $reflectionClass = new ReflectionClass(PaymentHandler::class);
+        $method = $reflectionClass->getMethod('getGatewayFromPaymentMethod');
+
+        $result = $method->invoke($paymentHandlerMock, $this->paymentTransaction, $this->context);
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * Test cancelPreTransaction success path
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testCancelPreTransactionSuccess(): void
+    {
+        $salesChannelId = $this->salesChannelId;
+        $orderId = 'order-123';
+
+        $sdk = $this->createMock(Sdk::class);
+        $transactionManager = $this->createMock(TransactionManager::class);
+
+        $transactionManager->expects($this->once())
+            ->method('update')
+            ->with($orderId, $this->isInstanceOf(UpdateRequest::class));
+
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->settingsService->expects($this->once())
+            ->method('isDebugMode')
+            ->with($salesChannelId)
+            ->willReturn(true);
+
+        $this->logger->expects($this->once())
+            ->method('info')
+            ->with(
+                'PaymentHandler: Pre-transaction cancelled successfully',
+                $this->arrayHasKey('orderNumber')
+            );
+
+        $this->paymentHandler->cancelPreTransaction($salesChannelId, $orderId);
+    }
+
+    /**
+     * Test cancelPreTransaction handles update exception
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testCancelPreTransactionHandlesException(): void
+    {
+        $salesChannelId = 'sales-channel-id';
+        $orderId = 'order-456';
+
+        $sdk = $this->createMock(Sdk::class);
+        $transactionManager = $this->createMock(TransactionManager::class);
+
+        $transactionManager->method('update')
+            ->willThrowException(new Exception('Update failed'));
+
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                'PaymentHandler: Failed to cancel pre-transaction',
+                $this->arrayHasKey('message')
+            );
+
+        $this->paymentHandler->cancelPreTransaction($salesChannelId, $orderId);
+    }
+
+    /**
+     * Test refund with shopping cart request
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundWithShoppingCartRequest(): void
+    {
+        $refundId = 'refund-123';
+        $orderNumber = 'ORDER-123';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+        $this->order->method('getId')
+            ->willReturn($this->orderId);
+        $this->order->method('getCustomFields')
+            ->willReturn(null);
+
+        $refundAmount = new CalculatedPrice(10.0, 10.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+        $transactionData->method('requiresShoppingCart')
+            ->willReturn(true);
+
+        $checkoutData = $this->createMock(CheckoutData::class);
+        $checkoutData->expects($this->once())
+            ->method('addItem')
+            ->with($this->isInstanceOf(\MultiSafepay\ValueObject\CartItem::class));
+
+        $refundRequest = $this->createMock(RefundRequest::class);
+        $refundRequest->method('getCheckoutData')
+            ->willReturn($checkoutData);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->method('createRefundRequest')
+            ->with($transactionData)
+            ->willReturn($refundRequest);
+        $transactionManager->expects($this->once())
+            ->method('refund')
+            ->with($transactionData, $refundRequest);
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('complete')
+            ->with($refundId, $this->context);
+
+        $this->orderRepository->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(static function (array $payload) {
+                    return isset($payload[0]['customFields']['multisafepay_refunded_amount'])
+                        && $payload[0]['customFields']['multisafepay_refunded_amount'] === 1000;
+                }),
+                $this->context
+            );
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test refund logs warning when persisting custom fields fails
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundLogsWarningWhenPersistingCustomFieldsFails(): void
+    {
+        $refundId = 'refund-warning';
+        $orderNumber = 'ORDER-WARN';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+        $this->order->method('getId')
+            ->willReturn($this->orderId);
+        $this->order->method('getCustomFields')
+            ->willReturn([]);
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+        $transactionData->method('requiresShoppingCart')
+            ->willReturn(false);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->method('refund')
+            ->with($transactionData, $this->isInstanceOf(RefundRequest::class));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('complete')
+            ->with($refundId, $this->context);
+
+        $this->orderRepository->method('update')
+            ->willThrowException(new Exception('Persist failed'));
+
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Refund succeeded but failed to persist refunded amount in order customFields',
+                $this->arrayHasKey('orderId')
+            );
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test refund without shopping cart request
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundWithoutShoppingCartRequest(): void
+    {
+        $refundId = 'refund-456';
+        $orderNumber = 'ORDER-456';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+        $this->order->method('getId')
+            ->willReturn($this->orderId);
+
+        $refundAmount = new CalculatedPrice(2.5, 2.5, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+        $transactionData->method('requiresShoppingCart')
+            ->willReturn(false);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->expects($this->once())
+            ->method('refund')
+            ->with(
+                $transactionData,
+                $this->isInstanceOf(RefundRequest::class)
+            );
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('complete')
+            ->with($refundId, $this->context);
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test pay throws invalid transaction when order is missing
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testPayThrowsInvalidTransactionWhenOrderMissing(): void
+    {
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $orderTransaction->method('getOrder')
+            ->willReturn(null);
+
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entityCollection = new EntityCollection([$orderTransaction]);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($entityCollection);
+
+        $orderTransactionRepository = $this->createMock(EntityRepository::class);
+        $orderTransactionRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $orderTransactionRepository,
+            $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger
+        );
+
+        $this->expectException(PaymentException::class);
+
+        $paymentHandler->pay(new Request(), $this->paymentTransaction, $this->context, null);
+    }
+
+    /**
+     * Test pay logs debug info when debug mode enabled
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testPayLogsDebugInfoWhenDebugModeEnabled(): void
+    {
+        $this->setupBasicOrderTransaction();
+
+        $request = new Request();
+
+        $sdk = $this->createMock(Sdk::class);
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionResponse = $this->createMock(TransactionResponse::class);
+
+        $transactionResponse->method('getPaymentUrl')
+            ->willReturn('https://multisafepay.io');
+
+        $transactionManager->method('create')
+            ->willReturn($transactionResponse);
+
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->willReturn($sdk);
+
+        $orderRequest = $this->createMock(OrderRequest::class);
+        $this->orderRequestBuilder->method('build')
+            ->willReturn($orderRequest);
+
+        $this->settingsService->method('isDebugMode')
+            ->willReturn(true);
+
+        $this->logger->expects($this->exactly(2))
+            ->method('info')
+            ->with($this->isType('string'), $this->isType('array'));
+
+        $paymentHandlerMock = $this->getMockBuilder(PaymentHandler::class)
+            ->setConstructorArgs([
+                $this->sdkFactory,
+                $this->orderRequestBuilder,
+                $this->eventDispatcher,
+                $this->transactionStateHandler,
+                $this->cachedSalesChannelContextFactory,
+                $this->settingsService,
+                $this->orderTransactionRepository,
+                $this->orderRepository,
+                $this->refundRepository,
+                $this->refundStateHandler,
+                $this->logger
+            ])
+            ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
+            ->getMock();
+
+        $paymentHandlerMock->method('getGatewayFromPaymentMethod')
+            ->willReturn('IDEAL');
+        $paymentHandlerMock->method('getTypeFromPaymentMethod')
+            ->willReturn('direct');
+        $paymentHandlerMock->method('getIssuers')
+            ->willReturn([]);
+
+        $result = $paymentHandlerMock->pay($request, $this->paymentTransaction, $this->context, null);
+
+        $this->assertSame('https://multisafepay.io', $result->getTargetUrl());
+    }
+
+    /**
+     * Test getOrderFromTransaction throws when missing
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    public function testGetOrderFromTransactionThrowsWhenMissing(): void
+    {
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn(new EntityCollection());
+
+        $orderTransactionRepository = $this->createMock(EntityRepository::class);
+        $orderTransactionRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $orderTransactionRepository,
+            $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger
+        );
+
+        $reflectionClass = new ReflectionClass(PaymentHandler::class);
+        $method = $reflectionClass->getMethod('getOrderFromTransaction');
+        $method->setAccessible(true);
+
+        $this->expectException(PaymentException::class);
+
+        $method->invoke($paymentHandler, 'missing-transaction', $this->context);
+    }
+
+    /**
+     * Test finalize handles customer cancel with debug logging
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testFinalizeLogsAndCancelsWhenCustomerCancels(): void
+    {
+        $this->setupBasicOrderTransaction();
+
+        $orderNumber = 'ORDER-CANCEL';
+        $salesChannelId = 'sales-channel-id';
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+
+        $request = new Request(['transactionid' => $orderNumber, 'cancel' => true]);
+
+        $this->settingsService->method('isDebugMode')
+            ->willReturnOnConsecutiveCalls(true, true, false);
+
+        $this->logger->expects($this->exactly(2))
+            ->method('info')
+            ->with($this->isType('string'), $this->isType('array'));
+
+        $this->transactionStateHandler->expects($this->once())
+            ->method('cancel')
+            ->with($this->orderTransactionId, $this->context);
+
+        $sdk = $this->createMock(Sdk::class);
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('update')
+            ->with($orderNumber, $this->isInstanceOf(UpdateRequest::class));
+
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->expectException(PaymentException::class);
+
+        $this->paymentHandler->finalize($request, $this->paymentTransaction, $this->context);
+    }
+
+    /**
+     * Test refund throws unknown refund when order is missing
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundThrowsUnknownRefundWhenOrderMissing(): void
+    {
+        $refundId = 'refund-missing';
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn(null);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $this->expectException(PaymentException::class);
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test refund throws invalid transaction when currency is missing
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundThrowsInvalidTransactionWhenCurrencyMissing(): void
+    {
+        $refundId = 'refund-nocurrency';
+
+        $this->order->method('getOrderNumber')
+            ->willReturn('ORDER-NOCURRENCY');
+        $this->order->method('getSalesChannelId')
+            ->willReturn('sales-channel-id');
+        $this->order->method('getCurrency')
+            ->willReturn(null);
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $this->expectException(PaymentException::class);
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test refund logs and rethrows on failure
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundLogsAndRethrowsOnFailure(): void
+    {
+        $refundId = 'refund-fail';
+        $orderNumber = 'ORDER-FAIL';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+
+        $this->orderTransaction->method('getId')
+            ->willReturn('tx-fail');
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+        $transactionData->method('requiresShoppingCart')
+            ->willReturn(false);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->method('refund')
+            ->willThrowException(new Exception('Refund failed'));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->never())
+            ->method('complete');
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with('PaymentHandler: Refund failed', $this->arrayHasKey('refundId'));
+
+        $this->expectException(Exception::class);
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test getRefundEntity throws unknown refund exception
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    public function testGetRefundEntityThrowsUnknownRefund(): void
+    {
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn(new EntityCollection());
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $reflectionClass = new ReflectionClass(PaymentHandler::class);
+        $method = $reflectionClass->getMethod('getRefundEntity');
+        $method->setAccessible(true);
+
+        $this->expectException(PaymentException::class);
+
+        $method->invoke($this->paymentHandler, 'missing-refund', $this->context);
     }
 }

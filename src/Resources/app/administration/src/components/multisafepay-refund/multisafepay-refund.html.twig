@@ -24,7 +24,7 @@
             Refund
         </mt-button>
         <span class="float-right">
-            <strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmount }}</strong>
+            <strong>Amount refunded: {{ order ? order.currency.symbol : 'currency' }}&nbsp;{{ refundedAmountFormatted }}</strong>
         </span>
         <sw-modal
             v-show="showModal"
@@ -35,7 +35,7 @@
             aria-live="polite"
             :aria-label="$t('multisafepay-refund.confirm_refund')">
             <template #default>
-                Are you sure you want to refund {{ order ? order.currency.symbol : 'currency' }}{{ this.amount }}?
+                Are you sure you want to refund {{ order ? order.currency.symbol : 'currency' }}{{ amountFormatted }}?
                 <br/>
             </template>
             <template #modal-footer>

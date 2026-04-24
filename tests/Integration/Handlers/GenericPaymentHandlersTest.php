@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
@@ -226,6 +227,8 @@ class GenericPaymentHandlersTest extends TestCase
         $cachedSalesChannelContextFactory = self::getContainer()->get(SalesChannelContextFactory::class);
         $orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
         $orderRepository = self::getContainer()->get('order.repository');
+        $refundRepository = self::getContainer()->get('order_transaction_capture_refund.repository');
+        $refundStateHandler = self::getContainer()->get(OrderTransactionCaptureRefundStateHandler::class);
 
         $orderRequestBuilder = $this->getMockBuilder(OrderRequestBuilder::class)
             ->disableOriginalConstructor()
@@ -256,6 +259,8 @@ class GenericPaymentHandlersTest extends TestCase
             $settingsServiceMock,
             $orderTransactionRepository,
             $orderRepository,
+            $refundRepository,
+            $refundStateHandler,
             $logger
         );
 
@@ -269,6 +274,8 @@ class GenericPaymentHandlersTest extends TestCase
                 $settingsServiceMock,
                 $orderTransactionRepository,
                 $orderRepository,
+                $refundRepository,
+                $refundStateHandler,
                 $logger
             ])
             ->onlyMethods(['getClassName', 'pay', 'supports'])

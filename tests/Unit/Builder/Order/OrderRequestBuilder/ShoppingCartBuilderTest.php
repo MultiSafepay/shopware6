@@ -6,8 +6,10 @@
 namespace MultiSafepay\Shopware6\Tests\Unit\Builder\Order\OrderRequestBuilder;
 
 use MultiSafepay\Api\Transactions\OrderRequest;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\CheckoutOptions;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\ShoppingCart\Item as CartItem;
+use MultiSafepay\Api\Transactions\OrderRequest\Arguments\TaxTable;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\ShoppingCartBuilder\ShoppingCartBuilderInterface;
@@ -16,6 +18,7 @@ use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionMethod;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -310,5 +313,44 @@ class ShoppingCartBuilderTest extends TestCase
             $this->dataBag,
             $this->salesChannelContext
         );
+    }
+    public function testEnsureNoneTaxRuleExistsReturnsWhenZeroRulePresent(): void
+    {
+        $shoppingCartBuilder = new ShoppingCartBuilder([]);
+
+        $orderRequest = $this->createMock(OrderRequest::class);
+        $checkoutOptions = $this->createMock(CheckoutOptions::class);
+        $taxTable = $this->createMock(TaxTable::class);
+
+        $orderRequest->method('getCheckoutOptions')->willReturn($checkoutOptions);
+        $checkoutOptions->method('getTaxTable')->willReturn($taxTable);
+        $taxTable->method('getData')->willReturn(['alternate' => [['name' => '0']]]);
+
+        $taxTable->expects($this->never())->method('addTaxRule');
+        $orderRequest->expects($this->never())->method('addCheckoutOptions');
+
+        $method = new ReflectionMethod(ShoppingCartBuilder::class, 'ensureNoneTaxRuleExists');
+        $method->setAccessible(true);
+        $method->invoke($shoppingCartBuilder, $orderRequest);
+    }
+
+    public function testEnsureNoneTaxRuleExistsAddsZeroRuleWhenTaxTableEmpty(): void
+    {
+        $shoppingCartBuilder = new ShoppingCartBuilder([]);
+
+        $orderRequest = $this->createMock(OrderRequest::class);
+        $checkoutOptions = $this->createMock(CheckoutOptions::class);
+        $taxTable = $this->createMock(TaxTable::class);
+
+        $orderRequest->method('getCheckoutOptions')->willReturn($checkoutOptions);
+        $checkoutOptions->method('getTaxTable')->willReturn($taxTable);
+        $taxTable->method('getData')->willThrowException(new InvalidArgumentException('No tax rules'));
+
+        $taxTable->expects($this->once())->method('addTaxRule');
+        $orderRequest->expects($this->once())->method('addCheckoutOptions')->with($checkoutOptions);
+
+        $method = new ReflectionMethod(ShoppingCartBuilder::class, 'ensureNoneTaxRuleExists');
+        $method->setAccessible(true);
+        $method->invoke($shoppingCartBuilder, $orderRequest);
     }
 }

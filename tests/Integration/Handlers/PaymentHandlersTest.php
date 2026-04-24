@@ -111,14 +111,14 @@ class PaymentHandlersTest extends TestCase
 
             $this->assertFalse($supportsRecurring, "$handlerClass should not support recurring payment operations");
 
-            // Testing with PaymentHandlerType::REFUND - these handlers don't support refund operations
+            // Testing with PaymentHandlerType::REFUND - these handlers support refund operations
             $supportsRefund = $handler->supports(
                 PaymentHandlerType::REFUND,
                 $paymentMethod->getTechnicalName(),
                 $this->context
             );
 
-            $this->assertFalse($supportsRefund, "$handlerClass should not support refund payment operations");
+            $this->assertTrue($supportsRefund, "$handlerClass should support refund payment operations");
         }
     }
 

@@ -21,6 +21,7 @@ use ReflectionClass;
 use ReflectionException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
@@ -77,6 +78,8 @@ class BetaalplanPaymentHandlerTest extends TestCase
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $this->orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
         $orderRepositoryMock = $this->createMock(EntityRepository::class);
+        $refundRepositoryMock = $this->createMock(EntityRepository::class);
+        $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(\Psr\Log\LoggerInterface::class);
 
         $this->paymentHandler = new BetaalplanPaymentHandler(
@@ -88,6 +91,8 @@ class BetaalplanPaymentHandlerTest extends TestCase
             $settingsServiceMock,
             $this->orderTransactionRepositoryMock,
             $orderRepositoryMock,
+            $refundRepositoryMock,
+            $refundStateHandlerMock,
             $loggerMock
         );
     }
