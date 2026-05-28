@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        SHOPWARE_VERSION: ${SHOPWARE_VERSION:-6.7.10.1}
     ports:
       - "22:22"
       - "3306:3306"

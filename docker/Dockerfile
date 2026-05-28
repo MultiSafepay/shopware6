@@ -1,5 +1,8 @@
-# Use dockware/dev as the base image
-FROM dockware/dev:6.7.2.2
+# Shopware version
+ARG SHOPWARE_VERSION=6.7.10.1
+
+# Use dockware/shopware as the base image
+FROM dockware/shopware:${SHOPWARE_VERSION}
 
 # Swith to root user
 USER root
