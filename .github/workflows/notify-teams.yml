@@ -1,0 +1,19 @@
+name: Notify Teams on Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: MultiSafepay/microsoft-teams-release-notifications@main
+        with:
+          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          changelog_path: "./CHANGELOG.md"
