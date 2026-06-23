@@ -193,7 +193,7 @@ class PaymentMethodsInstallerTest extends TestCase
         $installContext = $this->createMock(InstallContext::class);
         $installContext->method('getContext')->willReturn(Context::createDefaultContext());
 
-        // Call install and expect exception
+        // Call installation and expect exception
         try {
             $installer->install($installContext);
             $this->fail('Expected RuntimeException was not thrown');
@@ -227,7 +227,8 @@ class PaymentMethodsInstallerTest extends TestCase
             'template' => 'ideal',
             'direct' => true,
             'component' => false,
-            'tokenization' => true
+            'tokenization' => true,
+            PaymentMethodCustomFields::MANUAL_CAPTURE => false
         ]);
 
         $paymentMethod2 = $this->createMock(PaymentMethodEntity::class);
@@ -238,7 +239,8 @@ class PaymentMethodsInstallerTest extends TestCase
             'template' => 'bancontact',
             'direct' => false,
             'component' => true,
-            'tokenization' => false
+            'tokenization' => false,
+            PaymentMethodCustomFields::MANUAL_CAPTURE => false
         ]);
 
         $paymentMethod3 = $this->createMock(PaymentMethodEntity::class);
@@ -304,7 +306,8 @@ class PaymentMethodsInstallerTest extends TestCase
             'template' => 'ideal',
             'direct' => true,
             'component' => false,
-            'tokenization' => true
+            'tokenization' => true,
+            PaymentMethodCustomFields::MANUAL_CAPTURE => false
         ], $result['019aa1f5513472a1ab48582897fc4ccc']);
 
         // Verify the second payment method
@@ -314,7 +317,8 @@ class PaymentMethodsInstallerTest extends TestCase
             'template' => 'bancontact',
             'direct' => false,
             'component' => true,
-            'tokenization' => false
+            'tokenization' => false,
+            PaymentMethodCustomFields::MANUAL_CAPTURE => false
         ], $result['019aa1f55146729a99178e12592ba324']);
 
         // Verify the third payment method (null custom fields)
@@ -351,12 +355,12 @@ class PaymentMethodsInstallerTest extends TestCase
         $emptySearchIds->method('getTotal')->willReturn(0);
 
         $paymentMethodRepository = $this->createMock(EntityRepository::class);
-        
+
         // First call: getAllExistingCustomFields (should be called once)
         $paymentMethodRepository->expects($this->once())
             ->method('search')
             ->willReturn($searchResult);
-        
+
         // Multiple calls: getPaymentMethodId for each gateway (returns 0 to skip processing)
         $paymentMethodRepository->expects($this->any())
             ->method('searchIds')
@@ -408,7 +412,7 @@ class PaymentMethodsInstallerTest extends TestCase
     public function testAddPaymentMethodAccessesCustomFieldsMapCorrectly(): void
     {
         $paymentMethodId = '019aa1f5513472a1ab48582897fc4ccc';
-        
+
         // Prepare the custom fields map that would come from getAllExistingCustomFields
         $existingCustomFieldsMap = [
             $paymentMethodId => [
@@ -416,7 +420,8 @@ class PaymentMethodsInstallerTest extends TestCase
                 'template' => 'old_template',
                 'direct' => true,        // Admin configured
                 'component' => true,     // Admin configured
-                'tokenization' => false
+                'tokenization' => false,
+                PaymentMethodCustomFields::MANUAL_CAPTURE => true
             ]
         ];
 
@@ -427,7 +432,7 @@ class PaymentMethodsInstallerTest extends TestCase
 
         $paymentMethodRepository = $this->createMock(EntityRepository::class);
         $paymentMethodRepository->method('searchIds')->willReturn($searchIds);
-        
+
         // Capture the upsert call to verify custom fields are preserved
         $upsertedData = null;
         $mockWrittenEvent = $this->createMock(EntityWrittenContainerEvent::class);
@@ -477,7 +482,7 @@ class PaymentMethodsInstallerTest extends TestCase
         $this->assertCount(1, $upsertedData);
 
         $paymentData = $upsertedData[0];
-        
+
         // Verify custom fields preserved admin configuration
         $this->assertArrayHasKey('customFields', $paymentData);
         $customFields = $paymentData['customFields'];
@@ -486,15 +491,17 @@ class PaymentMethodsInstallerTest extends TestCase
         $this->assertArrayHasKey('direct', $customFields, 'direct should exist');
         $this->assertArrayHasKey('component', $customFields, 'component should exist');
         $this->assertArrayHasKey('tokenization', $customFields, 'tokenization should exist');
-        
+        $this->assertArrayHasKey(PaymentMethodCustomFields::MANUAL_CAPTURE, $customFields, 'manual_capture should exist');
+
         // All existing values should be preserved during upgrade
         $this->assertTrue($customFields['direct'], 'direct should be preserved as true');
         $this->assertTrue($customFields['component'], 'component should be preserved as true');
         $this->assertFalse($customFields['tokenization'], 'tokenization should be preserved as false');
-        
+        $this->assertTrue($customFields[PaymentMethodCustomFields::MANUAL_CAPTURE], 'manual_capture should be preserved as true');
+
         // Template should be updated to a new value
         $this->assertEquals('new_template', $customFields['template'], 'template should be updated');
-        
+
         // is_multisafepay should always be true
         $this->assertTrue($customFields['is_multisafepay']);
     }

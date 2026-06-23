@@ -15,7 +15,7 @@ install:
 
 .PHONY: phpunit
 phpunit:
-	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app vendor/bin/phpunit --configuration=./phpunit.xml.dist
+	docker-compose exec --workdir=/var/www/html/custom/plugins/MltisafeMultiSafepay app /var/www/html/vendor/bin/phpunit --configuration=./phpunit.xml.dist
 
 .PHONY: phpunit-cov
 phpunit-cov:

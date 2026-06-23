@@ -267,8 +267,8 @@ class NotificationControllerLoggingTest extends TestCase
             ->willReturn($order);
 
         $checkoutHelperMock->expects($this->once())
-            ->method('transitionPaymentState')
-            ->with('completed', $transactionId, $this->context);
+            ->method('transitionPaymentStateFromTransaction')
+            ->with($this->isInstanceOf(TransactionResponse::class), $transactionId, $this->context);
 
         $checkoutHelperMock->expects($this->once())
             ->method('transitionPaymentMethodIfNeeded')
@@ -348,8 +348,8 @@ class NotificationControllerLoggingTest extends TestCase
             ->willReturn($order);
 
         $checkoutHelperMock->expects($this->once())
-            ->method('transitionPaymentState')
-            ->with('completed', $transactionId, $this->context);
+            ->method('transitionPaymentStateFromTransaction')
+            ->with($this->isInstanceOf(TransactionResponse::class), $transactionId, $this->context);
 
         $checkoutHelperMock->expects($this->once())
             ->method('transitionPaymentMethodIfNeeded')

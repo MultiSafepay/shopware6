@@ -5,6 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\Tests\Unit\Helper;
 
+use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use PHPUnit\Framework\MockObject\Exception;
@@ -319,6 +320,95 @@ class CheckoutHelperTest extends TestCase
     }
 
     /**
+     * Test manual capture transaction response mappings.
+     *
+     * @throws Exception
+     */
+    public function testGetCorrectTransitionActionFromManualCaptureTransaction(): void
+    {
+        $checkoutHelper = new CheckoutHelper(
+            $this->createMock(OrderTransactionStateHandler::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class)
+        );
+
+        $authorizedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'financial_status' => 'initialized',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 10000,
+            ],
+        ]);
+
+        $capturedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'financial_status' => 'completed',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 0,
+            ],
+        ]);
+
+        $partiallyCapturedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'financial_status' => 'initialized',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 2900,
+            ],
+            'related_transactions' => [
+                [
+                    'amount' => 1098,
+                    'status' => 'completed',
+                ],
+            ],
+        ]);
+
+        $fullyCapturedAfterPartialTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'financial_status' => 'initialized',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 0,
+            ],
+            'related_transactions' => [
+                [
+                    'amount' => 1098,
+                    'status' => 'completed',
+                ],
+                [
+                    'amount' => 2900,
+                    'status' => 'completed',
+                ],
+            ],
+        ]);
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_AUTHORIZE,
+            $checkoutHelper->getCorrectTransitionActionFromTransaction($authorizedTransaction)
+        );
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_PAID,
+            $checkoutHelper->getCorrectTransitionActionFromTransaction($capturedTransaction)
+        );
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_PAID_PARTIALLY,
+            $checkoutHelper->getCorrectTransitionActionFromTransaction($partiallyCapturedTransaction)
+        );
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_PAID,
+            $checkoutHelper->getCorrectTransitionActionFromTransaction($fullyCapturedAfterPartialTransaction)
+        );
+    }
+
+    /**
      * Test transitionPaymentMethodIfNeeded when payment methods match
      *
      * @throws Exception
@@ -484,7 +574,7 @@ class CheckoutHelperTest extends TestCase
     }
 
     /**
-     * Test transitionPaymentMethodIfNeeded returns early when current payment method cannot be loaded
+     * Test transitionPaymentMethodIfNeeded returns early when the current payment method cannot be loaded
      *
      * @throws Exception
      */
@@ -539,7 +629,7 @@ class CheckoutHelperTest extends TestCase
     }
 
     /**
-     * Test transitionPaymentMethodIfNeeded stores wallet + card display
+     * Test transitionPaymentMethodIfNeeded stores wallet and card display
      * when expected and used handler match
      *
      * @throws Exception
@@ -607,7 +697,7 @@ class CheckoutHelperTest extends TestCase
     }
 
     /**
-     * Test transitionPaymentMethodIfNeeded uses wallet for replacement payment method
+     * Test transitionPaymentMethodIfNeeded uses wallet for a replacement payment method
      * and stores Apple Pay (American Express)
      *
      * @throws Exception
@@ -803,7 +893,7 @@ class CheckoutHelperTest extends TestCase
 
     /**
      * Test transitionPaymentMethodIfNeeded clears stale wallet display custom fields
-     * when handlers match but wallet display cannot be built.
+     * when handlers match, but wallet display cannot be built.
      *
      * @throws Exception
      */
@@ -852,13 +942,12 @@ class CheckoutHelperTest extends TestCase
                 $this->callback(function (array $updateData) use ($transactionId) {
                     $item = $updateData[0];
 
-                    return $item['id'] === $transactionId
-                        && !isset($item['paymentMethodId'])
-                        && isset($item['customFields'])
-                        && !isset($item['customFields']['multisafepay_payment_method_display'])
-                        && !isset($item['customFields']['multisafepay_payment_method_display_admin'])
-                        && isset($item['customFields']['some_other_custom_field'])
-                        && $item['customFields']['some_other_custom_field'] === 'keep-me';
+                    return isset($item['customFields']['some_other_custom_field'])
+                           && $item['id'] === $transactionId
+                           && !isset($item['paymentMethodId'])
+                           && !isset($item['customFields']['multisafepay_payment_method_display'])
+                           && !isset($item['customFields']['multisafepay_payment_method_display_admin'])
+                           && $item['customFields']['some_other_custom_field'] === 'keep-me';
                 }),
                 $this->isInstanceOf(Context::class)
             );
@@ -1059,8 +1148,12 @@ class CheckoutHelperTest extends TestCase
             $this->createMock(EntityRepository::class),
             $this->createMock(PaymentUtil::class)
         ) extends CheckoutHelper {
-            public function isSameStateId(string $actionName, string $orderTransactionId, Context $context): bool
-            {
+            public function isSameStateId(
+                string $actionName,
+                string $orderTransactionId,
+                Context $context,
+                ?OrderTransactionEntity $transaction = null
+            ): bool {
                 return true;
             }
         };
@@ -1202,6 +1295,70 @@ class CheckoutHelperTest extends TestCase
         $checkoutHelper->getTransitionFromActionName(StateMachineTransitionActions::ACTION_PAID, $this->contextMock);
     }
 
+
+    public function testTransitionPaymentStateToPartiallyPaidCallsStateHandler(): void
+    {
+        $context = Context::createDefaultContext();
+        $stateMachineState = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineState->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_OPEN);
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $transaction->method('getStateMachineState')->willReturn($stateMachineState);
+
+        $stateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $stateHandler->expects($this->once())
+            ->method('paidPartially')
+            ->with('tx-1', $context);
+
+        $checkoutHelper = new class(
+            $stateHandler,
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(PaymentUtil::class),
+            $transaction
+        ) extends CheckoutHelper {
+            private OrderTransactionEntity $transaction;
+
+            public function __construct(
+                OrderTransactionStateHandler $orderTransactionStateHandler,
+                EntityRepository $transactionRepository,
+                EntityRepository $stateMachineRepository,
+                LoggerInterface $logger,
+                EntityRepository $paymentMethodRepository,
+                PaymentUtil $paymentUtil,
+                OrderTransactionEntity $transaction
+            ) {
+                parent::__construct(
+                    $orderTransactionStateHandler,
+                    $transactionRepository,
+                    $stateMachineRepository,
+                    $logger,
+                    $paymentMethodRepository,
+                    $paymentUtil
+                );
+                $this->transaction = $transaction;
+            }
+
+            public function getTransaction(string $transactionId, Context $context): OrderTransactionEntity
+            {
+                return $this->transaction;
+            }
+
+            public function isSameStateId(
+                string $actionName,
+                string $orderTransactionId,
+                Context $context,
+                ?OrderTransactionEntity $transaction = null
+            ): bool {
+                return false;
+            }
+        };
+
+        $checkoutHelper->transitionPaymentStateToPartiallyPaid('tx-1', $context);
+    }
+
     public function testGetOrderTransactionStatesNameFromAction(): void
     {
         $checkoutHelper = new CheckoutHelper(
@@ -1214,6 +1371,7 @@ class CheckoutHelperTest extends TestCase
         );
 
         $this->assertSame(OrderTransactionStates::STATE_PAID, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_PAID));
+        $this->assertSame(OrderTransactionStates::STATE_PARTIALLY_PAID, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_PAID_PARTIALLY));
         $this->assertSame(OrderTransactionStates::STATE_CANCELLED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_CANCEL));
         $this->assertSame(OrderTransactionStates::STATE_REFUNDED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_REFUND));
         $this->assertSame(OrderTransactionStates::STATE_PARTIALLY_REFUNDED, $checkoutHelper->getOrderTransactionStatesNameFromAction(StateMachineTransitionActions::ACTION_REFUND_PARTIALLY));

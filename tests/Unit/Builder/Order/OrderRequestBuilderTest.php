@@ -11,12 +11,14 @@ use MultiSafepay\Exception\InvalidTotalAmountException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\OrderRequestBuilderInterface;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool;
+use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -72,6 +74,7 @@ class OrderRequestBuilderTest extends TestCase
         $this->order = $this->createMock(OrderEntity::class);
         $this->salesChannelContext = $this->createMock(SalesChannelContext::class);
         $currencyEntity = $this->createMock(CurrencyEntity::class);
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
 
         // Initialize RequestDataBag
         $this->dataBag = new RequestDataBag();
@@ -79,6 +82,15 @@ class OrderRequestBuilderTest extends TestCase
         // Set up common behaviors
         $this->salesChannelContext->method('getCurrency')
             ->willReturn($currencyEntity);
+
+        $this->salesChannelContext->method('getSalesChannelId')
+            ->willReturn('test-sales-channel-id');
+
+        $this->salesChannelContext->method('getPaymentMethod')
+            ->willReturn($paymentMethod);
+
+        $paymentMethod->method('getCustomFields')
+            ->willReturn([]);
 
         $currencyEntity->method('getIsoCode')
             ->willReturn('EUR');
@@ -99,7 +111,6 @@ class OrderRequestBuilderTest extends TestCase
      * @return void
      * @throws Exception
      * @throws InvalidArgumentException
-     * @throws InvalidTotalAmountException
      */
     public function testBuildWithStandardParameters(): void
     {
@@ -179,7 +190,6 @@ class OrderRequestBuilderTest extends TestCase
      * @return void
      * @throws Exception
      * @throws InvalidArgumentException
-     * @throws InvalidTotalAmountException
      */
     public function testBuildWithActiveToken(): void
     {
@@ -206,6 +216,51 @@ class OrderRequestBuilderTest extends TestCase
 
         // Assert the type was changed to direct
         $this->assertEquals(TransactionTypeSource::TRANSACTION_TYPE_DIRECT_VALUE, $orderRequest->getType());
+    }
+
+    /**
+     * Test building an order request with manual capture enabled.
+     *
+     * @return void
+     * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws InvalidTotalAmountException
+     */
+    public function testBuildWithManualCaptureEnabled(): void
+    {
+        $currencyEntity = $this->createMock(CurrencyEntity::class);
+        $currencyEntity->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $paymentMethod = $this->createMock(PaymentMethodEntity::class);
+        $paymentMethod->method('getCustomFields')
+            ->willReturn([
+                ManualCaptureHelper::CUSTOM_FIELD_MANUAL_CAPTURE => true,
+            ]);
+
+        $salesChannelContext = $this->createMock(SalesChannelContext::class);
+        $salesChannelContext->method('getCurrency')
+            ->willReturn($currencyEntity);
+        $salesChannelContext->method('getPaymentMethod')
+            ->willReturn($paymentMethod);
+
+        $orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool, new ManualCaptureHelper());
+
+        $this->orderRequestBuilderPool->method('getOrderRequestBuilders')
+            ->willReturn([]);
+
+        $orderRequest = $orderRequestBuilder->build(
+            $this->transaction,
+            $this->order,
+            $this->dataBag,
+            $salesChannelContext,
+            'CREDITCARD'
+        );
+
+        $data = $orderRequest->getData();
+
+        $this->assertArrayHasKey('capture', $data);
+        $this->assertSame('manual', $data['capture']);
     }
 
     /**
@@ -301,7 +356,6 @@ class OrderRequestBuilderTest extends TestCase
      * @return void
      * @throws Exception
      * @throws InvalidArgumentException
-     * @throws InvalidTotalAmountException
      */
     public function testBuildWithGatewayInfo(): void
     {

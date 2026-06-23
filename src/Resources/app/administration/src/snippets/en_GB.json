@@ -34,6 +34,14 @@
     "multisafepay-direct": {
         "help_text": "Enable the payment inside the checkout page"
     },
+    "multisafepay-manual-capture": {
+        "help_text": "Authorize the payment first and capture the full amount when the order delivery is marked as shipped."
+    },
+    "multisafepay-order": {
+        "summary": {
+            "createdOn": "on"
+        }
+    },
     "multisafepay-refund": {
         "refund_options": "MultiSafepay refund options",
         "process_refund": "Process refund",

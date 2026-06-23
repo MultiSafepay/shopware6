@@ -7,6 +7,8 @@ namespace MultiSafepay\Shopware6\Tests\Integration\Subscriber;
 
 use Exception;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Helper\CheckoutHelper;
+use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Subscriber\OrderDeliveryStateChangeEvent;
 use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
@@ -145,6 +147,8 @@ class OrderDeliveryStateChangeEventTest extends TestCase
                 $this->getContainer()->get(PaymentUtil::class),
                 $this->getContainer()->get(OrderUtil::class),
                 $this->createMock(LoggerInterface::class),
+                $this->getContainer()->get(CheckoutHelper::class),
+                $this->getContainer()->get(ManualCaptureHelper::class),
             ])
             ->onlyMethods($methodNames)
             ->getMock();

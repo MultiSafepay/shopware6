@@ -78,7 +78,9 @@ class OrderUtil
             ->addAssociation('orderCustomer.salutation')
             ->addAssociation('stateMachineState')
             ->addAssociation('documents')
+            ->addAssociation('primaryOrderTransaction.stateMachineState')
             ->addAssociation('transactions')
+            ->addAssociation('transactions.stateMachineState')
             ->addAssociation('transactions.paymentMethod')
             ->addAssociation('transactions.paymentMethod.plugin')
             ->addAssociation('salesChannel');

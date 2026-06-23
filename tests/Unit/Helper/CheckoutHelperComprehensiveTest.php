@@ -380,6 +380,32 @@ class CheckoutHelperComprehensiveTest extends TestCase
     }
 
     /**
+     * Ensure we don't regress refunded states to partially paid when a manual capture notification arrives.
+     *
+     * @throws Exception
+     */
+    public function testTransitionPaymentStateDoesNotRegressRefundedPartiallyToPartiallyPaid(): void
+    {
+        $orderTransactionId = 'test-transaction-id';
+
+        $transactionMock = $this->createMock(OrderTransactionEntity::class);
+        $stateMachineStateMock = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineStateMock->method('getTechnicalName')->willReturn(OrderTransactionStates::STATE_PARTIALLY_REFUNDED);
+        $transactionMock->method('getStateMachineState')->willReturn($stateMachineStateMock);
+
+        $this->checkoutHelper->method('getTransaction')
+            ->with($orderTransactionId, $this->contextMock)
+            ->willReturn($transactionMock);
+
+        $this->orderTransactionStateHandlerMock->expects($this->never())
+            ->method('paidPartially');
+        $this->orderTransactionStateHandlerMock->expects($this->never())
+            ->method('reopen');
+
+        $this->checkoutHelper->transitionPaymentStateToPartiallyPaid($orderTransactionId, $this->contextMock);
+    }
+
+    /**
      * Ensure we don't force a reopen() fallback for refund transitions.
      * Otherwise, a failed refund transition can leave the transaction stuck in "open".
      *

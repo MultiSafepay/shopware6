@@ -34,6 +34,14 @@
     "multisafepay-direct": {
         "help_text": "Die Zahlung auf der Checkout-Seite aktivieren."
     },
+    "multisafepay-manual-capture": {
+        "help_text": "Die Zahlung zuerst autorisieren und den vollständigen Betrag erfassen, wenn die Lieferung der Bestellung als versandt markiert wird."
+    },
+    "multisafepay-order": {
+        "summary": {
+            "createdOn": "am"
+        }
+    },
     "multisafepay-refund": {
         "refund_options": "MultiSafepay Rückerstattungsoptionen",
         "process_refund": "Rückerstattung verarbeiten",

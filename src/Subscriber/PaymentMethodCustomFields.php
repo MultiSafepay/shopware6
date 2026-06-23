@@ -5,6 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\Subscriber;
 
+use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
@@ -32,6 +33,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
     public const MULTISAFEPAY_HANDLER_NAMESPACE = 'MultiSafepay\\Shopware6\\Handlers';
     public const IS_MULTISAFEPAY = 'is_multisafepay';
     public const TEMPLATE = 'template';
+    public const MANUAL_CAPTURE = 'manual_capture';
 
     /**
      * Payment handlers that support component customization (simple names)
@@ -470,8 +472,8 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
     /**
      * Builds the default custom field set for qualifying payment methods.
      *
-     * Always returns the five expected keys (is_multisafepay, template, direct,
-     * component, tokenization) so that translations and the payment method
+     * Always returns the expected keys (is_multisafepay, template, direct,
+     * component, tokenization, manual_capture) so that translations and the payment method
      * entity remain aligned, even when certain features are not in use.
      *
      * @param string $template
@@ -485,22 +487,23 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
             'direct' => false,
             'component' => false,
             'tokenization' => false,
+            self::MANUAL_CAPTURE => false,
         ];
     }
 
     /**
      * Updates translation custom fields if any are missing
      *
-     * Checks for required custom fields (is_multisafepay, template, direct, component, tokenization)
+     * Checks for required custom fields (is_multisafepay, template, direct, component, tokenization, manual_capture)
      * and adds them with default values if not present. Only performs upsert if changes are needed
      *
      * @param string $paymentMethodId
      * @param string $languageId
      * @param array $customFields Existing custom fields from the translation
      * @param string $template The template identifier for this payment method
-    * @param string|null $name The name from the payload (maybe NULL)
-    * @param string|null $description The description from the payload (maybe NULL)
-    * @param string|null $distinguishableName The distinguishable name from the payload (maybe NULL)
+     * @param string|null $name The name from the payload (maybe NULL)
+     * @param string|null $description The description from the payload (maybe NULL)
+     * @param string|null $distinguishableName The distinguishable name from the payload (maybe NULL)
      * @param Context $context
      */
     private function updateTranslationCustomFields(
@@ -546,7 +549,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
             $customFieldChanges = true;
         }
 
-        foreach (['direct', 'component', 'tokenization'] as $featureField) {
+        foreach (['direct', 'component', 'tokenization', self::MANUAL_CAPTURE] as $featureField) {
             if (!array_key_exists($featureField, $customFields) || $customFields[$featureField] === null) {
                 $customFields[$featureField] = false;
                 $customFieldChanges = true;
@@ -709,6 +712,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
                 'component' => in_array($handlerName, self::COMPONENT_SUPPORTED_HANDLERS, true),
                 'tokenization' => in_array($handlerName, self::TOKENIZATION_SUPPORTED_HANDLERS, true),
                 'direct' => in_array($handlerName, self::DIRECT_SUPPORTED_HANDLERS, true),
+                self::MANUAL_CAPTURE => ManualCaptureHelper::isSupportedHandlerName($handlerName),
                 default => false,
             };
         }
@@ -717,6 +721,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
         if (in_array($handlerName, self::COMPONENT_SUPPORTED_HANDLERS, true)
             || in_array($handlerName, self::TOKENIZATION_SUPPORTED_HANDLERS, true)
             || in_array($handlerName, self::DIRECT_SUPPORTED_HANDLERS, true)
+            || ManualCaptureHelper::isSupportedHandlerName($handlerName)
         ) {
             return true;
         }

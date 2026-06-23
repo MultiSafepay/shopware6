@@ -136,7 +136,7 @@ class NotificationController extends StorefrontController
             return $response->setContent('NG');
         }
 
-        $this->checkoutHelper->transitionPaymentState($result->getStatus(), $transactionId, $context);
+        $this->checkoutHelper->transitionPaymentStateFromTransaction($result, $transactionId, $context);
         $paymentDetails = $result->getPaymentDetails();
         $wallet = $paymentDetails->get('wallet');
         $wallet = is_string($wallet) ? trim($wallet) : null;
@@ -224,7 +224,7 @@ class NotificationController extends StorefrontController
         }
 
         $context = Context::createDefaultContext();
-        $this->checkoutHelper->transitionPaymentState($transaction->getStatus(), $transactionId, $context);
+        $this->checkoutHelper->transitionPaymentStateFromTransaction($transaction, $transactionId, $context);
         $paymentDetails = $transaction->getPaymentDetails();
         $wallet = $paymentDetails->get('wallet');
         $wallet = is_string($wallet) ? trim($wallet) : null;

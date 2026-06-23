@@ -34,6 +34,14 @@
     "multisafepay-direct": {
         "help_text": "Activeer de betaling binnen de afrekenpagina."
     },
+    "multisafepay-manual-capture": {
+        "help_text": "Autoriseer de betaling eerst en capture het volledige bedrag wanneer de levering van de bestelling als verzonden wordt gemarkeerd."
+    },
+    "multisafepay-order": {
+        "summary": {
+            "createdOn": "op"
+        }
+    },
     "multisafepay-refund": {
         "refund_options": "MultiSafepay terugbetalingsopties",
         "process_refund": "Terugbetaling verwerken",

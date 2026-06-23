@@ -43,6 +43,7 @@
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
         <service id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder">
             <argument type="service" id="MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ManualCaptureHelper"/>
         </service>
     </services>
 </container>
