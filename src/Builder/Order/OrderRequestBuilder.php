@@ -5,9 +5,11 @@
  */
 namespace MultiSafepay\Shopware6\Builder\Order;
 
+use MultiSafepay\Api\Transactions\CaptureRequest;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
 use MultiSafepay\Exception\InvalidArgumentException;
+use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
 use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -30,14 +32,22 @@ class OrderRequestBuilder
     private OrderRequestBuilderPool $orderRequestBuilderPool;
 
     /**
+     * @var ManualCaptureHelper
+     */
+    private ManualCaptureHelper $manualCaptureHelper;
+
+    /**
      * OrderRequestBuilder constructor
      *
      * @param OrderRequestBuilderPool $orderRequestBuilderPool
+     * @param ManualCaptureHelper|null $manualCaptureHelper
      */
     public function __construct(
-        OrderRequestBuilderPool $orderRequestBuilderPool
+        OrderRequestBuilderPool $orderRequestBuilderPool,
+        ?ManualCaptureHelper $manualCaptureHelper = null
     ) {
         $this->orderRequestBuilderPool = $orderRequestBuilderPool;
+        $this->manualCaptureHelper = $manualCaptureHelper ?? new ManualCaptureHelper();
     }
 
     /**
@@ -84,6 +94,14 @@ class OrderRequestBuilder
 
         if ($dataBag->getBoolean('tokenize')) {
             $orderRequest->addData(['recurring_model' => 'cardOnFile']);
+        }
+
+        $paymentMethodCustomFields = $salesChannelContext->getPaymentMethod()->getCustomFields() ?? [];
+        if ($this->manualCaptureHelper->isManualCaptureEnabledForGateway(
+            $gateway,
+            $paymentMethodCustomFields
+        )) {
+            $orderRequest->addData(['capture' => CaptureRequest::CAPTURE_MANUAL_TYPE]);
         }
 
         foreach ($this->orderRequestBuilderPool->getOrderRequestBuilders() as $orderRequestBuilder) {

@@ -205,6 +205,7 @@ class PaymentMethodsInstaller implements InstallerInterface
             $customFieldsData[PaymentMethodCustomFields::IS_MULTISAFEPAY] = true;
             $customFieldsData[PaymentMethodCustomFields::TEMPLATE] = $paymentMethod->getTemplate() ?? '';
             $customFieldsData['direct'] = $customFieldsData['component'] = $customFieldsData['tokenization'] = false;
+            $customFieldsData[PaymentMethodCustomFields::MANUAL_CAPTURE] = false;
         }
 
         // During upgrade, preserve existing custom field values for supported features
@@ -222,6 +223,11 @@ class PaymentMethodsInstaller implements InstallerInterface
                 }
                 if (isset($customFieldsData['tokenization']) && isset($existingCustomFields['tokenization'])) {
                     $customFieldsData['tokenization'] = $existingCustomFields['tokenization'];
+                }
+                if (isset($customFieldsData[PaymentMethodCustomFields::MANUAL_CAPTURE])
+                    && isset($existingCustomFields[PaymentMethodCustomFields::MANUAL_CAPTURE])
+                ) {
+                    $customFieldsData[PaymentMethodCustomFields::MANUAL_CAPTURE] = $existingCustomFields[PaymentMethodCustomFields::MANUAL_CAPTURE];
                 }
             }
         }

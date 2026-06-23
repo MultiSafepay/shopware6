@@ -8,6 +8,9 @@
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\CheckoutHelper"/>
+            <argument type="service" id="monolog.logger.multisafepay_general"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ManualCaptureHelper"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="MultiSafepay\Shopware6\Subscriber\DocumentCreatedEvent">

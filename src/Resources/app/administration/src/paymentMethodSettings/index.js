@@ -37,7 +37,10 @@ Component.override('sw-settings-payment-detail', {
             tokenizationSupported: false,
 
             // Define whether the component is supported
-            componentSupported: false
+            componentSupported: false,
+
+            // Define whether manual capture is supported
+            manualCaptureSupported: false
         }
     },
 
@@ -87,6 +90,15 @@ Component.override('sw-settings-payment-detail', {
             // Check if handler is in the static list and API confirms support
             const isInStaticList = TOKENIZATION_SUPPORTED_HANDLERS.some(supportedHandler => handler.includes(supportedHandler));
             return isInStaticList && this.tokenizationSupported;
+        },
+
+        // Check if current payment method supports manual capture
+        isManualCaptureAllowed() {
+            if (!this.paymentMethod || !this.paymentMethod.handlerIdentifier) {
+                return false;
+            }
+
+            return this.manualCaptureSupported;
         }
     },
 
@@ -123,6 +135,11 @@ Component.override('sw-settings-payment-detail', {
                 this.paymentMethod.customFields.direct = false;
             }
 
+            // Initialize the 'manual_capture' property of 'customFields' if it's not defined
+            if (!this.paymentMethod.customFields.manual_capture) {
+                this.paymentMethod.customFields.manual_capture = false;
+            }
+
             this.reloadEntityData();
         },
 
@@ -157,6 +174,7 @@ Component.override('sw-settings-payment-detail', {
             if (!this.paymentMethod || !this.paymentMethod.id) {
                 this.componentSupported = false;
                 this.tokenizationSupported = false;
+                this.manualCaptureSupported = false;
                 return;
             }
 
@@ -174,6 +192,14 @@ Component.override('sw-settings-payment-detail', {
                 this.componentSupported = ApiResponse.supported || false;
             }).catch(() => {
                 this.componentSupported = false;
+            });
+
+            // Call the 'isManualCaptureAllowed' method of 'multiSafepayApiService'
+            this.multiSafepayApiService.isManualCaptureAllowed(this.paymentMethod.id).then((ApiResponse) => {
+                // Set the 'manualCaptureSupported' data property based on the API response
+                this.manualCaptureSupported = ApiResponse.supported || false;
+            }).catch(() => {
+                this.manualCaptureSupported = false;
             });
         }
     }

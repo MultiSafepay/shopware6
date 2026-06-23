@@ -42,5 +42,8 @@
     },
     "multisafepay-direct": {
         "help_text": "Activeer de betaling binnen de afrekenpagina."
+    },
+    "multisafepay-manual-capture": {
+        "help_text": "Schakel handmatige capture in voor deze betaalmethode."
     }
 }

@@ -69,6 +69,7 @@ class OrderUtil
             ->addAssociation('stateMachineState')
             ->addAssociation('documents')
             ->addAssociation('transactions')
+            ->addAssociation('transactions.stateMachineState')
             ->addAssociation('transactions.paymentMethod')
             ->addAssociation('transactions.paymentMethod.plugin')
             ->addAssociation('salesChannel');

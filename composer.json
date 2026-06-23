@@ -63,7 +63,6 @@
         }
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
         "multisafepay/coding-standards": "dev-master",
         "phpunit/phpunit": "^10.5",
         "phpro/grumphp": "^2.5",

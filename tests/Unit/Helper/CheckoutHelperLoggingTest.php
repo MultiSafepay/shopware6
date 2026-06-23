@@ -5,6 +5,7 @@
  */
 namespace MultiSafepay\Shopware6\Tests\Unit\Helper;
 
+use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Shopware6\Handlers\AmericanExpressPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\ApplePayPaymentHandler;
 use MultiSafepay\Shopware6\Handlers\GooglePayPaymentHandler;
@@ -16,12 +17,14 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 /**
@@ -89,7 +92,7 @@ class CheckoutHelperLoggingTest extends TestCase
             ->with($orderTransactionId)
             ->willReturn($transaction);
 
-        $this->transactionRepository->expects($this->exactly(2))
+        $this->transactionRepository->expects($this->once())
             ->method('search')
             ->willReturn($transactionSearchResult);
 
@@ -138,6 +141,78 @@ class CheckoutHelperLoggingTest extends TestCase
     }
 
     /**
+     * Test manual capture MultiSafepay transactions map to Shopware payment transitions.
+     */
+    public function testManualCaptureTransactionsMapToCorrectTransitionActions(): void
+    {
+        $authorizedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 4995,
+            ],
+        ]);
+        $partiallyCapturedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 2900,
+            ],
+            'related_transactions' => [
+                [
+                    'amount' => 2095,
+                    'status' => 'completed',
+                ],
+            ],
+        ]);
+        $fullyCapturedTransaction = new TransactionResponse([
+            'status' => 'completed',
+            'payment_details' => [
+                'capture' => 'manual',
+                'capture_remain' => 0,
+            ],
+        ]);
+
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_AUTHORIZE,
+            $this->checkoutHelper->getCorrectTransitionActionFromTransaction($authorizedTransaction)
+        );
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_PAID_PARTIALLY,
+            $this->checkoutHelper->getCorrectTransitionActionFromTransaction($partiallyCapturedTransaction)
+        );
+        $this->assertSame(
+            StateMachineTransitionActions::ACTION_PAID,
+            $this->checkoutHelper->getCorrectTransitionActionFromTransaction($fullyCapturedTransaction)
+        );
+    }
+
+    /**
+     * Test Shopware transition actions resolve to the expected transaction state names.
+     */
+    public function testOrderTransactionStatesIncludeManualCaptureStates(): void
+    {
+        $this->assertSame(
+            OrderTransactionStates::STATE_AUTHORIZED,
+            $this->checkoutHelper->getOrderTransactionStatesNameFromAction(
+                StateMachineTransitionActions::ACTION_AUTHORIZE
+            )
+        );
+        $this->assertSame(
+            OrderTransactionStates::STATE_PARTIALLY_PAID,
+            $this->checkoutHelper->getOrderTransactionStatesNameFromAction(
+                StateMachineTransitionActions::ACTION_PAID_PARTIALLY
+            )
+        );
+        $this->assertSame(
+            OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+            $this->checkoutHelper->getOrderTransactionStatesNameFromAction(
+                StateMachineTransitionActions::ACTION_REFUND_PARTIALLY
+            )
+        );
+    }
+
+    /**
      * Test that IllegalTransitionException is logged when order is null
      */
     public function testTransitionPaymentStateLogsIllegalTransitionExceptionWithNullOrder(): void
@@ -163,7 +238,7 @@ class CheckoutHelperLoggingTest extends TestCase
             ->with($orderTransactionId)
             ->willReturn($transaction);
 
-        $this->transactionRepository->expects($this->exactly(2))
+        $this->transactionRepository->expects($this->once())
             ->method('search')
             ->willReturn($transactionSearchResult);
 
@@ -237,7 +312,7 @@ class CheckoutHelperLoggingTest extends TestCase
             ->with($orderTransactionId)
             ->willReturn($transaction);
 
-        $this->transactionRepository->expects($this->exactly(2))
+        $this->transactionRepository->expects($this->once())
             ->method('search')
             ->willReturn($transactionSearchResult);
 
@@ -330,6 +405,71 @@ class CheckoutHelperLoggingTest extends TestCase
             ->method('warning');
 
         $this->checkoutHelper->transitionPaymentState($status, $orderTransactionId, $context);
+    }
+
+    /**
+     * Test that refunded transactions are not regressed to paid by late notifications.
+     */
+    public function testTransitionPaymentStateDoesNotRegressRefundedPartiallyToPaid(): void
+    {
+        $status = 'completed';
+        $orderTransactionId = 'test-transaction-id';
+        $context = $this->createMock(Context::class);
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $stateMachineState = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineState->method('getTechnicalName')
+            ->willReturn(OrderTransactionStates::STATE_PARTIALLY_REFUNDED);
+        $transaction->method('getStateMachineState')->willReturn($stateMachineState);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')
+            ->with($orderTransactionId)
+            ->willReturn($transaction);
+
+        $this->transactionRepository->expects($this->once())
+            ->method('search')
+            ->willReturn($transactionSearchResult);
+        $this->stateMachineRepository->expects($this->never())
+            ->method('search');
+        $this->orderTransactionStateHandler->expects($this->never())
+            ->method('paid');
+        $this->orderTransactionStateHandler->expects($this->never())
+            ->method('reopen');
+
+        $this->checkoutHelper->transitionPaymentState($status, $orderTransactionId, $context);
+    }
+
+    /**
+     * Test that refunded transactions are not regressed to partially paid by manual capture notifications.
+     */
+    public function testTransitionPaymentStateDoesNotRegressRefundedPartiallyToPartiallyPaid(): void
+    {
+        $orderTransactionId = 'test-transaction-id';
+        $context = $this->createMock(Context::class);
+
+        $transaction = $this->createMock(OrderTransactionEntity::class);
+        $stateMachineState = $this->createMock(StateMachineStateEntity::class);
+        $stateMachineState->method('getTechnicalName')
+            ->willReturn(OrderTransactionStates::STATE_PARTIALLY_REFUNDED);
+        $transaction->method('getStateMachineState')->willReturn($stateMachineState);
+
+        $transactionSearchResult = $this->createMock(EntitySearchResult::class);
+        $transactionSearchResult->method('get')
+            ->with($orderTransactionId)
+            ->willReturn($transaction);
+
+        $this->transactionRepository->expects($this->once())
+            ->method('search')
+            ->willReturn($transactionSearchResult);
+        $this->stateMachineRepository->expects($this->never())
+            ->method('search');
+        $this->orderTransactionStateHandler->expects($this->never())
+            ->method('payPartially');
+        $this->orderTransactionStateHandler->expects($this->never())
+            ->method('reopen');
+
+        $this->checkoutHelper->transitionPaymentStateToPartiallyPaid($orderTransactionId, $context);
     }
 
     /**

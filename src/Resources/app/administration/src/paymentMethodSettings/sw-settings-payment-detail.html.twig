@@ -25,4 +25,12 @@
             label="Pay inside checkout"
             :help-text="$tc('multisafepay-direct.help_text')"
     ></sw-switch-field>
+    <sw-switch-field
+            v-if="isManualCaptureAllowed"
+            v-model:value="paymentMethod.customFields.manual_capture"
+            name="sw-field--paymentMethod-customFields.manual_capture"
+            class="sw-settings-payment-detail__field-custom-fields-manual-capture"
+            label="Manual capture"
+            :help-text="$tc('multisafepay-manual-capture.help_text')"
+    ></sw-switch-field>
 {% endblock %}

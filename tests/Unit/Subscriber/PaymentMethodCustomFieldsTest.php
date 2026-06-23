@@ -33,13 +33,13 @@ class PaymentMethodCustomFieldsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Reset static cache between tests to ensure test isolation
         $reflection = new ReflectionClass(PaymentMethodCustomFields::class);
-        
+
         $processedProp = $reflection->getProperty('processedTranslations');
         $processedProp->setValue(null, []);
-        
+
         $batchModeProp = $reflection->getProperty('batchModeEnabled');
         $batchModeProp->setValue(null, false);
     }
@@ -603,7 +603,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
 
         $event = $this->createMock(EntityWrittenEvent::class);
         $event->method('getWriteResults')->willReturn($writeResults);
-        
+
         // SystemSource indicates this is NOT an admin user operation
         // Only AdminApiSource (user edits from the admin panel) should be processed
         $systemContext = new Context(new SystemSource());
@@ -719,7 +719,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
                 // Missing fields should be added
                 $this->assertTrue($customFields['is_multisafepay']);
                 $this->assertStringContainsString('mybank', strtolower($customFields['template']));
-                
+
                 // ALL payment methods with custom fields get all 5 fields (new policy)
                 $this->assertArrayHasKey('component', $customFields, 'All custom field methods get component field');
                 $this->assertArrayHasKey('tokenization', $customFields, 'All custom field methods get tokenization field');
@@ -788,7 +788,8 @@ class PaymentMethodCustomFieldsTest extends TestCase
             'template' => '@MltisafeMultiSafepay/storefront/multisafepay/creditcard/creditcard.html.twig',
             'component' => true,
             'tokenization' => false,
-            'direct' => false  // Include all 5 fields
+            'direct' => false,
+            PaymentMethodCustomFields::MANUAL_CAPTURE => false
         ]);
         $translationSearchResult->method('first')->willReturn($translationEntity);
         $translationRepo->method('search')->willReturn($translationSearchResult);
@@ -801,7 +802,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
 
     /**
      * Scenario: Admin edits MyBank in German without name (NULL)
-     * Expected: Name should be copied from existing English translation (fallback)
+     * Expected: Name should be copied from the existing English translation (fallback)
      * This is the MAIN scenario that triggered this branch development
      */
     public function testAdminEditsMyBankInGermanWithoutNameCopiesFromFallback(): void
@@ -877,7 +878,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
 
                 // Custom fields should be complete
                 $this->assertTrue($translation['customFields']['is_multisafepay']);
-                
+
                 // ALL payment methods with custom fields get all 5 fields (new policy)
                 $this->assertArrayHasKey('direct', $translation['customFields'], 'All custom field methods get direct field');
                 $this->assertArrayHasKey('component', $translation['customFields'], 'All custom field methods get component field');
@@ -970,10 +971,10 @@ class PaymentMethodCustomFieldsTest extends TestCase
         // Simulate Shopware's internal recursion: event with 10 translations
         // 3 are MultiSafepay, 7 are not
         $writeResults = [];
-        
+
         for ($i = 0; $i < 10; $i++) {
             $paymentMethodId = Uuid::randomHex();
-            
+
             $writeResults[] = new EntityWriteResult(
                 $paymentMethodId,
                 [
@@ -1000,7 +1001,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
                 $callCount++;
 
                 $searchResult = $this->createMock(EntitySearchResult::class);
-                
+
                 // The first 3 are MultiSafepay
                 $paymentMethod = $this->createMock(PaymentMethodEntity::class);
                 if ($callCount <= 3) {
@@ -1020,7 +1021,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
         // The subscriber should iterate all 10 but only check MultiSafepay ones
         // We verify it calls search 10 times (checking all) but only processes MultiSafepay
         $subscriber->onPaymentMethodTranslationWritten($event);
-        
+
         // The fact that it completes without calling upsert is expected
         // because the mock doesn't have the translation repo data needed for updateTranslationCustomFields
         // What matters is that it only checks the 3 MultiSafepay methods, not all 10
@@ -1178,6 +1179,38 @@ class PaymentMethodCustomFieldsTest extends TestCase
     }
 
     /**
+     * Test that supportsCustomFields correctly identifies payment methods with manual capture support
+     *
+     * @return void
+     */
+    public function testSupportsCustomFieldsIdentifiesManualCaptureSupportedHandlers(): void
+    {
+        $this->assertTrue(
+            PaymentMethodCustomFields::supportsCustomFields(
+                'MultiSafepay\\Shopware6\\Handlers\\VisaPaymentHandler',
+                PaymentMethodCustomFields::MANUAL_CAPTURE
+            ),
+            'Visa should support manual capture'
+        );
+
+        $this->assertTrue(
+            PaymentMethodCustomFields::supportsCustomFields(
+                'MultiSafepay\\Shopware6\\Handlers\\CreditCardPaymentHandler',
+                PaymentMethodCustomFields::MANUAL_CAPTURE
+            ),
+            'CreditCard should support manual capture'
+        );
+
+        $this->assertFalse(
+            PaymentMethodCustomFields::supportsCustomFields(
+                'MultiSafepay\\Shopware6\\Handlers\\IdealPaymentHandler',
+                PaymentMethodCustomFields::MANUAL_CAPTURE
+            ),
+            'iDEAL should NOT support manual capture'
+        );
+    }
+
+    /**
      * Test that supportsCustomFields returns true for payment methods with templates (no specific feature)
      *
      * @return void
@@ -1280,7 +1313,7 @@ class PaymentMethodCustomFieldsTest extends TestCase
     public function testExtractHandlerNameWorksCorrectly(): void
     {
         // Test via supportsCustomFields which uses extractHandlerName internally
-        
+
         // Standard handler format
         $this->assertTrue(
             PaymentMethodCustomFields::supportsCustomFields(
@@ -1300,14 +1333,14 @@ class PaymentMethodCustomFieldsTest extends TestCase
         // Handler with a mixed case should still work (case-insensitive comparison)
         $reflection = new ReflectionClass(PaymentMethodCustomFields::class);
         $method = $reflection->getMethod('extractHandlerName');
-        
+
         // Test lowercase conversion
         $result = $method->invoke(null, 'MultiSafepay\\Shopware6\\Handlers\\CreditCardPaymentHandler');
         $this->assertEquals('creditcard', $result);
-        
+
         $result = $method->invoke(null, 'MultiSafepay\\Shopware6\\Handlers\\MyBankPaymentHandler');
         $this->assertEquals('mybank', $result);
-        
+
         $result = $method->invoke(null, 'MultiSafepay\\Shopware6\\Handlers\\VisaPaymentHandler');
         $this->assertEquals('visa', $result);
     }
@@ -1335,6 +1368,11 @@ class PaymentMethodCustomFieldsTest extends TestCase
         $this->assertFalse(
             PaymentMethodCustomFields::supportsCustomFields($creditCardHandler, 'direct'),
             'Should NOT support direct feature'
+        );
+
+        $this->assertTrue(
+            PaymentMethodCustomFields::supportsCustomFields($creditCardHandler, PaymentMethodCustomFields::MANUAL_CAPTURE),
+            'Should support manual capture feature'
         );
 
         // Invalid feature should return false

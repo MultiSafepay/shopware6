@@ -26,7 +26,7 @@ jobs:
         uses: shopware/setup-shopware@main
         with:
           # Shopware version to use
-          shopware-version: 'v6.6.10.9'
+          shopware-version: 'v6.6.10.18'
           # PHP version to use
           php-version: 8.2
           # Environment in which Shopware will run
@@ -53,6 +53,19 @@ jobs:
           composer require multisafepay/shopware6
           bin/console plugin:refresh
           bin/console plugin:install -c -a MltisafeMultiSafepay
+
+      # Shopware 6.6 still supports RSA JWT keys, but the test bootstrap can
+      # try to generate them again and fail when the setup action already
+      # created config/jwt/private.pem.
+      - name: Use app secret for JWT in tests
+        run: |
+          mkdir -p config/packages
+          printf '%s\n' \
+            'shopware:' \
+            '  api:' \
+            '    jwt_key:' \
+            '      use_app_secret: true' \
+            > config/packages/shopware.yaml
 
       # Run PHPUnit to execute the tests and generate a coverage report
       - name: Run Tests

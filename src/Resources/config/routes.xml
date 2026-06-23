@@ -11,6 +11,10 @@
         <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\TokenizationController::componentAllowed</default>
         <default key="_routeScope"><list><string>api</string></list></default>
     </route>
+    <route id="api.action.multisafepay.manual-capture-allowed" path="/api/multisafepay/manual-capture-allowed" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\ManualCaptureController::manualCaptureAllowed</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
     <route id="api.action.multisafepay.verify-api-key" path="/api/multisafepay/verify-api-key" methods="POST">
         <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\ApiController::verifyApiKey</default>
         <default key="_routeScope"><list><string>api</string></list></default>

@@ -42,5 +42,8 @@
     },
     "multisafepay-direct": {
         "help_text": "Enable the payment inside the checkout page"
+    },
+    "multisafepay-manual-capture": {
+        "help_text": "Enable manual capture for this payment method."
     }
 }

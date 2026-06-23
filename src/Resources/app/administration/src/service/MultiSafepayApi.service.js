@@ -118,4 +118,26 @@ export default class MultiSafepayApiService extends ApiService {
             return ApiService.handleResponse(response); // Handle the error response from the API
         });
     }
+
+    // Method to check if manual capture is allowed for a specific payment method
+    isManualCaptureAllowed(paymentMethodId)
+    {
+        // Define the API route for checking if manual capture is allowed
+        const apiRoute = `${this.getApiBasePath()}/manual-capture-allowed`;
+
+        // Make a POST request to the manual capture allowed API route
+        return this.httpClient.post(
+            apiRoute,
+            {
+                paymentMethodId: paymentMethodId // The ID of the payment method to check
+            },
+            {
+                headers: this.getBasicHeaders() // Get the basic headers for the request
+            }
+        ).then((response) => {
+            return ApiService.handleResponse(response); // Handle the response from the API
+        }).catch((response) => {
+            return ApiService.handleResponse(response); // Handle the error response from the API
+        });
+    }
 }

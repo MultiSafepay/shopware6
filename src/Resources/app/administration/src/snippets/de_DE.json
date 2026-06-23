@@ -42,5 +42,8 @@
     },
     "multisafepay-direct": {
         "help_text": "Die Zahlung auf der Checkout-Seite aktivieren."
+    },
+    "multisafepay-manual-capture": {
+        "help_text": "Manuelle Erfassung für diese Zahlungsmethode aktivieren."
     }
 }

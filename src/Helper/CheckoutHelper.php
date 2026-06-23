@@ -5,8 +5,11 @@
  */
 namespace MultiSafepay\Shopware6\Helper;
 
+use MultiSafepay\Api\Transactions\TransactionResponse;
+use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -65,6 +68,11 @@ class CheckoutHelper
     private PaymentUtil $paymentUtil;
 
     /**
+     * @var ManualCaptureHelper
+     */
+    private ManualCaptureHelper $manualCaptureHelper;
+
+    /**
      * CheckoutHelper constructor
      *
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
@@ -73,6 +81,7 @@ class CheckoutHelper
      * @param LoggerInterface $logger
      * @param EntityRepository $paymentMethodsRepository
      * @param PaymentUtil $paymentUtil
+     * @param ManualCaptureHelper|null $manualCaptureHelper
      */
     public function __construct(
         OrderTransactionStateHandler $orderTransactionStateHandler,
@@ -80,7 +89,8 @@ class CheckoutHelper
         EntityRepository $stateMachineRepository,
         LoggerInterface $logger,
         EntityRepository $paymentMethodsRepository,
-        PaymentUtil $paymentUtil
+        PaymentUtil $paymentUtil,
+        ?ManualCaptureHelper $manualCaptureHelper = null
     ) {
         $this->transactionRepository = $transactionRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
@@ -88,6 +98,7 @@ class CheckoutHelper
         $this->logger = $logger;
         $this->paymentMethodRepository = $paymentMethodsRepository;
         $this->paymentUtil = $paymentUtil;
+        $this->manualCaptureHelper = $manualCaptureHelper ?? new ManualCaptureHelper();
     }
 
     /**
@@ -103,14 +114,114 @@ class CheckoutHelper
     {
         $transitionAction = $this->getCorrectTransitionAction($status);
 
+        $this->transitionPaymentStateWithAction($transitionAction, $status, $orderTransactionId, $context);
+    }
+
+    /**
+     * Transition the payment state from a full MultiSafepay transaction response.
+     *
+     * @param TransactionResponse $transaction
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @throws IllegalTransitionException
+     * @throws InconsistentCriteriaIdsException
+     */
+    public function transitionPaymentStateFromTransaction(
+        TransactionResponse $transaction,
+        string $orderTransactionId,
+        Context $context
+    ): void {
+        $transitionAction = $this->getCorrectTransitionActionFromTransaction($transaction);
+
+        $this->transitionPaymentStateWithAction($transitionAction, $transaction->getStatus(), $orderTransactionId, $context);
+    }
+
+    /**
+     * Transition the payment state to paid after a confirmed manual capture.
+     *
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @throws IllegalTransitionException
+     * @throws InconsistentCriteriaIdsException
+     */
+    public function transitionPaymentStateToPaid(string $orderTransactionId, Context $context): void
+    {
+        $this->transitionPaymentStateWithAction(
+            StateMachineTransitionActions::ACTION_PAID,
+            'completed',
+            $orderTransactionId,
+            $context
+        );
+    }
+
+    /**
+     * Transition the payment state to partially paid after a confirmed partial manual capture.
+     *
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @throws IllegalTransitionException
+     * @throws InconsistentCriteriaIdsException
+     */
+    public function transitionPaymentStateToPartiallyPaid(string $orderTransactionId, Context $context): void
+    {
+        $this->transitionPaymentStateWithAction(
+            StateMachineTransitionActions::ACTION_PAID_PARTIALLY,
+            'completed',
+            $orderTransactionId,
+            $context
+        );
+    }
+
+    /**
+     * Transition the payment state with a resolved Shopware transition action.
+     *
+     * @param string|null $transitionAction
+     * @param string $status
+     * @param string $orderTransactionId
+     * @param Context $context
+     * @throws IllegalTransitionException
+     * @throws InconsistentCriteriaIdsException
+     */
+    private function transitionPaymentStateWithAction(
+        ?string $transitionAction,
+        string $status,
+        string $orderTransactionId,
+        Context $context
+    ): void {
         if (is_null($transitionAction)) {
+            return;
+        }
+
+        // Avoid regressing refunded transactions when late notifications report paid-like states.
+        $transaction = $this->getTransaction($orderTransactionId, $context);
+        $currentTechnicalState = $transaction->getStateMachineState()?->getTechnicalName();
+        $isRefundedState = in_array(
+            $currentTechnicalState,
+            [
+                OrderTransactionStates::STATE_REFUNDED,
+                OrderTransactionStates::STATE_PARTIALLY_REFUNDED
+            ],
+            true
+        );
+
+        if ($isRefundedState && in_array(
+            $transitionAction,
+            [
+                StateMachineTransitionActions::ACTION_PAID,
+                StateMachineTransitionActions::ACTION_PAID_PARTIALLY,
+                StateMachineTransitionActions::ACTION_CANCEL,
+                StateMachineTransitionActions::ACTION_REOPEN,
+                StateMachineTransitionActions::ACTION_AUTHORIZE
+            ],
+            true
+        )) {
             return;
         }
 
         /**
          * Check if the status is the same, so we don't need to update it
          */
-        if ($this->isSameStateId($transitionAction, $orderTransactionId, $context)) {
+        if ($this->isSameStateId($transitionAction, $orderTransactionId, $context, $transaction)) {
             return;
         }
 
@@ -119,8 +230,6 @@ class CheckoutHelper
         try {
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         } catch (IllegalTransitionException) {
-            $transaction = $this->getTransaction($orderTransactionId, $context);
-
             $stateMachineState = $transaction->getStateMachineState();
             $currentState = !is_null($stateMachineState) ? $stateMachineState->getName() : 'null';
 
@@ -139,6 +248,31 @@ class CheckoutHelper
             $this->orderTransactionStateHandler->reopen($orderTransactionId, $context);
             $this->orderTransactionStateHandler->$functionName($orderTransactionId, $context);
         }
+    }
+
+    /**
+     * Get the correct transition action from a full MultiSafepay transaction response.
+     *
+     * @param TransactionResponse $transaction
+     * @return string|null
+     */
+    public function getCorrectTransitionActionFromTransaction(TransactionResponse $transaction): ?string
+    {
+        if ($this->manualCaptureHelper->isManualCaptureTransaction($transaction)) {
+            if ($this->manualCaptureHelper->isFullyCaptured($transaction)) {
+                return StateMachineTransitionActions::ACTION_PAID;
+            }
+
+            if ($this->manualCaptureHelper->isPartiallyCaptured($transaction)) {
+                return StateMachineTransitionActions::ACTION_PAID_PARTIALLY;
+            }
+
+            if ($this->manualCaptureHelper->isAuthorized($transaction)) {
+                return StateMachineTransitionActions::ACTION_AUTHORIZE;
+            }
+        }
+
+        return $this->getCorrectTransitionAction($transaction->getStatus());
     }
 
     /**
@@ -171,6 +305,7 @@ class CheckoutHelper
     {
         $criteria = new Criteria([$transactionId]);
         $criteria->addAssociation('order');
+        $criteria->addAssociation('stateMachineState');
 
         /** @var OrderTransactionEntity $transaction */
         return $this->transactionRepository->search($criteria, $context)
@@ -183,12 +318,17 @@ class CheckoutHelper
      * @param string $actionName
      * @param string $orderTransactionId
      * @param Context $context
+     * @param OrderTransactionEntity|null $transaction
      * @return bool
      * @throws InconsistentCriteriaIdsException
      */
-    public function isSameStateId(string $actionName, string $orderTransactionId, Context $context): bool
-    {
-        $transaction = $this->getTransaction($orderTransactionId, $context);
+    public function isSameStateId(
+        string $actionName,
+        string $orderTransactionId,
+        Context $context,
+        ?OrderTransactionEntity $transaction = null
+    ): bool {
+        $transaction ??= $this->getTransaction($orderTransactionId, $context);
         $currentStateId = $transaction->getStateId();
 
         $actionStatusTransition = $this->getTransitionFromActionName($actionName, $context);
@@ -198,7 +338,7 @@ class CheckoutHelper
             return true;
         }
 
-        // Note: DO THIS CHECK TO PREVENT ERRORS ON 6.3
+        // Note: Perform this check to prevent errors on Shopware 6.3
         $getStateMachineState = $transaction->getStateMachineState();
         if (!is_null($getStateMachineState)) {
             return $getStateMachineState->getTechnicalName() === $actionStatusTransition->getTechnicalName();
@@ -214,14 +354,22 @@ class CheckoutHelper
      * @param Context $context
      * @return StateMachineStateEntity
      * @throws InconsistentCriteriaIdsException
+     * @throws RuntimeException
      */
     public function getTransitionFromActionName(string $actionName, Context $context): StateMachineStateEntity
     {
         $stateName = $this->getOrderTransactionStatesNameFromAction($actionName);
         $criteria = new Criteria();
+        $criteria->addAssociation('stateMachine');
         $criteria->addFilter(new EqualsFilter('technicalName', $stateName));
+        $criteria->addFilter(new EqualsFilter('stateMachine.technicalName', 'order_transaction.state'));
 
-        return $this->stateMachineRepository->search($criteria, $context)->first();
+        $state = $this->stateMachineRepository->search($criteria, $context)->first();
+        if (!$state instanceof StateMachineStateEntity) {
+            throw new RuntimeException(sprintf('Could not resolve state "%s" for order_transaction.state', $stateName));
+        }
+
+        return $state;
     }
 
     /**
@@ -233,8 +381,12 @@ class CheckoutHelper
     public function getOrderTransactionStatesNameFromAction(string $actionName): string
     {
         return match ($actionName) {
+            StateMachineTransitionActions::ACTION_AUTHORIZE => OrderTransactionStates::STATE_AUTHORIZED,
             StateMachineTransitionActions::ACTION_PAID => OrderTransactionStates::STATE_PAID,
+            StateMachineTransitionActions::ACTION_PAID_PARTIALLY => OrderTransactionStates::STATE_PARTIALLY_PAID,
             StateMachineTransitionActions::ACTION_CANCEL => OrderTransactionStates::STATE_CANCELLED,
+            StateMachineTransitionActions::ACTION_REFUND => OrderTransactionStates::STATE_REFUNDED,
+            StateMachineTransitionActions::ACTION_REFUND_PARTIALLY => OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
             default => OrderTransactionStates::STATE_OPEN,
         };
     }
@@ -525,6 +677,10 @@ class CheckoutHelper
      */
     private function convertToFunctionName(string $string): string
     {
+        if ($string === StateMachineTransitionActions::ACTION_PAID_PARTIALLY) {
+            return 'payPartially';
+        }
+
         $string = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 
         return lcfirst($string);
