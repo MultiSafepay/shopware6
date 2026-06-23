@@ -5,10 +5,15 @@
  */
 namespace MultiSafepay\Shopware6\Tests\Unit\Controllers\Administration;
 
+use MultiSafepay\Api\PaymentMethodManager;
+use MultiSafepay\Api\PaymentMethods\PaymentMethod;
+use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Controllers\Administration\ManualCaptureController;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
@@ -25,14 +30,20 @@ use Symfony\Component\HttpFoundation\Request;
 class ManualCaptureControllerTest extends TestCase
 {
     private EntityRepository|MockObject $paymentRepository;
+    private SdkFactory|MockObject $sdkFactory;
+    private LoggerInterface|MockObject $logger;
     private ManualCaptureController $controller;
 
     protected function setUp(): void
     {
         $this->paymentRepository = $this->createMock(EntityRepository::class);
+        $this->sdkFactory = $this->createMock(SdkFactory::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->controller = new ManualCaptureController(
             $this->paymentRepository,
-            new ManualCaptureHelper()
+            new ManualCaptureHelper($this->sdkFactory),
+            $this->sdkFactory,
+            $this->logger
         );
     }
 
@@ -73,6 +84,8 @@ class ManualCaptureControllerTest extends TestCase
 
     public function testManualCaptureAllowedReturnsTrueForSupportedHandler(): void
     {
+        $this->mockSdkForManualCaptureSupport(true);
+
         $response = $this->callControllerWithHandler(
             'payment-method-id',
             'MultiSafepay\\Shopware6\\Handlers\\VisaPaymentHandler'
@@ -82,6 +95,23 @@ class ManualCaptureControllerTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertTrue($payload['success']);
         $this->assertTrue($payload['supported']);
+        $this->assertTrue($payload['apiVerified']);
+    }
+
+    public function testManualCaptureAllowedReturnsFalseWhenApiDoesNotSupportManualCapture(): void
+    {
+        $this->mockSdkForManualCaptureSupport(false);
+
+        $response = $this->callControllerWithHandler(
+            'payment-method-id',
+            'MultiSafepay\\Shopware6\\Handlers\\VisaPaymentHandler'
+        );
+        $payload = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue($payload['success']);
+        $this->assertFalse($payload['supported']);
+        $this->assertTrue($payload['apiVerified']);
     }
 
     public function testManualCaptureAllowedReturnsFalseForUnsupportedHandler(): void
@@ -95,6 +125,42 @@ class ManualCaptureControllerTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertTrue($payload['success']);
         $this->assertFalse($payload['supported']);
+    }
+
+    public function testManualCaptureAllowedFallsBackOnApiException(): void
+    {
+        $this->sdkFactory->method('create')
+            ->willThrowException(new \Exception('API unavailable'));
+
+        $response = $this->callControllerWithHandler(
+            'payment-method-id',
+            'MultiSafepay\\Shopware6\\Handlers\\VisaPaymentHandler'
+        );
+        $payload = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue($payload['success']);
+        // Falls back to local handler check (which is true for Visa)
+        $this->assertTrue($payload['supported']);
+        $this->assertTrue($payload['apiError']);
+    }
+
+    private function mockSdkForManualCaptureSupport(bool $supported): void
+    {
+        $paymentMethodResponse = $this->createMock(PaymentMethod::class);
+        $paymentMethodResponse->method('supportsManualCapture')
+            ->willReturn($supported);
+
+        $paymentMethodManager = $this->createMock(PaymentMethodManager::class);
+        $paymentMethodManager->method('getByGatewayCode')
+            ->willReturn($paymentMethodResponse);
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getPaymentMethodManager')
+            ->willReturn($paymentMethodManager);
+
+        $this->sdkFactory->method('create')
+            ->willReturn($sdk);
     }
 
     private function callControllerWithHandler(string $paymentMethodId, string $handlerIdentifier)
@@ -120,13 +186,14 @@ class ManualCaptureControllerTest extends TestCase
     private function createPaymentMethodSearchResult(array $paymentMethods): EntitySearchResult
     {
         $context = Context::createDefaultContext();
+        $criteria = new Criteria();
 
         return new EntitySearchResult(
             PaymentMethodEntity::class,
             count($paymentMethods),
             new PaymentMethodCollection($paymentMethods),
             null,
-            new Criteria(),
+            $criteria,
             $context
         );
     }

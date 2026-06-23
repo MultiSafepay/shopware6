@@ -43,6 +43,8 @@
         <service id="MultiSafepay\Shopware6\Controllers\Administration\ManualCaptureController" public="true">
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ManualCaptureHelper"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="multisafepay.logger"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

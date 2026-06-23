@@ -5,7 +5,11 @@
  */
 namespace MultiSafepay\Shopware6\Controllers\Administration;
 
+use Exception;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
+use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -33,17 +37,33 @@ class ManualCaptureController extends AbstractController
     private ManualCaptureHelper $manualCaptureHelper;
 
     /**
+     * @var SdkFactory
+     */
+    private SdkFactory $sdkFactory;
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * ManualCaptureController constructor.
      *
      * @param EntityRepository $paymentMethodsRepository
      * @param ManualCaptureHelper $manualCaptureHelper
+     * @param SdkFactory $sdkFactory
+     * @param LoggerInterface $logger
      */
     public function __construct(
         EntityRepository $paymentMethodsRepository,
-        ManualCaptureHelper $manualCaptureHelper
+        ManualCaptureHelper $manualCaptureHelper,
+        SdkFactory $sdkFactory,
+        LoggerInterface $logger
     ) {
         $this->paymentRepository = $paymentMethodsRepository;
         $this->manualCaptureHelper = $manualCaptureHelper;
+        $this->sdkFactory = $sdkFactory;
+        $this->logger = $logger;
     }
 
     /**
@@ -92,10 +112,65 @@ class ManualCaptureController extends AbstractController
 
         $handlerIdentifier = $paymentMethod->getHandlerIdentifier();
 
-        return new JsonResponse([
-            'success' => true,
-            'supported' => is_string($handlerIdentifier)
-                && $this->manualCaptureHelper->isSupportedHandler($handlerIdentifier)
-        ]);
+        // First, check if handler is supported by local constant verification
+        if (!is_string($handlerIdentifier) || !$this->manualCaptureHelper->isSupportedHandler($handlerIdentifier)) {
+            return new JsonResponse([
+                'success' => true,
+                'supported' => false
+            ]);
+        }
+
+        // If supported by handler, verify with MultiSafepay API
+        return $this->verifyManualCaptureWithApi($handlerIdentifier, $paymentMethod);
+    }
+
+    /**
+     * Verify manual capture support via MultiSafepay API.
+     *
+     * @param string $handlerIdentifier
+     * @param PaymentMethodEntity $paymentMethod
+     * @return JsonResponse
+     */
+    private function verifyManualCaptureWithApi(string $handlerIdentifier, PaymentMethodEntity $paymentMethod): JsonResponse
+    {
+        try {
+            // Get gateway code from handler identifier
+            $gatewayCode = $this->manualCaptureHelper->getGatewayCodeFromHandler($handlerIdentifier);
+
+            if ($gatewayCode === null || $gatewayCode === '') {
+                $this->logger->warning('ManualCaptureController: Could not determine gateway code', [
+                    'handlerIdentifier' => $handlerIdentifier,
+                    'paymentMethodId' => $paymentMethod->getId()
+                ]);
+
+                // Fall back to handler verification if we can't get gateway code
+                return new JsonResponse([
+                    'success' => true,
+                    'supported' => $this->manualCaptureHelper->isSupportedHandler($handlerIdentifier)
+                ]);
+            }
+
+            // Verify with API - pass null to use global SDK configuration
+            $isSupported = $this->manualCaptureHelper->isManualCaptureEnabledByApi($gatewayCode, null);
+
+            return new JsonResponse([
+                'success' => true,
+                'supported' => $isSupported,
+                'apiVerified' => true
+            ]);
+        } catch (Exception $exception) {
+            $this->logger->error('ManualCaptureController: Error verifying manual capture via API', [
+                'handlerIdentifier' => $handlerIdentifier,
+                'message' => $exception->getMessage(),
+                'exceptionClass' => get_class($exception)
+            ]);
+
+            // Fall back to handler verification if API check fails
+            return new JsonResponse([
+                'success' => true,
+                'supported' => $this->manualCaptureHelper->isSupportedHandler($handlerIdentifier),
+                'apiError' => true
+            ]);
+        }
     }
 }
