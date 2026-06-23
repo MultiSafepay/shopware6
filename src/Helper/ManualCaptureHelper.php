@@ -5,8 +5,13 @@
  */
 namespace MultiSafepay\Shopware6\Helper;
 
+use Exception;
 use MultiSafepay\Api\Transactions\CaptureRequest;
 use MultiSafepay\Api\Transactions\TransactionResponse;
+use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\PaymentUtil;
+use Psr\Http\Client\ClientExceptionInterface;
 
 /**
  * Class ManualCaptureHelper
@@ -36,6 +41,22 @@ class ManualCaptureHelper
         'MASTERCARD',
         'VISA',
     ];
+
+    /**
+     * @var SdkFactory|null
+     */
+    private ?SdkFactory $sdkFactory = null;
+
+    /**
+     * ManualCaptureHelper constructor
+     *
+     * @param SdkFactory|null $sdkFactory
+     */
+    public function __construct(
+        ?SdkFactory $sdkFactory = null
+    ) {
+        $this->sdkFactory = $sdkFactory;
+    }
 
     /**
      * Check if manual capture should be added to a new MultiSafepay order request.
@@ -105,6 +126,69 @@ class ManualCaptureHelper
 
         return is_string($handlerName) && $handlerName !== '' ? strtolower($handlerName) : null;
     }
+
+    /**
+     * Verify if a payment method supports manual capture via MultiSafepay API.
+     *
+     * This method calls the MultiSafepay API to fetch the payment method by gateway code
+     * and checks if the specified method supports the manual capture feature.
+     *
+     * Exceptions are not caught here; callers should handle them for fallback logic.
+     *
+     * @param string $gatewayCode
+     * @param string|null $salesChannelId
+     * @return bool
+     * @throws ApiException
+     * @throws ClientExceptionInterface
+     * @throws Exception
+     */
+    public function isManualCaptureEnabledByApi(string $gatewayCode, ?string $salesChannelId = null): bool
+    {
+        // Only proceed if we have the necessary dependencies
+        if ($this->sdkFactory === null) {
+            return false;
+        }
+
+        // Fetch the payment method from the MultiSafepay API by gateway code
+        $sdk = $this->sdkFactory->create($salesChannelId);
+        $paymentMethod = $sdk->getPaymentMethodManager()->getByGatewayCode($gatewayCode);
+
+        // Check if the payment method supports manual capture
+        return $paymentMethod->supportsManualCapture();
+    }
+
+    /**
+     * Get gateway code from a payment handler identifier.
+     *
+     * This method attempts to extract the gateway code from the handler identifier
+     * by matching it against known payment method classes.
+     *
+     * @param string $handlerIdentifier
+     * @return string|null
+     */
+    public function getGatewayCodeFromHandler(string $handlerIdentifier): ?string
+    {
+        // Try to find a matching payment method by handler identifier
+        foreach (PaymentUtil::GATEWAYS as $paymentMethodClass) {
+            if (!class_exists($paymentMethodClass)) {
+                continue;
+            }
+
+            try {
+                $paymentMethod = new $paymentMethodClass();
+
+                // Check if this payment method has the matching handler
+                if ($paymentMethod->getPaymentHandler() === $handlerIdentifier) {
+                    return $paymentMethod->getGatewayCode();
+                }
+            } catch (Exception) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
 
     /**
      * Check if the MultiSafepay transaction was created for manual capture.
