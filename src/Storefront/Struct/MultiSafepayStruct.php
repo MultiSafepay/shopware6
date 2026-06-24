@@ -111,4 +111,18 @@ class MultiSafepayStruct extends Struct
      * @var string
      */
     public string $current_payment_method_id;
+
+    /**
+     * Whether direct mode is enabled
+     *
+     * @var bool
+     */
+    public bool $direct = false;
+
+    /**
+     * Whether redirect mode is enabled
+     *
+     * @var bool
+     */
+    public bool $redirect = false;
 }

@@ -65,7 +65,7 @@ class MediaNameUtilTest extends TestCase
     /**
      * @return array
      */
-    public function restrictedCharactersProvider(): array
+    public static function restrictedCharactersProvider(): array
     {
         return [
             ['\\'],

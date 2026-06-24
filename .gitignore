@@ -9,3 +9,4 @@
 /node_modules/
 /var/
 /vendor/
+.run/

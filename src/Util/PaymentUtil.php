@@ -76,6 +76,7 @@ use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 use MultiSafepay\Shopware6\PaymentMethods\Zinia;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 
 /**
@@ -197,6 +198,20 @@ class PaymentUtil
     public function isMultisafepayPaymentMethod(string $orderId, Context $context): bool
     {
         $order = $this->orderUtil->getOrder($orderId, $context);
+
+        return $this->isMultisafepayPaymentMethodForOrder($order);
+    }
+
+    /**
+     * Check if the payment method of a given order is a MultiSafepay payment method.
+     *
+     * Use this variant when the order entity is already loaded to avoid a duplicate DAL query.
+     *
+     * @param OrderEntity $order
+     * @return bool
+     */
+    public function isMultisafepayPaymentMethodForOrder(OrderEntity $order): bool
+    {
         $getTransactions = $order->getTransactions();
 
         if (is_null($getTransactions)) {
