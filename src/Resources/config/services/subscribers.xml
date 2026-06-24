@@ -33,6 +33,14 @@
             <argument type="service" id="multisafepay.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>
+        <service id="MultiSafepay\Shopware6\Subscriber\OrderStateChangeEvent">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\PaymentUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Helper\ManualCaptureHelper"/>
+            <argument type="service" id="monolog.logger.multisafepay_general"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
         <service id="MultiSafepay\Shopware6\Subscriber\PaymentMethodCustomFields">
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="payment_method_translation.repository"/>
