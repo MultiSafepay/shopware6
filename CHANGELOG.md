@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.6.0] - 2026-06-24
+### Added
+- DAVAMS-1030: Add manual capture support
+- DAVAMS-984: Add card names info to Apple Pay and Google Pay payment methods orders
+
+### Changed
+- PLGSHPS6-415: Rebranding: iDEAL - Wero and in3
+
 ## [3.5.0] - 2025-12-10
 ### Added
 + PLGSHPS6-389: Add log exceptions on the payment and refund process
