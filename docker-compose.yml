@@ -11,6 +11,8 @@ services:
       - "9999:9999"
     volumes:
       - "./:/var/www/html/custom/plugins/MltisafeMultiSafepay/"
+      - "shopware66_mysql:/var/lib/mysql"
+      - "shopware66_redis:/data"
     environment:
       - XDEBUG_ENABLED=1
       - APP_ENV=dev
@@ -24,3 +26,7 @@ services:
     entrypoint: [ "/bin/sh", "-c" , "/src/expose token ${EXPOSE_TOKEN} && sed -i -E \"s/'dns'\\s?=>\\s?'.*'/'dns' => true/g\" /root/.expose/config.php  && /src/expose share app --server-host=${EXPOSE_HOST} --subdomain=${APP_SUBDOMAIN}" ]
     ports:
       - "4040:4040"
+
+volumes:
+  shopware66_mysql:
+  shopware66_redis:
