@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.0] - 2026-06-24
+### Added
+- DAVAMS-1030: Add manual capture support
+- PLGSHPS6-216: Add support to process partial or full refunds on BNPL payment methods
+- DAVAMS-984: Add card names info to Apple Pay and Google Pay payment methods
+
+### Changed
+- DAVAMS-954: Rebranding: iDEAL - Wero and in3
+
 ## [4.2.0] - 2025-12-10
 ### Added
 - PLGSHPS6-389: Add log exceptions on the payment and refund process
