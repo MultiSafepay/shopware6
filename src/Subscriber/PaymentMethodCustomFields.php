@@ -243,11 +243,13 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
                     : '';
             }
 
-            // Get name and description from the payload (could be NULL if the user didn't fill them)
-            $name = $payload['name'] ?? null;
-            $description = $payload['description'] ?? null;
+            $hasName = array_key_exists('name', $payload);
+            $hasDescription = array_key_exists('description', $payload);
+            $hasDistinguishableName = array_key_exists('distinguishableName', $payload);
 
-            $distinguishableName = $payload['distinguishableName'] ?? null;
+            $name = $hasName ? $payload['name'] : null;
+            $description = $hasDescription ? $payload['description'] : null;
+            $distinguishableName = $hasDistinguishableName ? $payload['distinguishableName'] : null;
 
             $this->updateTranslationCustomFields(
                 $paymentMethodId,
@@ -257,6 +259,9 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
                 $name,
                 $description,
                 $distinguishableName,
+                $hasName,
+                $hasDescription,
+                $hasDistinguishableName,
                 $context
             );
         }
@@ -499,11 +504,17 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
      *
      * @param string $paymentMethodId
      * @param string $languageId
-     * @param array $customFields Existing custom fields from the translation
+     * @param array $customFields Custom fields from the write payload (may be partial).
+     *                            Existing stored values are loaded internally via
+     *                            getTranslationCustomFields() and merged with these,
+     *                            with payload values taking precedence.
      * @param string $template The template identifier for this payment method
-     * @param string|null $name The name from the payload (maybe NULL)
-     * @param string|null $description The description from the payload (maybe NULL)
-     * @param string|null $distinguishableName The distinguishable name from the payload (maybe NULL)
+     * @param string|null $name The name from the payload
+     * @param string|null $description The description from the payload
+     * @param string|null $distinguishableName The distinguishable name from the payload
+     * @param bool $syncName Whether the payload explicitly included the name field
+     * @param bool $syncDescription Whether the payload explicitly included the description field
+     * @param bool $syncDistinguishableName Whether the payload explicitly included the distinguishable name field
      * @param Context $context
      */
     private function updateTranslationCustomFields(
@@ -514,6 +525,9 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
         ?string $name,
         ?string $description,
         ?string $distinguishableName,
+        bool $syncName,
+        bool $syncDescription,
+        bool $syncDistinguishableName,
         Context $context
     ): void {
         // Get the payment method to determine which custom fields it supports
@@ -556,34 +570,15 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
             }
         }
 
-        // If name or description are NULL, we need to fetch and update them
-        $needsNameUpdate = ($name === null || $description === null || $distinguishableName === null);
-
-        // Only proceed if we need to update custom fields OR name/description
-        if (!$customFieldChanges && !$needsNameUpdate) {
+        if (!$customFieldChanges) {
             return;
         }
-
-        // If name or description are NULL, fetch from an existing translation as fallback
-        if ($name === null || $description === null || $distinguishableName === null) {
-            $fallbackCriteria = new Criteria();
-            $fallbackCriteria->addFilter(new EqualsFilter('paymentMethodId', $paymentMethodId));
-            // Exclude the current translation from the fallback search
-            $fallbackCriteria->addFilter(new NotFilter(MultiFilter::CONNECTION_AND, [
-                new EqualsFilter('languageId', $languageId)
-            ]));
-            $fallbackCriteria->setLimit(1);
-            $fallbackTranslation = $this->translationRepository->search($fallbackCriteria, $context)->first();
-
-            if ($fallbackTranslation) {
-                $name = $name ?? $fallbackTranslation->getName();
-                $description = $description ?? $fallbackTranslation->getDescription();
-                $fallbackDistinguishable = $fallbackTranslation->getDistinguishableName();
-                if ($distinguishableName === null) {
-                    $distinguishableName = $fallbackDistinguishable ?? $name;
-                }
-            }
-        }
+        
+        // Partial admin updates may omit translated fields (or include them with null values).
+        // Only sync them when they were explicitly sent in the payload with a non-null value.
+        $shouldSyncName = $syncName && $name !== null;
+        $shouldSyncDescription = $syncDescription && $description !== null;
+        $shouldSyncDistinguishableName = $syncDistinguishableName && $distinguishableName !== null;
 
         // Build the upsert data
         $upsertData = [
@@ -595,14 +590,14 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
             $upsertData['customFields'] = $customFields;
         }
 
-        // Include name/description only if we have values
-        if ($name !== null) {
+        // Only replay fields that were explicitly part of the original payload.
+        if ($shouldSyncName) {
             $upsertData['name'] = $name;
         }
-        if ($description !== null) {
+        if ($shouldSyncDescription) {
             $upsertData['description'] = $description;
         }
-        if ($distinguishableName !== null) {
+        if ($shouldSyncDistinguishableName) {
             $upsertData['distinguishableName'] = $distinguishableName;
         }
 

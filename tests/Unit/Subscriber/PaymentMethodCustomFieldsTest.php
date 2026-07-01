@@ -801,11 +801,10 @@ class PaymentMethodCustomFieldsTest extends TestCase
     }
 
     /**
-     * Scenario: Admin edits MyBank in German without name (NULL)
-     * Expected: Name should be copied from the existing English translation (fallback)
-     * This is the MAIN scenario that triggered this branch development
+     * Scenario: Admin updates only custom fields for a translated payment method
+     * Expected: Missing custom fields are added, but omitted localized fields are not backfilled
      */
-    public function testAdminEditsMyBankInGermanWithoutNameCopiesFromFallback(): void
+    public function testAdminPartialTranslationUpdateDoesNotBackfillOmittedLocalizedFields(): void
     {
         $paymentMethodRepo = $this->createMock(EntityRepository::class);
         $translationRepo = $this->createMock(EntityRepository::class);
@@ -815,8 +814,8 @@ class PaymentMethodCustomFieldsTest extends TestCase
         $paymentMethodId = Uuid::randomHex();
         $germanLanguageId = Uuid::randomHex();
 
-        // Admin edits MyBank in the German admin panel
-        // Payload has customFields, but the name is NULL (user didn't fill it)
+        // Admin edits MyBank in the German admin panel with a partial payload.
+        // The localized text fields are omitted entirely from the update.
         $writeResult = new EntityWriteResult(
             $paymentMethodId,
             [
@@ -827,9 +826,6 @@ class PaymentMethodCustomFieldsTest extends TestCase
                     'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig',
                     // Missing: direct (will trigger update)
                 ],
-                'name' => null, // User didn't fill the name
-                'description' => null,
-                'distinguishableName' => null
             ],
             'payment_method_translation',
             EntityWriteResult::OPERATION_UPDATE
@@ -848,33 +844,28 @@ class PaymentMethodCustomFieldsTest extends TestCase
         $paymentSearchResult->method('first')->willReturn($paymentMethod);
         $paymentMethodRepo->method('search')->willReturn($paymentSearchResult);
 
-        // Mock existing translation custom fields and fallback translation
+        // Mock existing translation with incomplete custom fields.
         $existingTranslation = $this->createMock(PaymentMethodTranslationEntity::class);
         $existingTranslation->method('getCustomFields')->willReturn([
             'is_multisafepay' => true,
             'template' => '@MltisafeMultiSafepay/storefront/multisafepay/mybank/issuers.html.twig'
         ]);
 
-        $fallbackTranslation = $this->createMock(PaymentMethodTranslationEntity::class);
-        $fallbackTranslation->method('getName')->willReturn('MyBank - Bonifico Immediato');
-        $fallbackTranslation->method('getDescription')->willReturn('Online banking in Italy');
-        $fallbackTranslation->method('getDistinguishableName')->willReturn('MyBank - Bonifico Immediato');
-
         $translationSearchResult = $this->createMock(EntitySearchResult::class);
-        $translationSearchResult->method('first')
-            ->willReturnOnConsecutiveCalls($existingTranslation, $fallbackTranslation);
-        $translationRepo->method('search')->willReturn($translationSearchResult);
+        $translationSearchResult->method('first')->willReturn($existingTranslation);
+        $translationRepo->expects($this->once())
+            ->method('search')
+            ->willReturn($translationSearchResult);
 
-        // EXPECT: Upsert called with name copied from English
+        // EXPECT: Upsert only touches custom fields and leaves localized text untouched.
         $translationRepo->expects($this->once())
             ->method('upsert')
             ->with($this->callback(function ($data) {
                 $translation = $data[0];
 
-                // Name should be copied from English fallback
-                $this->assertEquals('MyBank - Bonifico Immediato', $translation['name']);
-                $this->assertEquals('Online banking in Italy', $translation['description']);
-                $this->assertEquals('MyBank - Bonifico Immediato', $translation['distinguishableName']);
+                $this->assertArrayNotHasKey('name', $translation);
+                $this->assertArrayNotHasKey('description', $translation);
+                $this->assertArrayNotHasKey('distinguishableName', $translation);
 
                 // Custom fields should be complete
                 $this->assertTrue($translation['customFields']['is_multisafepay']);
@@ -883,9 +874,18 @@ class PaymentMethodCustomFieldsTest extends TestCase
                 $this->assertArrayHasKey('direct', $translation['customFields'], 'All custom field methods get direct field');
                 $this->assertArrayHasKey('component', $translation['customFields'], 'All custom field methods get component field');
                 $this->assertArrayHasKey('tokenization', $translation['customFields'], 'All custom field methods get tokenization field');
+                $this->assertArrayHasKey(
+                    PaymentMethodCustomFields::MANUAL_CAPTURE,
+                    $translation['customFields'],
+                    'All custom field methods get manual_capture field'
+                );
                 $this->assertFalse($translation['customFields']['direct'], 'direct should default to false');
                 $this->assertFalse($translation['customFields']['component'], 'component should default to false');
                 $this->assertFalse($translation['customFields']['tokenization'], 'tokenization should default to false');
+                $this->assertFalse(
+                    $translation['customFields'][PaymentMethodCustomFields::MANUAL_CAPTURE],
+                    'manual_capture should default to false'
+                );
 
                 return true;
             }));
