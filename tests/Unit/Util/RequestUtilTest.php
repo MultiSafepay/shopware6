@@ -7,6 +7,8 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Class RequestUtilTest
@@ -15,31 +17,36 @@ use PHPUnit\Framework\TestCase;
  */
 class RequestUtilTest extends TestCase
 {
-    private RequestUtil $requestUtil;
-
     /**
-     * Set up the test case
+     * Test that getGlobals returns the current request from the stack
      *
      * @return void
      */
-    protected function setUp(): void
+    public function testGetGlobalsReturnsCurrentRequest(): void
     {
-        $this->requestUtil = new RequestUtil();
+        $request = new Request(['foo' => 'bar'], ['baz' => 'qux']);
+
+        $requestStack = new RequestStack();
+        $requestStack->push($request);
+
+        $requestUtil = new RequestUtil($requestStack);
+
+        self::assertSame($request, $requestUtil->getGlobals());
     }
 
     /**
-     * Test the getGlobals method
+     * Test that getGlobals falls back to an empty request when the stack is empty
      *
      * @return void
      */
-    public function testGetGlobals(): void
+    public function testGetGlobalsReturnsEmptyRequestWhenStackIsEmpty(): void
     {
-        $result = $this->requestUtil->getGlobals();
+        $requestUtil = new RequestUtil(new RequestStack());
 
-        self::assertEquals($_GET, $result->query->all());
-        self::assertEquals($_POST, $result->request->all());
-        self::assertEquals($_COOKIE, $result->cookies->all());
-        self::assertEquals($_FILES, $result->files->all());
-        self::assertEquals($_SERVER, $result->server->all());
+        $result = $requestUtil->getGlobals();
+
+        self::assertInstanceOf(Request::class, $result);
+        self::assertSame([], $result->query->all());
+        self::assertSame([], $result->request->all());
     }
 }

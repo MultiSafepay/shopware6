@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\CartItem;
 use MultiSafepay\ValueObject\Money;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -104,6 +105,11 @@ class PaymentHandler extends AbstractPaymentHandler
     private LoggerInterface $logger;
 
     /**
+     * @var RequestUtil
+     */
+    private RequestUtil $requestUtil;
+
+    /**
      * PaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
@@ -117,6 +123,7 @@ class PaymentHandler extends AbstractPaymentHandler
      * @param EntityRepository $refundRepository
      * @param OrderTransactionCaptureRefundStateHandler $refundStateHandler
      * @param LoggerInterface $logger
+     * @param RequestUtil $requestUtil
      */
     public function __construct(
         SdkFactory $sdkFactory,
@@ -129,7 +136,8 @@ class PaymentHandler extends AbstractPaymentHandler
         EntityRepository $orderRepository,
         EntityRepository $refundRepository,
         OrderTransactionCaptureRefundStateHandler $refundStateHandler,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RequestUtil $requestUtil
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
@@ -142,6 +150,7 @@ class PaymentHandler extends AbstractPaymentHandler
         $this->refundRepository = $refundRepository;
         $this->refundStateHandler = $refundStateHandler;
         $this->logger = $logger;
+        $this->requestUtil = $requestUtil;
     }
 
     /**
@@ -785,7 +794,7 @@ class PaymentHandler extends AbstractPaymentHandler
 
     /**
      * On the edit order page, we don't get a correct DataBag with the issuer data.
-     * Therefore, we need to get this data from the $_POST/$_GET.
+     * Therefore, we need to get this data from the current request.
      *
      * @param string $name
      * @param RequestDataBag $dataBag
@@ -797,7 +806,7 @@ class PaymentHandler extends AbstractPaymentHandler
             return $dataBag->get($name);
         }
 
-        $request = (new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER))->request;
+        $request = $this->requestUtil->getGlobals()->request;
         return $request->get($name);
     }
 }

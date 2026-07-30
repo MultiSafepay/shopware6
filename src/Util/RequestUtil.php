@@ -6,16 +6,33 @@
 namespace MultiSafepay\Shopware6\Util;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class RequestUtil
 {
     /**
-     * Retrieve super globals (replaces Request::createFromGlobals)
+     * @var RequestStack
+     */
+    private RequestStack $requestStack;
+
+    /**
+     * RequestUtil constructor
+     *
+     * @param RequestStack $requestStack
+     */
+    public function __construct(RequestStack $requestStack)
+    {
+        $this->requestStack = $requestStack;
+    }
+
+    /**
+     * Retrieve the current framework request, falling back to the PHP
+     * superglobals when no request is present on the stack (e.g. CLI/worker)
      *
      * @return Request
      */
     public function getGlobals(): Request
     {
-        return new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER);
+        return $this->requestStack->getCurrentRequest() ?? Request::createFromGlobals();
     }
 }

@@ -19,6 +19,7 @@ use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\PaymentHandler;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -122,6 +123,11 @@ class PaymentHandlerTest extends TestCase
     private LoggerInterface|MockObject $logger;
 
     /**
+     * @var RequestUtil|MockObject
+     */
+    private RequestUtil|MockObject $requestUtil;
+
+    /**
      * @var Context|MockObject
      */
     private Context|MockObject $context;
@@ -185,6 +191,8 @@ class PaymentHandlerTest extends TestCase
         $this->refundRepository = $this->createMock(EntityRepository::class);
         $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->requestUtil = $this->createMock(RequestUtil::class);
+        $this->requestUtil->method('getGlobals')->willReturn(new Request());
         $this->context = $this->createMock(Context::class);
         $this->paymentTransaction = $this->createMock(PaymentTransactionStruct::class);
         $this->orderTransaction = $this->createMock(OrderTransactionEntity::class);
@@ -207,7 +215,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         // Configure order and orderTransaction
@@ -286,7 +295,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -549,21 +559,35 @@ class PaymentHandlerTest extends TestCase
         // Create an empty data bag to force fallback to request
         $dataBag = new RequestDataBag();
 
-        // Set up the $_POST superglobal to test the fallback
-        $_POST['test_key'] = 'post_value';
+        // Set up a RequestUtil returning a request holding the fallback value
+        $requestUtil = $this->createMock(RequestUtil::class);
+        $requestUtil->method('getGlobals')
+            ->willReturn(new Request([], ['test_key' => 'post_value']));
+
+        $paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $this->orderTransactionRepository,
+            $this->orderRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger,
+            $requestUtil
+        );
 
         // Get the protected method via reflection
         $reflectionClass = new ReflectionClass(PaymentHandler::class);
         $method = $reflectionClass->getMethod('getDataBagItem');
 
         // Call the protected method with our parameters
-        $result = $method->invoke($this->paymentHandler, 'test_key', $dataBag);
+        $result = $method->invoke($paymentHandler, 'test_key', $dataBag);
 
         // Verify the result
         $this->assertEquals('post_value', $result);
-
-        // Clean up
-        unset($_POST['test_key']);
     }
 
     /**
@@ -810,7 +834,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -902,7 +927,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers', 'requiresGender'])
             ->getMock();
@@ -1111,7 +1137,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1243,7 +1270,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1282,7 +1310,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1326,7 +1355,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1370,7 +1400,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1410,7 +1441,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -1455,7 +1487,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -1624,7 +1657,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         // Access protected method using reflection
@@ -1694,7 +1728,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         // Access protected method
@@ -1738,7 +1773,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         // Access protected method
@@ -1834,7 +1870,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'requiresGender', 'getGender', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -1893,7 +1930,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         // Create a request with parameters
@@ -1970,7 +2008,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -2036,7 +2075,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod'])
             ->getMock();
@@ -2105,7 +2145,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();
@@ -2501,7 +2542,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         $this->expectException(PaymentException::class);
@@ -2560,7 +2602,8 @@ class PaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getGatewayFromPaymentMethod', 'getTypeFromPaymentMethod', 'getIssuers'])
             ->getMock();
@@ -2604,7 +2647,8 @@ class PaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
 
         $reflectionClass = new ReflectionClass(PaymentHandler::class);

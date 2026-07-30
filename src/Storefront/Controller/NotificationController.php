@@ -13,7 +13,6 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\OrderUtil;
-use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\Util\Notification;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
@@ -34,11 +33,6 @@ class NotificationController extends StorefrontController
      * @var CheckoutHelper
      */
     private CheckoutHelper $checkoutHelper;
-
-    /**
-     * @var Request
-     */
-    private Request $request;
 
     /**
      * @var SdkFactory
@@ -65,7 +59,6 @@ class NotificationController extends StorefrontController
      *
      * @param CheckoutHelper $checkoutHelper
      * @param SdkFactory $sdkFactory
-     * @param RequestUtil $requestUtil
      * @param OrderUtil $orderUtil
      * @param SettingsService $settingsService
      * @param LoggerInterface $logger
@@ -73,13 +66,11 @@ class NotificationController extends StorefrontController
     public function __construct(
         CheckoutHelper $checkoutHelper,
         SdkFactory $sdkFactory,
-        RequestUtil $requestUtil,
         OrderUtil $orderUtil,
         SettingsService $settingsService,
         LoggerInterface $logger
     ) {
         $this->checkoutHelper = $checkoutHelper;
-        $this->request = $requestUtil->getGlobals();
         $this->sdkFactory = $sdkFactory;
         $this->orderUtil = $orderUtil;
         $this->config = $settingsService;
@@ -89,17 +80,20 @@ class NotificationController extends StorefrontController
     /**
      *  Handle the notification
      *
+     * @param Request $request
      * @param Context $context
      * @return Response
      * @throws ClientExceptionInterface
      */
-    public function notification(Context $context): Response
+    public function notification(Request $request, Context $context): Response
     {
-        $response = new Response();
-        $orderNumber = $this->request->query->get('transactionid');
+        $orderNumber = $request->query->get('transactionid');
+        if (!is_string($orderNumber) || $orderNumber === '') {
+            return new Response('NG');
+        }
 
         try {
-            $order = $this->orderUtil->getOrderFromNumber($orderNumber);
+            $order = $this->orderUtil->getOrderFromNumber($orderNumber, $context);
         } catch (InconsistentCriteriaIdsException $exception) {
             $this->logger->warning('Order not found for MultiSafepay notification', [
                 'message' => 'Could not find order for notification',
@@ -109,12 +103,21 @@ class NotificationController extends StorefrontController
                 'exceptionCode' => $exception->getCode()
             ]);
 
-            return $response->setContent('NG');
+            return new Response('NG');
+        }
+
+        if (is_null($order)) {
+            $this->logger->warning('Order not found for MultiSafepay notification', [
+                'message' => 'No order matches the given order number',
+                'orderNumber' => $orderNumber
+            ]);
+
+            return new Response('NG');
         }
 
         $getTransactions = $order->getTransactions();
         if (is_null($getTransactions)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $transaction = $getTransactions->first();
@@ -133,7 +136,7 @@ class NotificationController extends StorefrontController
                 'exceptionCode' => $exception->getCode()
             ]);
 
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $this->checkoutHelper->transitionPaymentStateFromTransaction($result, $transactionId, $context);
@@ -148,22 +151,26 @@ class NotificationController extends StorefrontController
             $wallet
         );
 
-        return $response->setContent('OK');
+        return new Response('OK');
     }
 
     /**
      *  Handle the post-notification
      *
+     * @param Request $request
+     * @param Context $context
      * @return Response
      * @throws InvalidArgumentException
      */
-    public function postNotification(): Response
+    public function postNotification(Request $request, Context $context): Response
     {
-        $response = new Response();
-        $orderNumber = $this->request->query->get('transactionid');
+        $orderNumber = $request->query->get('transactionid');
+        if (!is_string($orderNumber) || $orderNumber === '') {
+            return new Response('NG');
+        }
 
         try {
-            $order = $this->orderUtil->getOrderFromNumber($orderNumber);
+            $order = $this->orderUtil->getOrderFromNumber($orderNumber, $context);
         } catch (InconsistentCriteriaIdsException $exception) {
             $this->logger->warning('Order not found in post-notification', [
                 'message' => 'Could not find order by order number',
@@ -171,24 +178,33 @@ class NotificationController extends StorefrontController
                 'exceptionMessage' => $exception->getMessage()
             ]);
 
-            return $response->setContent('NG');
+            return new Response('NG');
+        }
+
+        if (is_null($order)) {
+            $this->logger->warning('Order not found in post-notification', [
+                'message' => 'No order matches the given order number',
+                'orderNumber' => $orderNumber
+            ]);
+
+            return new Response('NG');
         }
 
         $getTransactions = $order->getTransactions();
         if (is_null($getTransactions)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $shopwareTransaction = $getTransactions->first();
         if (is_null($shopwareTransaction)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $transactionId = $shopwareTransaction->getId();
         $body = file_get_contents('php://input');
 
         if (!$body) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $hasAuthHeader = isset($_SERVER['HTTP_AUTH']);
@@ -205,7 +221,7 @@ class NotificationController extends StorefrontController
                 'bodyLength' => strlen($body)
             ]);
 
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         try {
@@ -220,10 +236,9 @@ class NotificationController extends StorefrontController
                 'exceptionCode' => $jsonException->getCode()
             ]);
 
-            return $response->setContent('JSON Error: ' . $jsonException->getMessage());
+            return new Response('JSON Error: ' . $jsonException->getMessage());
         }
 
-        $context = Context::createDefaultContext();
         $this->checkoutHelper->transitionPaymentStateFromTransaction($transaction, $transactionId, $context);
         $paymentDetails = $transaction->getPaymentDetails();
         $wallet = $paymentDetails->get('wallet');
@@ -236,6 +251,6 @@ class NotificationController extends StorefrontController
             $wallet
         );
 
-        return $response->setContent('OK');
+        return new Response('OK');
     }
 }

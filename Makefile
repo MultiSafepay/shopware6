@@ -67,11 +67,11 @@ full-build:
 # ------------------------------------------------------------------------------------------------------------
 .PHONY: validate-marketplace
 validate-marketplace:
-	sh bin/validate-marketplace.sh .
+	@docker-compose exec --workdir=/var/www/html app sh custom/plugins/MltisafeMultiSafepay/bin/validate-marketplace.sh
 
 .PHONY: validate-full
 validate-full:
-	sh bin/validate-marketplace.sh . --full
+	@docker-compose exec --workdir=/var/www/html app shopware-cli extension validate custom/plugins/MltisafeMultiSafepay --full
 # ------------------------------------------------------------------------------------------------------------
 
 .PHONY: composer-production

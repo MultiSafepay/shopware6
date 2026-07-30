@@ -10,6 +10,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\MyBankPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\MyBank;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -91,6 +92,11 @@ class MyBankPaymentHandlerTest extends TestCase
     private LoggerInterface|MockObject $logger;
 
     /**
+     * @var RequestUtil|MockObject
+     */
+    private RequestUtil|MockObject $requestUtil;
+
+    /**
      * Set up the test case
      *
      * @return void
@@ -109,6 +115,8 @@ class MyBankPaymentHandlerTest extends TestCase
         $this->refundRepository = $this->createMock(EntityRepository::class);
         $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->requestUtil = $this->createMock(RequestUtil::class);
+        $this->requestUtil->method('getGlobals')->willReturn(new Request());
 
         $this->myBankPaymentHandler = new MyBankPaymentHandler(
             $this->sdkFactory,
@@ -121,7 +129,8 @@ class MyBankPaymentHandlerTest extends TestCase
             $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
-            $this->logger
+            $this->logger,
+            $this->requestUtil
         );
     }
 
@@ -177,7 +186,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
-                    $this->logger
+                    $this->logger,
+                    $this->requestUtil
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -238,7 +248,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
-                    $this->logger
+                    $this->logger,
+                    $this->requestUtil
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -299,7 +310,8 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
-                    $this->logger
+                    $this->logger,
+                    $this->requestUtil
                 ])
                 ->onlyMethods(['getDataBagItem'])
                 ->getMock();
@@ -370,7 +382,8 @@ class MyBankPaymentHandlerTest extends TestCase
                 $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
-                $this->logger
+                $this->logger,
+                $this->requestUtil
             ])
             ->onlyMethods(['getClassName'])
             ->getMock();

@@ -14,7 +14,6 @@ use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Controller\NotificationController;
 use MultiSafepay\Shopware6\Util\OrderUtil;
-use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -68,13 +67,10 @@ class NotificationControllerLoggingTest extends TestCase
 
         // Mock request with transaction ID and recreate controller
         $request = new Request(['transactionid' => $orderNumber]);
-        $requestUtilMock = $this->createMock(RequestUtil::class);
-        $requestUtilMock->method('getGlobals')->willReturn($request);
 
         $controller = new NotificationController(
             $this->createMock(CheckoutHelper::class),
             $this->sdkFactoryMock,
-            $requestUtilMock,
             $this->orderUtilMock,
             $this->createMock(SettingsService::class),
             $this->loggerMock
@@ -99,7 +95,7 @@ class NotificationControllerLoggingTest extends TestCase
             );
 
         // Execute
-        $controller->notification($this->context);
+        $controller->notification($request, $this->context);
     }
 
     /**
@@ -117,13 +113,10 @@ class NotificationControllerLoggingTest extends TestCase
 
         // Mock request with transaction ID and recreate controller
         $request = new Request(['transactionid' => $orderNumber]);
-        $requestUtilMock = $this->createMock(RequestUtil::class);
-        $requestUtilMock->method('getGlobals')->willReturn($request);
 
         $controller = new NotificationController(
             $this->createMock(CheckoutHelper::class),
             $this->sdkFactoryMock,
-            $requestUtilMock,
             $this->orderUtilMock,
             $this->createMock(SettingsService::class),
             $this->loggerMock
@@ -179,7 +172,7 @@ class NotificationControllerLoggingTest extends TestCase
             );
 
         // Execute
-        $controller->notification($this->context);
+        $controller->notification($request, $this->context);
 
         // Cleanup
         unset($_SERVER['HTTP_AUTH']);
@@ -198,13 +191,10 @@ class NotificationControllerLoggingTest extends TestCase
 
         // Mock request with transaction ID and recreate controller
         $request = new Request(['transactionid' => $orderNumber]);
-        $requestUtilMock = $this->createMock(RequestUtil::class);
-        $requestUtilMock->method('getGlobals')->willReturn($request);
 
         $controller = new NotificationController(
             $this->createMock(CheckoutHelper::class),
             $this->sdkFactoryMock,
-            $requestUtilMock,
             $this->orderUtilMock,
             $this->createMock(SettingsService::class),
             $this->loggerMock
@@ -227,7 +217,7 @@ class NotificationControllerLoggingTest extends TestCase
             );
 
         // Execute
-        $controller->postNotification();
+        $controller->postNotification($request, $this->context);
     }
 
     /**
@@ -245,8 +235,6 @@ class NotificationControllerLoggingTest extends TestCase
         $transactionId = 'transaction-id-10058';
 
         $request = new Request(['transactionid' => $orderNumber]);
-        $requestUtilMock = $this->createMock(RequestUtil::class);
-        $requestUtilMock->method('getGlobals')->willReturn($request);
 
         $checkoutHelperMock = $this->createMock(CheckoutHelper::class);
 
@@ -301,13 +289,12 @@ class NotificationControllerLoggingTest extends TestCase
         $controller = new NotificationController(
             $checkoutHelperMock,
             $this->sdkFactoryMock,
-            $requestUtilMock,
             $this->orderUtilMock,
             $this->createMock(SettingsService::class),
             $this->loggerMock
         );
 
-        $response = $controller->notification($this->context);
+        $response = $controller->notification($request, $this->context);
 
         $this->assertSame('OK', $response->getContent());
     }
@@ -326,8 +313,6 @@ class NotificationControllerLoggingTest extends TestCase
         $transactionId = 'transaction-id-10059';
 
         $request = new Request(['transactionid' => $orderNumber]);
-        $requestUtilMock = $this->createMock(RequestUtil::class);
-        $requestUtilMock->method('getGlobals')->willReturn($request);
 
         $checkoutHelperMock = $this->createMock(CheckoutHelper::class);
 
@@ -381,14 +366,87 @@ class NotificationControllerLoggingTest extends TestCase
         $controller = new NotificationController(
             $checkoutHelperMock,
             $this->sdkFactoryMock,
-            $requestUtilMock,
             $this->orderUtilMock,
             $this->createMock(SettingsService::class),
             $this->loggerMock
         );
 
-        $response = $controller->notification($this->context);
+        $response = $controller->notification($request, $this->context);
 
         $this->assertSame('OK', $response->getContent());
+    }
+
+    /**
+     * Test that notification() returns NG and logs when no order matches the number
+     *
+     * @return void
+     * @throws Exception
+     * @throws ClientExceptionInterface
+     */
+    public function testNotificationReturnsNgWhenOrderIsNull(): void
+    {
+        $orderNumber = 'ORD-UNKNOWN-1';
+        $request = new Request(['transactionid' => $orderNumber]);
+
+        $controller = new NotificationController(
+            $this->createMock(CheckoutHelper::class),
+            $this->sdkFactoryMock,
+            $this->orderUtilMock,
+            $this->createMock(SettingsService::class),
+            $this->loggerMock
+        );
+
+        $this->orderUtilMock->method('getOrderFromNumber')->willReturn(null);
+
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Order not found for MultiSafepay notification',
+                $this->callback(static function ($context) use ($orderNumber) {
+                    return $context['message'] === 'No order matches the given order number'
+                        && $context['orderNumber'] === $orderNumber;
+                })
+            );
+
+        $response = $controller->notification($request, $this->context);
+
+        $this->assertSame('NG', $response->getContent());
+    }
+
+    /**
+     * Test that postNotification() returns NG and logs when no order matches the number
+     *
+     * @return void
+     * @throws Exception
+     * @throws InvalidArgumentException
+     */
+    public function testPostNotificationReturnsNgWhenOrderIsNull(): void
+    {
+        $orderNumber = 'ORD-UNKNOWN-2';
+        $request = new Request(['transactionid' => $orderNumber]);
+
+        $controller = new NotificationController(
+            $this->createMock(CheckoutHelper::class),
+            $this->sdkFactoryMock,
+            $this->orderUtilMock,
+            $this->createMock(SettingsService::class),
+            $this->loggerMock
+        );
+
+        $this->orderUtilMock->method('getOrderFromNumber')->willReturn(null);
+
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Order not found in post-notification',
+                $this->callback(static function ($context) use ($orderNumber) {
+                    return $context['message'] === 'No order matches the given order number'
+                        && $context['orderNumber'] === $orderNumber;
+                })
+            );
+
+        $response = $controller->postNotification($request, $this->context);
+
+        $this->assertSame('NG', $response->getContent());
     }
 }

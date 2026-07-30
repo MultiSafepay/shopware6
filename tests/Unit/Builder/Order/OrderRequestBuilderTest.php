@@ -13,6 +13,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder\OrderRequestBuilder
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilderPool;
 use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -22,6 +23,7 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class OrderRequestBuilderTest
@@ -34,6 +36,11 @@ class OrderRequestBuilderTest extends TestCase
      * @var OrderRequestBuilderPool|MockObject
      */
     private OrderRequestBuilderPool|MockObject $orderRequestBuilderPool;
+
+    /**
+     * @var RequestUtil|MockObject
+     */
+    private RequestUtil|MockObject $requestUtil;
 
     /**
      * @var OrderRequestBuilder
@@ -70,6 +77,8 @@ class OrderRequestBuilderTest extends TestCase
     {
         // Create mocks
         $this->orderRequestBuilderPool = $this->createMock(OrderRequestBuilderPool::class);
+        $this->requestUtil = $this->createMock(RequestUtil::class);
+        $this->requestUtil->method('getGlobals')->willReturn(new Request());
         $this->transaction = $this->createMock(PaymentTransactionStruct::class);
         $this->order = $this->createMock(OrderEntity::class);
         $this->salesChannelContext = $this->createMock(SalesChannelContext::class);
@@ -102,7 +111,7 @@ class OrderRequestBuilderTest extends TestCase
             ->willReturn(100.0);
 
         // Create OrderRequestBuilder
-        $this->orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool);
+        $this->orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool, $this->requestUtil);
     }
 
     /**
@@ -244,7 +253,7 @@ class OrderRequestBuilderTest extends TestCase
         $salesChannelContext->method('getPaymentMethod')
             ->willReturn($paymentMethod);
 
-        $orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool, new ManualCaptureHelper());
+        $orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool, $this->requestUtil, new ManualCaptureHelper());
 
         $this->orderRequestBuilderPool->method('getOrderRequestBuilders')
             ->willReturn([]);
@@ -316,9 +325,13 @@ class OrderRequestBuilderTest extends TestCase
      */
     public function testBuildWithPayloadFromRequest(): void
     {
-        // Set up the payload in $_POST
+        // Set up the payload in the request
         $payload = 'test_payload_from_post';
-        $_POST['payload'] = $payload;
+        $requestUtil = $this->createMock(RequestUtil::class);
+        $requestUtil->method('getGlobals')
+            ->willReturn(new Request([], ['payload' => $payload]));
+
+        $orderRequestBuilder = new OrderRequestBuilder($this->orderRequestBuilderPool, $requestUtil);
 
         // Set up a mock builder interface
         $mockBuilder = $this->createMock(OrderRequestBuilderInterface::class);
@@ -330,7 +343,7 @@ class OrderRequestBuilderTest extends TestCase
             ->willReturn([$mockBuilder]);
 
         // Call the build method
-        $orderRequest = $this->orderRequestBuilder->build(
+        $orderRequest = $orderRequestBuilder->build(
             $this->transaction,
             $this->order,
             $this->dataBag,
@@ -345,9 +358,6 @@ class OrderRequestBuilderTest extends TestCase
         $this->assertArrayHasKey('payment_data', $data);
         $this->assertArrayHasKey('payload', $data['payment_data']);
         $this->assertEquals($payload, $data['payment_data']['payload']);
-
-        // Clean up the global state
-        unset($_POST['payload']);
     }
 
     /**

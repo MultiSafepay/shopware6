@@ -9,6 +9,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\KlarnaPaymentHandler;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -19,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\Salutation\SalutationEntity;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class KlarnaPaymentHandlerTest
@@ -51,6 +53,8 @@ class KlarnaPaymentHandlerTest extends TestCase
         $refundRepositoryMock = $this->createMock(EntityRepository::class);
         $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(LoggerInterface::class);
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn(new Request());
 
         $this->paymentHandler = new KlarnaPaymentHandler(
             $sdkFactoryMock,
@@ -63,7 +67,8 @@ class KlarnaPaymentHandlerTest extends TestCase
             $orderRepositoryMock,
             $refundRepositoryMock,
             $refundStateHandlerMock,
-            $loggerMock
+            $loggerMock,
+            $requestUtilMock
         );
     }
 

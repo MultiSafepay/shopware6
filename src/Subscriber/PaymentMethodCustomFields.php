@@ -287,30 +287,41 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
 
         $context = $event->getContext();
 
-        // Process each newly created language
+        // Collect all newly created language IDs up front
+        $languageIds = [];
         foreach ($event->getWriteResults() as $writeResult) {
             $payload = $writeResult->getPayload();
 
-            // Skip if the payload does not contain the created language ID
             if (empty($payload) || !isset($payload['id'])) {
                 continue;
             }
 
-            $languageId = $payload['id'];
+            $languageIds[] = $payload['id'];
+        }
 
-            // Get only MultiSafepay payment methods (optimized query with filter)
-            $criteria = new Criteria();
-            $criteria->addFilter(new ContainsFilter('handlerIdentifier', self::MULTISAFEPAY_HANDLER_NAMESPACE));
-            $paymentMethods = $this->paymentMethodRepository->search($criteria, $context);
+        if (empty($languageIds)) {
+            return;
+        }
 
-            if ($paymentMethods->count() === 0) {
-                continue;
-            }
+        // Get only MultiSafepay payment methods (single query, language-independent)
+        $criteria = new Criteria();
+        $criteria->addFilter(new ContainsFilter('handlerIdentifier', self::MULTISAFEPAY_HANDLER_NAMESPACE));
+        $paymentMethods = $this->paymentMethodRepository->search($criteria, $context);
 
-            // Preload existing translations for this language in a single batch query
-            $paymentMethodIds = $paymentMethods->getIds();
-            $existingTranslations = $this->getExistingTranslationsForLanguage($languageId, $paymentMethodIds, $context);
+        if ($paymentMethods->count() === 0) {
+            return;
+        }
 
+        // Preload existing translations for all new languages in a single batch query
+        $paymentMethodIds = $paymentMethods->getIds();
+        $existingTranslations = $this->getExistingTranslationsForLanguages(
+            $languageIds,
+            $paymentMethodIds,
+            $context
+        );
+
+        // Process each newly created language using the preloaded data
+        foreach ($languageIds as $languageId) {
             foreach ($paymentMethods as $paymentMethod) {
                 $handlerIdentifier = $paymentMethod->getHandlerIdentifier();
 
@@ -320,7 +331,7 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
                 }
 
                 // Skip if the translation already exists for this language
-                if (isset($existingTranslations[$paymentMethod->getId()])) {
+                if (isset($existingTranslations[$languageId][$paymentMethod->getId()])) {
                     continue;
                 }
 
@@ -619,27 +630,30 @@ class PaymentMethodCustomFields implements EventSubscriberInterface
     }
 
     /**
-     * Get existing translations for a specific language in a batch
+     * Get existing translations for multiple languages in a single batch
      *
-     * This method optimizes performance by loading all translations for multiple
-     * payment methods in a single query instead of querying each one individually
+     * This method optimizes performance by loading all translations for the given
+     * languages and payment methods in a single query instead of querying per language
      *
-     * @param string $languageId The language to check
+     * @param array $languageIds The languages to check
      * @param array $paymentMethodIds Payment method IDs to check
      * @param Context $context
-     * @return array Map of paymentMethodId => true for existing translations
+     * @return array Map of languageId => [paymentMethodId => true] for existing translations
      */
-    private function getExistingTranslationsForLanguage(string $languageId, array $paymentMethodIds, Context $context): array
-    {
+    private function getExistingTranslationsForLanguages(
+        array $languageIds,
+        array $paymentMethodIds,
+        Context $context
+    ): array {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('languageId', $languageId));
+        $criteria->addFilter(new EqualsAnyFilter('languageId', $languageIds));
         $criteria->addFilter(new EqualsAnyFilter('paymentMethodId', $paymentMethodIds));
 
         $translations = $this->translationRepository->search($criteria, $context);
 
         $existingMap = [];
         foreach ($translations as $translation) {
-            $existingMap[$translation->getPaymentMethodId()] = true;
+            $existingMap[$translation->getLanguageId()][$translation->getPaymentMethodId()] = true;
         }
 
         return $existingMap;

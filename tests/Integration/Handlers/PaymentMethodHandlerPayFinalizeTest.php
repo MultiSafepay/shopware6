@@ -11,6 +11,7 @@ use MultiSafepay\Shopware6\PaymentMethods\Ideal;
 use MultiSafepay\Shopware6\PaymentMethods\MultiSafepay;
 use MultiSafepay\Shopware6\PaymentMethods\PayPal;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -94,6 +95,7 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
         $refundRepository = $this->createMock(EntityRepository::class);
         $refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $logger = $this->createMock(LoggerInterface::class);
+        $requestUtil = $this->createMock(RequestUtil::class);
 
         // Create the handler instance
         $handler = new $handlerClass(
@@ -107,7 +109,8 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
             $orderRepository,
             $refundRepository,
             $refundStateHandler,
-            $logger
+            $logger,
+            $requestUtil
         );
 
         // Verify via reflection that the sdkFactory property is correctly set

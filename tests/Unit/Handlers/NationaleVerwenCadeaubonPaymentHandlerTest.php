@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\NationaleVerwenCadeaubonPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\NationaleVerwenCadeaubon;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -82,6 +83,8 @@ class NationaleVerwenCadeaubonPaymentHandlerTest extends TestCase
         $refundRepositoryMock = $this->createMock(EntityRepository::class);
         $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(LoggerInterface::class);
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn(new Request());
 
         $this->paymentHandler = new NationaleVerwenCadeaubonPaymentHandler(
             $this->sdkFactoryMock,
@@ -94,7 +97,8 @@ class NationaleVerwenCadeaubonPaymentHandlerTest extends TestCase
             $orderRepositoryMock,
             $refundRepositoryMock,
             $refundStateHandlerMock,
-            $loggerMock
+            $loggerMock,
+            $requestUtilMock
         );
     }
 

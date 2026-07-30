@@ -80,7 +80,7 @@ class OrderUtilTest extends TestCase
             )
             ->willReturn($searchResult);
 
-        $result = $this->orderUtil->getOrderFromNumber($orderNumber);
+        $result = $this->orderUtil->getOrderFromNumber($orderNumber, Context::createDefaultContext());
 
         self::assertSame($order, $result);
     }

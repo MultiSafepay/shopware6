@@ -76,7 +76,7 @@ class SecondsActiveBuilder implements OrderRequestBuilderInterface
      * @param string|null $salesChannelId
      * @return int
      */
-    public function getSecondsActive(string $salesChannelId = null): int
+    public function getSecondsActive(?string $salesChannelId = null): int
     {
         $timeActive = $this->settingsService->getTimeActive($salesChannelId);
         $timeActive = empty($timeActive) || $timeActive <= 0 ? 30 : $timeActive;

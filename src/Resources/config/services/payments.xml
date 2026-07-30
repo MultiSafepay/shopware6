@@ -16,6 +16,7 @@
             <argument type="service" id="order_transaction_capture_refund.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler"/>
             <argument type="service" id="multisafepay.logger"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
         </service>
 
         <!-- Auto-register all payment handlers that extend the base handler -->
@@ -39,6 +40,7 @@
             <argument type="service" id="order_transaction_capture_refund.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler"/>
             <argument type="service" id="multisafepay.logger"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
             <tag name="shopware.payment.method"/>
         </service>
 
@@ -55,6 +57,7 @@
             <argument type="service" id="order_transaction_capture_refund.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler"/>
             <argument type="service" id="multisafepay.logger"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\RequestUtil"/>
             <tag name="shopware.payment.method"/>
         </prototype>
     </services>

@@ -14,6 +14,7 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\BetaalplanPaymentHandler;
 use MultiSafepay\Shopware6\PaymentMethods\Betaalplan;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -81,6 +82,8 @@ class BetaalplanPaymentHandlerTest extends TestCase
         $refundRepositoryMock = $this->createMock(EntityRepository::class);
         $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn(new Request());
 
         $this->paymentHandler = new BetaalplanPaymentHandler(
             $this->sdkFactoryMock,
@@ -93,7 +96,8 @@ class BetaalplanPaymentHandlerTest extends TestCase
             $orderRepositoryMock,
             $refundRepositoryMock,
             $refundStateHandlerMock,
-            $loggerMock
+            $loggerMock,
+            $requestUtilMock
         );
     }
 
