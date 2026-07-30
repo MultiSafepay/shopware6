@@ -27,6 +27,15 @@ storefront-build:
 	docker-compose exec app php psh.phar storefront:build --DB_HOST="127.0.0.1" --DB_USER="root" --DB_PASSWORD="root"
 # ------------------------------------------------------------------------------------------------------------
 
+.PHONY: validate-marketplace
+validate-marketplace:
+	@docker-compose exec --workdir=/var/www/html app sh custom/plugins/MltisafeMultiSafepay/bin/validate-marketplace.sh
+
+.PHONY: validate-full
+validate-full:
+	@docker-compose exec --workdir=/var/www/html app shopware-cli extension validate custom/plugins/MltisafeMultiSafepay --full
+# ------------------------------------------------------------------------------------------------------------
+
 .PHONY: composer-production
 composer-production:
 	@composer install --no-dev

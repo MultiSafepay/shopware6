@@ -39,8 +39,7 @@
             "Http\\Client\\": "vendor/php-http/discovery/src/",
             "Psr\\Http\\Client\\": "vendor/psr/http-client/src/",
             "MultiSafepay\\Shopware6\\": "src/",
-            "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/",
-            "MultiSafepay\\Shopware6\\Tests\\": "tests/"
+            "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/"
         }
     },
     "extra": {

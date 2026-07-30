@@ -1,0 +1,23 @@
+# Pinned date for reproducible analysis (same results on every run).
+# Update this when you want to align with a newer Marketplace rule set.
+compatibility_date: '2026-02-11'
+
+validation:
+  # Enable Shopware Marketplace-specific checks (same ones applied on extension upload).
+  store_compliance: true
+
+  # PHP version used for the static analysis (compatible with composer.json: "php": "^8.2").
+  php_version: '8.4'
+
+  # Ignore specific PHPStan rules for certain files (e.g. deprecated classes, missing generics).
+  ignore:
+    - identifier: 'phpstan/classConstant.deprecatedClass'
+      path: src/Components/Twig/TwigCacheWarmer.php
+    - identifier: 'phpstan/method.deprecatedClass'
+      path: src/Components/Twig/TwigCacheWarmer.php
+    - identifier: 'phpstan/new.deprecatedClass'
+      path: src/Components/Twig/TwigCacheWarmer.php
+    - identifier: 'phpstan/missingType.generics'
+      path: src/DependencyInjection/Configuration.php
+    - identifier: 'phpstan/shopware.noEmptyResponse'
+      path: src/Storefront/Controller/NotificationController.php

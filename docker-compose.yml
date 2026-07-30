@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        SHOPWARE_VERSION: ${SHOPWARE_VERSION:-6.6.10.18}
+        SHOPWARE_CLI_VERSION: ${SHOPWARE_CLI_VERSION:-0.15.12}
     ports:
       - "22:22"
       - "3306:3306"
@@ -18,6 +21,7 @@ services:
       - APP_ENV=dev
       - APP_DEBUG=1 # Needed to enable the Symfony profiler pack
       - SHOP_DOMAIN=${APP_SUBDOMAIN}.${EXPOSE_HOST}
+      - PHP_VERSION=${PHP_VERSION:-8.4}
     entrypoint: "sh /entrypoint-multisafepay.sh"
   expose:
     depends_on:

@@ -26,7 +26,7 @@ jobs:
         uses: shopware/setup-shopware@main
         with:
           # Shopware version to use
-          shopware-version: 'v6.6.10.18'
+          shopware-version: 'v6.6.10.21'
           # PHP version to use
           php-version: 8.2
           # Environment in which Shopware will run
@@ -51,6 +51,13 @@ jobs:
           composer config repositories.multisafepay.shopware6 "path" "custom/plugins/MltisafeMultiSafepay"
           composer config allow-plugins.php-http/discovery false
           composer require multisafepay/shopware6
+          
+          # Register the plugin's test namespace into the root Shopware composer.json
+          # so PHPUnit can find test fixtures/traits when running from the plugin.
+          jq '. * {"autoload-dev": {"psr-4": {"MultiSafepay\\Shopware6\\Tests\\": "custom/plugins/MltisafeMultiSafepay/tests/"}}}' composer.json > composer.json.new
+          mv composer.json.new composer.json
+          composer dump-autoload
+          
           bin/console plugin:refresh
           bin/console plugin:install -c -a MltisafeMultiSafepay
 

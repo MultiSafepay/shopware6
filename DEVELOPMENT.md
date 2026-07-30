@@ -34,3 +34,16 @@ make update-host
 ```
 make install
 ```
+
+## Validating the plugin
+
+The plugin is validated with [`shopware-cli`](https://github.com/shopware/shopware-cli)
+using PHPStan (Shopware Marketplace rules). The CLI is bundled in the Docker image, so you can
+run the validation via the Makefile target (it executes inside the container):
+
+```
+make validate-marketplace
+```
+
+This same validation runs automatically in CI on every pull request (see
+`.github/workflows/validate-marketplace.yml`) and will fail the pull request when issues are found.
