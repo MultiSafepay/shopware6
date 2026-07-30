@@ -65,6 +65,14 @@ full-build:
 	docker-compose exec app bin/build-js.sh
 
 # ------------------------------------------------------------------------------------------------------------
+.PHONY: validate-marketplace
+validate-marketplace:
+	sh bin/validate-marketplace.sh .
+
+.PHONY: validate-full
+validate-full:
+	sh bin/validate-marketplace.sh . --full
+# ------------------------------------------------------------------------------------------------------------
 
 .PHONY: composer-production
 composer-production:

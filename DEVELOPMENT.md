@@ -6,7 +6,7 @@
 1. Clone the repository:
 ```
 git clone https://github.com/MultiSafepay/shopware6.git
-``` 
+```
 
 2. Copy the example env file and make the required configuration changes in the .env file:
 ```
@@ -25,7 +25,7 @@ so you'll see any error message that might happen. You can shut down the contain
 access this project directory and execute `docker-compose down`. The next time you want to start the containers
 you can execute `docker-compose up -d`.
 
-4. Update the Shopware domain for the sales channel 
+4. Update the Shopware domain for the sales channel
 ```
 make update-host
 ```
@@ -34,3 +34,16 @@ make update-host
 ```
 make install
 ```
+
+## Validating the plugin
+
+The plugin is validated with [`shopware-cli`](https://github.com/shopware/shopware-cli)
+using PHPStan (Shopware Marketplace rules). The CLI is bundled in the Docker image, so you can
+run the validation via the Makefile target (it executes inside the container):
+
+```
+make validate-marketplace
+```
+
+This same validation runs automatically in CI on every pull request (see
+`.github/workflows/validate-marketplace.yml`) and will fail the pull request when issues are found.

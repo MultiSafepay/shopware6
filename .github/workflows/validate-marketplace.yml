@@ -1,0 +1,41 @@
+# This is the name of the workflow
+name: Validate marketplace
+
+# This workflow is triggered on pull requests targeting any branch
+on:
+  pull_request:
+    branches:
+      - master
+      - 6.6.x
+
+# This workflow consists of one job named 'validate'
+jobs:
+  validate:
+    # The job runs on the latest version of Ubuntu
+    runs-on: ubuntu-latest
+
+    # This is the name of the job, displayed on GitHub
+    name: Validate marketplace
+
+    # The job consists of several steps
+    steps:
+      # This step sets up PHP, matching the local container and dashboard (PHP 8.4)
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl
+
+      # This step checks out the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # This step installs the shopware-cli tool, matching the local container version
+      - name: Install shopware-cli
+        uses: shopware/shopware-cli-action@v3
+        with:
+          version: 0.16.9
+
+      # This step validates the plugin with PHPStan and fails when issues are found
+      - name: Validate marketplace (PHPStan)
+        run: sh bin/validate-marketplace.sh .
