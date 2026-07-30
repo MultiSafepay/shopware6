@@ -14,6 +14,7 @@ use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\AsyncPaymentHandler;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -55,13 +56,16 @@ class AsyncPaymentHandlerLoggingTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->transactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $requestUtil = $this->createMock(RequestUtil::class);
+        $requestUtil->method('getGlobals')->willReturn(new Request());
 
         $this->handler = new AsyncPaymentHandler(
             $this->sdkFactory,
             $this->orderRequestBuilder,
             $eventDispatcher,
             $this->transactionStateHandler,
-            $this->logger
+            $this->logger,
+            $requestUtil
         );
     }
 

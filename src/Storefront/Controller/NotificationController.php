@@ -13,7 +13,6 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Helper\CheckoutHelper;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\OrderUtil;
-use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\Util\Notification;
 use Psr\Http\Client\ClientExceptionInterface;
 use Shopware\Core\Framework\Context;
@@ -35,11 +34,6 @@ class NotificationController extends StorefrontController
     private CheckoutHelper $checkoutHelper;
 
     /**
-     * @var Request
-     */
-    private Request $request;
-
-    /**
      * @var SdkFactory
      */
     private SdkFactory $sdkFactory;
@@ -59,19 +53,16 @@ class NotificationController extends StorefrontController
      *
      * @param CheckoutHelper $checkoutHelper
      * @param SdkFactory $sdkFactory
-     * @param RequestUtil $requestUtil
      * @param OrderUtil $orderUtil
      * @param SettingsService $settingsService
      */
     public function __construct(
         CheckoutHelper $checkoutHelper,
         SdkFactory $sdkFactory,
-        RequestUtil $requestUtil,
         OrderUtil $orderUtil,
         SettingsService $settingsService
     ) {
         $this->checkoutHelper = $checkoutHelper;
-        $this->request = $requestUtil->getGlobals();
         $this->sdkFactory = $sdkFactory;
         $this->orderUtil = $orderUtil;
         $this->config = $settingsService;
@@ -80,24 +71,31 @@ class NotificationController extends StorefrontController
     /**
      *  Handle the notification
      *
+     * @param Request $request
      * @param Context $context
      * @return Response
      * @throws ClientExceptionInterface
      */
-    public function notification(Context $context): Response
+    public function notification(Request $request, Context $context): Response
     {
-        $response = new Response();
-        $orderNumber = $this->request->query->get('transactionid');
+        $orderNumber = $request->query->get('transactionid');
+        if (!is_string($orderNumber) || $orderNumber === '') {
+            return new Response('NG');
+        }
 
         try {
-            $order = $this->orderUtil->getOrderFromNumber($orderNumber);
+            $order = $this->orderUtil->getOrderFromNumber($orderNumber, $context);
         } catch (InconsistentCriteriaIdsException) {
-            return $response->setContent('NG');
+            return new Response('NG');
+        }
+
+        if (is_null($order)) {
+            return new Response('NG');
         }
 
         $getTransactions = $order->getTransactions();
         if (is_null($getTransactions)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $transaction = $getTransactions->first();
@@ -107,7 +105,7 @@ class NotificationController extends StorefrontController
             $result = $this->sdkFactory->create($order->getSalesChannelId())
                 ->getTransactionManager()->get($orderNumber);
         } catch (Exception) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $this->checkoutHelper->transitionPaymentStateFromTransaction($result, $transactionId, $context);
@@ -120,58 +118,65 @@ class NotificationController extends StorefrontController
             $wallet
         );
 
-        return $response->setContent('OK');
+        return new Response('OK');
     }
 
     /**
      *  Handle the post-notification
      *
+     * @param Request $request
+     * @param Context $context
      * @return Response
      * @throws InvalidArgumentException
      */
-    public function postNotification(): Response
+    public function postNotification(Request $request, Context $context): Response
     {
-        $response = new Response();
-        $orderNumber = $this->request->query->get('transactionid');
+        $orderNumber = $request->query->get('transactionid');
+        if (!is_string($orderNumber) || $orderNumber === '') {
+            return new Response('NG');
+        }
 
         try {
-            $order = $this->orderUtil->getOrderFromNumber($orderNumber);
+            $order = $this->orderUtil->getOrderFromNumber($orderNumber, $context);
         } catch (InconsistentCriteriaIdsException) {
-            return $response->setContent('NG');
+            return new Response('NG');
+        }
+
+        if (is_null($order)) {
+            return new Response('NG');
         }
 
         $getTransactions = $order->getTransactions();
         if (is_null($getTransactions)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $shopwareTransaction = $getTransactions->first();
         if (is_null($shopwareTransaction)) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         $transactionId = $shopwareTransaction->getId();
         $body = file_get_contents('php://input');
 
         if (!$body) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         if (!Notification::verifyNotification(
             $body,
-            $_SERVER['HTTP_AUTH'],
+            $_SERVER['HTTP_AUTH'] ?? '',
             $this->config->getApiKey($order->getSalesChannelId())
         )) {
-            return $response->setContent('NG');
+            return new Response('NG');
         }
 
         try {
             $transaction = new TransactionResponse(json_decode($body, true, 512, JSON_THROW_ON_ERROR), $body);
         } catch (JsonException $jsonException) {
-            return $response->setContent('JSON Error: ' . $jsonException->getMessage());
+            return new Response('JSON Error: ' . $jsonException->getMessage());
         }
 
-        $context = Context::createDefaultContext();
         $this->checkoutHelper->transitionPaymentStateFromTransaction($transaction, $transactionId, $context);
         $paymentDetails = $transaction->getPaymentDetails();
         $wallet = $this->normalizeWallet($paymentDetails->get('wallet'));
@@ -182,7 +187,7 @@ class NotificationController extends StorefrontController
             $wallet
         );
 
-        return $response->setContent('OK');
+        return new Response('OK');
     }
 
     /**

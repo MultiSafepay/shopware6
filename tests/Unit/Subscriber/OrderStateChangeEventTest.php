@@ -242,7 +242,6 @@ class OrderStateChangeEventTest extends TestCase
             ->willThrowException(new ApiException('Server error', 500));
 
         $this->setupSdkFactory($transactionManager);
-        $this->expectNotToPerformAssertions();
 
         // Should not throw — just log
         $this->subscriber->onOrderStateChanged($event);

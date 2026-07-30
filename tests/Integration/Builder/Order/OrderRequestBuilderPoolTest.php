@@ -21,6 +21,7 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Customers;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -31,6 +32,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class OrderRequestBuilderPoolTest extends TestCase
@@ -69,7 +71,9 @@ class OrderRequestBuilderPoolTest extends TestCase
     public function testBuilderPool()
     {
         $orderRequestBuilderPoolMock = $this->getMockOrderRequestBuilderPoolClass();
-        $orderRequestBuilder = new OrderRequestBuilder($orderRequestBuilderPoolMock);
+        $requestUtil = $this->createMock(RequestUtil::class);
+        $requestUtil->method('getGlobals')->willReturn(new Request());
+        $orderRequestBuilder = new OrderRequestBuilder($orderRequestBuilderPoolMock, $requestUtil);
 
         $result = $orderRequestBuilder->build(
             $this->transactionMock,

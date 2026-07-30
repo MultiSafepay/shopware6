@@ -46,14 +46,15 @@ class OrderUtil
      *  Get the order from the order number
      *
      * @param string $orderNumber
-     * @return OrderEntity
+     * @param Context $context
+     * @return OrderEntity|null
      */
-    public function getOrderFromNumber(string $orderNumber): OrderEntity
+    public function getOrderFromNumber(string $orderNumber, Context $context): ?OrderEntity
     {
         $criteria = (new Criteria())->addFilter(new EqualsFilter('orderNumber', $orderNumber))
             ->addAssociation('transactions');
 
-        return $this->orderRepository->search($criteria, Context::createDefaultContext())->first();
+        return $this->orderRepository->search($criteria, $context)->first();
     }
 
     /**

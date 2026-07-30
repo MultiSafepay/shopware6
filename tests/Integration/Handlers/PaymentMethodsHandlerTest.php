@@ -26,6 +26,7 @@ use MultiSafepay\Shopware6\Tests\Fixtures\Orders;
 use MultiSafepay\Shopware6\Tests\Fixtures\Orders\Transactions;
 use MultiSafepay\Shopware6\Tests\Fixtures\PaymentMethods;
 use MultiSafepay\Shopware6\Util\PaymentUtil;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -227,6 +228,11 @@ class PaymentMethodsHandlerTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $constructorArgs[] = $loggerMock;
+
+        // Add RequestUtil mock as the last parameter
+        $requestUtilMock = $this->createMock(RequestUtil::class);
+        $requestUtilMock->method('getGlobals')->willReturn(new Request());
+        $constructorArgs[] = $requestUtilMock;
 
         $reflection = new ReflectionClass($paymentMethod->getPaymentHandler());
         $methods = $reflection->getMethods(ReflectionMethod::IS_PUBLIC);

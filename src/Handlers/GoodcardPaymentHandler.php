@@ -37,8 +37,8 @@ class GoodcardPaymentHandler extends AsyncPaymentHandler
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = null,
+        ?string $gateway = null,
+        ?string $type = null,
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new Goodcard();

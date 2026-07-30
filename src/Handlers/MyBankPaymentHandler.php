@@ -37,7 +37,7 @@ class MyBankPaymentHandler extends AsyncPaymentHandler
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
-        string $gateway = null,
+        ?string $gateway = null,
         string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {

@@ -11,11 +11,11 @@ use MultiSafepay\Api\Transactions\OrderRequest\Arguments\GatewayInfo\Meta;
 use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Helper\ManualCaptureHelper;
 use MultiSafepay\Shopware6\Sources\Transaction\TransactionTypeSource;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\Money;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class OrderRequestBuilder
@@ -37,16 +37,24 @@ class OrderRequestBuilder
     private ManualCaptureHelper $manualCaptureHelper;
 
     /**
+     * @var RequestUtil
+     */
+    private RequestUtil $requestUtil;
+
+    /**
      * OrderRequestBuilder constructor
      *
      * @param OrderRequestBuilderPool $orderRequestBuilderPool
+     * @param RequestUtil $requestUtil
      * @param ManualCaptureHelper|null $manualCaptureHelper
      */
     public function __construct(
         OrderRequestBuilderPool $orderRequestBuilderPool,
+        RequestUtil $requestUtil,
         ?ManualCaptureHelper $manualCaptureHelper = null
     ) {
         $this->orderRequestBuilderPool = $orderRequestBuilderPool;
+        $this->requestUtil = $requestUtil;
         $this->manualCaptureHelper = $manualCaptureHelper ?? new ManualCaptureHelper();
     }
 
@@ -123,7 +131,7 @@ class OrderRequestBuilder
             return $dataBag->get('payload');
         }
 
-        $request = (new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER))->request;
+        $request = $this->requestUtil->getGlobals()->request;
         return $request->get('payload') ?: null;
     }
 }

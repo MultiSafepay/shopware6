@@ -61,7 +61,7 @@ class PaymentMethodsWithoutCustomFieldsTest extends TestCase
      */
     private function setupPaymentMethodForTest(
         PaymentMethodInterface $paymentMethod,
-        array $customFields = null
+        ?array $customFields = null
     ): string {
         // Check if the payment method already exists
         $criteria = (new Criteria())->addFilter(

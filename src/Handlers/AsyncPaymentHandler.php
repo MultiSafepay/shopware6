@@ -11,6 +11,7 @@ use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -59,6 +60,11 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
     private LoggerInterface $logger;
 
     /**
+     * @var RequestUtil
+     */
+    private RequestUtil $requestUtil;
+
+    /**
      * AsyncPaymentHandler constructor
      *
      * @param SdkFactory $sdkFactory
@@ -66,19 +72,22 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @param EventDispatcherInterface $eventDispatcher
      * @param OrderTransactionStateHandler $transactionStateHandler
      * @param LoggerInterface $logger
+     * @param RequestUtil $requestUtil
      */
     public function __construct(
         SdkFactory $sdkFactory,
         OrderRequestBuilder $orderRequestBuilder,
         EventDispatcherInterface $eventDispatcher,
         OrderTransactionStateHandler $transactionStateHandler,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RequestUtil $requestUtil
     ) {
         $this->sdkFactory = $sdkFactory;
         $this->orderRequestBuilder = $orderRequestBuilder;
         $this->eventDispatcher = $eventDispatcher;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->logger = $logger;
+        $this->requestUtil = $requestUtil;
     }
 
     /**
@@ -96,7 +105,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
-        string $gateway = null,
+        ?string $gateway = null,
         string $type = 'redirect',
         array $gatewayInfo = []
     ): RedirectResponse {
@@ -264,7 +273,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
 
     /**
      * On the edit order page, we don't get a correct DataBag with the issuer data.
-     * Therefore, we need to get this data from the $_POST/$_GET.
+     * Therefore, we need to get this data from the current request.
      *
      * @param string $name
      * @param RequestDataBag $dataBag
@@ -276,7 +285,7 @@ class AsyncPaymentHandler implements AsynchronousPaymentHandlerInterface
             return $dataBag->get($name);
         }
 
-        $request = (new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER))->request;
+        $request = $this->requestUtil->getGlobals()->request;
         return $request->get($name);
     }
 }

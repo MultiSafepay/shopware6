@@ -166,7 +166,7 @@ class CustomizedProductsBuilder implements ShoppingCartBuilderInterface
         array &$shoppingCart,
         string $currency,
         bool $hasNetPrices = false,
-        TransactionItem &$shoppingItem = null
+        ?TransactionItem &$shoppingItem = null
     ): void {
         foreach ($orderLineItems as $customLineItem) {
             $this->concatShoppingItemValues($shoppingItem, $this->getShoppingCartItem($customLineItem, $hasNetPrices, $currency));

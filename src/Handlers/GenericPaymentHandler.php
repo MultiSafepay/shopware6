@@ -9,6 +9,7 @@ use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\PaymentMethods\Generic;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Util\RequestUtil;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -40,6 +41,7 @@ class GenericPaymentHandler extends AsyncPaymentHandler
      * @param EventDispatcherInterface $eventDispatcher
      * @param OrderTransactionStateHandler $transactionStateHandler
      * @param LoggerInterface $logger
+     * @param RequestUtil $requestUtil
      */
     public function __construct(
         SdkFactory $sdkFactory,
@@ -47,9 +49,10 @@ class GenericPaymentHandler extends AsyncPaymentHandler
         SettingsService $settingsService,
         EventDispatcherInterface $eventDispatcher,
         OrderTransactionStateHandler $transactionStateHandler,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RequestUtil $requestUtil
     ) {
-        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler, $logger);
+        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler, $logger, $requestUtil);
         $this->settingsService = $settingsService;
     }
 
@@ -68,8 +71,8 @@ class GenericPaymentHandler extends AsyncPaymentHandler
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = null,
+        ?string $gateway = null,
+        ?string $type = null,
         array $gatewayInfo = []
     ): RedirectResponse {
         $paymentMethod = new Generic();
