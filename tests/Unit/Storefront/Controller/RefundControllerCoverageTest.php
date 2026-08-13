@@ -113,8 +113,8 @@ class RefundControllerCoverageTest extends TestCase
     /**
         * Verifies amount normalization for the admin refund endpoint.
         *
-        * The controller accepts user input either as full units ("9.99", "9,99", "10") or as cents ("1000").
-        * This test ensures both the parsed unit value and the derived cents value are consistent.
+        * The admin UI service always sends integer cents, so integer-like input is cents;
+        * decimal input ("9.99", "9,99") is full units.
         *
      * @throws ReflectionException
      */
@@ -122,21 +122,20 @@ class RefundControllerCoverageTest extends TestCase
     {
         $method = new ReflectionMethod(RefundController::class, 'normalizeRefundAmount');
 
-        $result = $method->invoke($this->controller, '9.99', 100.00);
+        $result = $method->invoke($this->controller, '9.99');
         $this->assertEqualsWithDelta(9.99, $result['amountInUnits'], 0.00001);
         $this->assertSame(999, $result['amountInCents']);
 
-        $result = $method->invoke($this->controller, '9,99', 100.00);
+        $result = $method->invoke($this->controller, '9,99');
         $this->assertEqualsWithDelta(9.99, $result['amountInUnits'], 0.00001);
         $this->assertSame(999, $result['amountInCents']);
 
-        // Integer-like input <= order total => treat as units
-        $result = $method->invoke($this->controller, '10', 100.00);
-        $this->assertEqualsWithDelta(10.0, $result['amountInUnits'], 0.00001);
-        $this->assertSame(1000, $result['amountInCents']);
+        // Integer-like input => always cents, even when the value fits within the order total
+        $result = $method->invoke($this->controller, '20');
+        $this->assertEqualsWithDelta(0.20, $result['amountInUnits'], 0.00001);
+        $this->assertSame(20, $result['amountInCents']);
 
-        // Integer-like input > order total => treat as cents
-        $result = $method->invoke($this->controller, '1000', 10.00);
+        $result = $method->invoke($this->controller, '1000');
         $this->assertEqualsWithDelta(10.0, $result['amountInUnits'], 0.00001);
         $this->assertSame(1000, $result['amountInCents']);
     }
@@ -542,7 +541,7 @@ class RefundControllerCoverageTest extends TestCase
 
         $request = new Request([], [
             'orderId' => $orderId,
-            'amount' => 15.00,
+            'amount' => 1500,
         ]);
 
         $response = $this->controller->refund($request, $this->context);
