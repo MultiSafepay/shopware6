@@ -200,12 +200,8 @@ class RefundController extends AbstractController
         }
 
         $rawAmount = (string)$request->request->get('amount');
-        $orderAmountTotal = $order->getAmountTotal();
 
-        ['amountInUnits' => $amountInUnits] = $this->normalizeRefundAmount(
-            $rawAmount,
-            $orderAmountTotal
-        );
+        ['amountInUnits' => $amountInUnits] = $this->normalizeRefundAmount($rawAmount);
 
         try {
             $orderTransactionId = $this->getLatestMultiSafepayTransactionId($order);
@@ -433,26 +429,21 @@ class RefundController extends AbstractController
     /**
      * Normalize the refund amount coming from Admin UI.
      *
-     * The admin UI may send the amount either:
-     * - As full units (e.g. "10", "10.00", "10,00")
-     * - Or as cents (e.g. "1000")
-     *
-     * Heuristic used for integer-like inputs (no dot/comma):
-     * - If the integer is less than or equal to the order total (rounded to an int), treat it as units.
-     * - Otherwise treat it as cents.
+     * The admin UI service (MultiSafepayApi.service.js) always sends the amount as an
+     * integer number of cents, so integer-like input (no dot/comma) is interpreted as cents.
+     * Decimal input (dot or comma) is interpreted as full units.
      *
      * Examples:
      * - raw "9.99" => units 9.99, cents 999
      * - raw "9,99" => units 9.99, cents 999
-     * - raw "10" (order total 100.00) => units 10.0, cents 1000
-     * - raw "1000" (order total 10.00) => units 10.0, cents 1000
+     * - raw "20"   => units 0.20, cents 20
+     * - raw "1000" => units 10.0, cents 1000
      *
      * @param string $rawAmount Amount as received from the request
-     * @param float $orderAmountTotal Order total in full units (e.g., 100.00)
      *
      * @return array{amountInUnits: float, amountInCents: int} Normalized amount in units and cents
      */
-    private function normalizeRefundAmount(string $rawAmount, float $orderAmountTotal): array
+    private function normalizeRefundAmount(string $rawAmount): array
     {
         if (str_contains($rawAmount, ',') || str_contains($rawAmount, '.')) {
             $amountInUnits = (float)str_replace(',', '.', $rawAmount);
@@ -461,16 +452,7 @@ class RefundController extends AbstractController
             return ['amountInUnits' => $amountInUnits, 'amountInCents' => $amountInCents];
         }
 
-        $amountAsInt = (int)$rawAmount;
-
-        if ($amountAsInt <= (int)round($orderAmountTotal)) {
-            $amountInUnits = (float)$amountAsInt;
-            $amountInCents = (int)round($amountInUnits * 100);
-
-            return ['amountInUnits' => $amountInUnits, 'amountInCents' => $amountInCents];
-        }
-
-        $amountInCents = $amountAsInt;
+        $amountInCents = (int)$rawAmount;
         $amountInUnits = $amountInCents / 100;
 
         return ['amountInUnits' => $amountInUnits, 'amountInCents' => $amountInCents];
