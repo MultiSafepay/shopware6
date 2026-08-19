@@ -42,6 +42,11 @@
             "MultiSafepay\\": "vendor/multisafepay/php-sdk/src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "MultiSafepay\\Shopware6\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "shopware-plugin-class": "MultiSafepay\\Shopware6\\MltisafeMultiSafepay",
         "label": {

@@ -30,6 +30,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Composer refuses packages with a published advisory. Pinning any given
+      # Shopware release pulls some in transitively -- 6.7 currently resolves
+      # mcp/sdk, whose advisory is only fixed in a version no 6.7 release
+      # allows -- so dependency install fails for reasons unrelated to this
+      # repository. Set globally so composer.json stays untouched.
+      - name: Allow advisory-affected transitive dependencies
+        run: composer config --global audit.block-insecure false
+
       # This step installs the dependencies defined in the composer.json file
       - name: Install dependencies
         run: composer install

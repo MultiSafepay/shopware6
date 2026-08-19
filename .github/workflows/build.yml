@@ -37,6 +37,12 @@ jobs:
           php-extensions: pcov
           # Install Shopware
           install: true
+          # Composer refuses packages with a published advisory, and Shopware's
+          # own root composer.json currently resolves mcp/sdk, whose advisory is
+          # fixed only in a version no 6.7 release allows. Without this the
+          # action fails while installing Shopware, before this repository is
+          # even checked out.
+          allow-insecure-versions: 'true'
 
       # Step to check out the code
       - name: Checkout MultiSafepay Shopware 6.7 module
