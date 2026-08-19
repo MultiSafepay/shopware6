@@ -4,7 +4,6 @@
 /.dist/
 /.idea
 /.vscode/
-/application/
 /composer.lock
 /node_modules/
 /var/

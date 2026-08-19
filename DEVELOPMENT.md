@@ -1,49 +1,84 @@
+# Development
+
 ## Requirements
-- Docker and Docker Compose
-- Expose token, follow instruction here: https://expose.beyondco.de/docs/introduction to get a token
 
-## Installation
-1. Clone the repository:
-```
-git clone https://github.com/MultiSafepay/shopware6.git
-``` 
+- PHP 8.2 or higher
+- [Composer](https://getcomposer.org/)
+- A Shopware 6.6 installation, for running the plugin and its test suite
+- [`shopware-cli`](https://github.com/shopware/shopware-cli), for Marketplace validation
 
-2. Copy the example env file and make the required configuration changes in the .env file:
-```
-cp .env.example .env
-```
-- **EXPOSE_HOST** can be set to the expose server to connect to
-- **APP_SUBDOMAIN** replace the `-xx` in `shopware6-dev-xx` with a number for example `shopware6-dev-05`
-- **EXPOSE_TOKEN** must be filled in
+## Installing the plugin into Shopware
 
-3. Start the Docker containers
-```
-docker-compose up
-```
-The above command will start the container and show you some logs, this helps when you start for the first time,
-so you'll see any error message that might happen. You can shut down the containers by opening another terminal,
-access this project directory and execute `docker-compose down`. The next time you want to start the containers
-you can execute `docker-compose up -d`.
-
-4. Update the Shopware domain for the sales channel 
-```
-make update-host
-```
-
-5. Install and activate the MultiSafepay plugin
-```
-make install
-```
-
-## Validating the plugin
-
-The plugin is validated with [`shopware-cli`](https://github.com/shopware/shopware-cli)
-using PHPStan (Shopware Marketplace rules). The CLI is bundled in the Docker image, so you can
-run the validation via the Makefile target (it executes inside the container):
+Place this checkout at `custom/plugins/MltisafeMultiSafepay` inside a Shopware installation, then
+run the following from the Shopware root:
 
 ```
-make validate-marketplace
+composer config repositories.multisafepay.shopware6 path custom/plugins/MltisafeMultiSafepay
+composer config allow-plugins.php-http/discovery false
+composer require multisafepay/shopware6
+bin/console plugin:refresh
+bin/console plugin:install -c -a MltisafeMultiSafepay
 ```
 
-This same validation runs automatically in CI on every pull request (see
-`.github/workflows/validate-marketplace.yml`) and will fail the pull request when issues are found.
+This is the same sequence `.github/workflows/build.yml` uses.
+
+## Coding standards
+
+Runs against a bare checkout -- no Shopware installation required:
+
+```
+composer install
+vendor/bin/phpcs --standard=phpcs.ruleset.xml src/ tests/
+```
+
+To fix what can be fixed automatically:
+
+```
+vendor/bin/phpcbf --standard=phpcs.ruleset.xml src/ tests/
+```
+
+`.github/workflows/code_sniffer.yml` runs the same check on every pull request.
+
+GrumPHP installs a pre-commit hook during `composer install` that runs the unit test suite.
+
+## Tests
+
+`tests/TestBootstrap.php` loads Shopware's autoloader from `../../../../vendor/autoload.php`, so
+the suite needs this checkout to sit inside a Shopware tree. From the plugin directory:
+
+```
+../../../vendor/bin/phpunit --configuration=./phpunit.xml.dist
+```
+
+With coverage:
+
+```
+php -d pcov.enabled=1 ../../../vendor/bin/phpunit --coverage-clover clover.xml
+```
+
+## Marketplace validation
+
+The plugin is validated with [`shopware-cli`](https://github.com/shopware/shopware-cli) using
+PHPStan and the Shopware Marketplace ruleset:
+
+```
+sh bin/validate-marketplace.sh .
+```
+
+`.github/workflows/validate-marketplace.yml` runs this on every pull request and fails the build
+when issues are found.
+
+For the complete report rather than the filtered summary:
+
+```
+shopware-cli extension validate . --full
+```
+
+## Releasing
+
+`bin/release.sh <version>` builds the Marketplace zip from a git tag, stripping development
+dependencies and re-adding the Shopware requirements without vendoring them.
+
+`.github/workflows/release.yml` runs it automatically when a tag is pushed and uploads the
+resulting `Plugin_Shopware6_<version>.zip` to the GitHub release. Run it locally only to inspect
+the archive.
