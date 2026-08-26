@@ -128,22 +128,17 @@ class PaymentUtilTest extends TestCase
     }
 
     /**
-     * Test isMultisafepayPaymentMethod method with a MultiSafepay payment
+     * Test isMultiSafepayPaymentMethod method with a MultiSafepay payment
      *
      * @return void
      */
-    public function testIsMultisafepayPaymentMethodWithMultiSafepayPayment(): void
+    public function testIsMultiSafepayPaymentMethodWithMultiSafepayPayment(): void
     {
         $orderId = 'test-order-id';
         $context = Context::createDefaultContext();
 
         // Mock the order
         $order = $this->getMockBuilder(OrderEntity::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        // Mock the transaction collection
-        $transactions = $this->getMockBuilder(OrderTransactionCollection::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -166,7 +161,7 @@ class PaymentUtilTest extends TestCase
         $plugin->method('getBaseClass')->willReturn(MltisafeMultiSafepay::class);
         $paymentMethod->method('getPlugin')->willReturn($plugin);
         $transaction->method('getPaymentMethod')->willReturn($paymentMethod);
-        $transactions->method('first')->willReturn($transaction);
+        $transactions = new OrderTransactionCollection([$transaction]);
         $order->method('getTransactions')->willReturn($transactions);
 
         // Set up the order util mock
@@ -176,16 +171,16 @@ class PaymentUtilTest extends TestCase
             ->willReturn($order);
 
         // Test with a MultiSafepay payment method
-        $result = $this->paymentUtil->isMultisafepayPaymentMethod($orderId, $context);
+        $result = $this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context);
         $this->assertTrue($result);
     }
 
     /**
-     * Test isMultisafepayPaymentMethod method with a non-MultiSafepay payment
+     * Test isMultiSafepayPaymentMethod method with a non-MultiSafepay payment
      *
      * @return void
      */
-    public function testIsMultisafepayPaymentMethodWithNonMultiSafepayPayment(): void
+    public function testIsMultiSafepayPaymentMethodWithNonMultiSafepayPayment(): void
     {
         $orderId = 'test-order-id';
         $context = Context::createDefaultContext();
@@ -201,10 +196,7 @@ class PaymentUtilTest extends TestCase
             ->getMock();
         $transactionNoPlugin->method('getPaymentMethod')->willReturn($paymentMethodNoPlugin);
 
-        $transactionsNoPlugin = $this->getMockBuilder(OrderTransactionCollection::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $transactionsNoPlugin->method('first')->willReturn($transactionNoPlugin);
+        $transactionsNoPlugin = new OrderTransactionCollection([$transactionNoPlugin]);
 
         $orderNoPlugin = $this->getMockBuilder(OrderEntity::class)
             ->disableOriginalConstructor()
@@ -216,7 +208,118 @@ class PaymentUtilTest extends TestCase
             ->with($orderId, $context)
             ->willReturn($orderNoPlugin);
 
-        $result = $this->paymentUtil->isMultisafepayPaymentMethod($orderId, $context);
+        $result = $this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context);
         $this->assertFalse($result);
+    }
+
+    public function testIsMultiSafepayPaymentMethodUsesPrimaryTransactionWhenAvailable(): void
+    {
+        $orderId = 'test-order-id';
+        $context = Context::createDefaultContext();
+
+        $mspPlugin = $this->getMockBuilder(PluginEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPlugin->method('getBaseClass')->willReturn(MltisafeMultiSafepay::class);
+
+        $mspPaymentMethod = $this->getMockBuilder(PaymentMethodEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPaymentMethod->method('getPlugin')->willReturn($mspPlugin);
+
+        $mspTransaction = $this->getMockBuilder(OrderTransactionEntity::class)->disableOriginalConstructor()->getMock();
+        $mspTransaction->method('getPaymentMethod')->willReturn($mspPaymentMethod);
+
+        $otherPlugin = $this->getMockBuilder(PluginEntity::class)->disableOriginalConstructor()->getMock();
+        $otherPlugin->method('getBaseClass')->willReturn('Other\\Plugin');
+
+        $otherPaymentMethod = $this->getMockBuilder(PaymentMethodEntity::class)->disableOriginalConstructor()->getMock();
+        $otherPaymentMethod->method('getPlugin')->willReturn($otherPlugin);
+
+        $primaryTransaction = $this->getMockBuilder(OrderTransactionEntity::class)->disableOriginalConstructor()->getMock();
+        $primaryTransaction->method('getPaymentMethod')->willReturn($otherPaymentMethod);
+
+        $order = $this->getMockBuilder(OrderEntity::class)->disableOriginalConstructor()->getMock();
+        $order->method('getPrimaryOrderTransaction')->willReturn($primaryTransaction);
+        $order->method('getTransactions')->willReturn(new OrderTransactionCollection([$mspTransaction, $primaryTransaction]));
+
+        $this->orderUtilMock->method('getOrder')->with($orderId, $context)->willReturn($order);
+
+        $this->assertFalse($this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context));
+    }
+
+    public function testIsMultiSafepayPaymentMethodReturnsFalseWhenTransactionsAreMissing(): void
+    {
+        $orderId = 'test-order-id';
+        $context = Context::createDefaultContext();
+
+        $order = $this->getMockBuilder(OrderEntity::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $order->method('getPrimaryOrderTransaction')->willReturn(null);
+        $order->method('getTransactions')->willReturn(null);
+
+        $this->orderUtilMock->expects($this->once())
+            ->method('getOrder')
+            ->with($orderId, $context)
+            ->willReturn($order);
+
+        $this->assertFalse($this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context));
+    }
+
+    public function testIsMultiSafepayPaymentMethodUsesPrimaryTransactionIdFallback(): void
+    {
+        $orderId = 'test-order-id';
+        $context = Context::createDefaultContext();
+
+        $mspPlugin = $this->getMockBuilder(PluginEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPlugin->method('getBaseClass')->willReturn(MltisafeMultiSafepay::class);
+
+        $mspPaymentMethod = $this->getMockBuilder(PaymentMethodEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPaymentMethod->method('getPlugin')->willReturn($mspPlugin);
+
+        $mspTransaction = $this->getMockBuilder(OrderTransactionEntity::class)->disableOriginalConstructor()->getMock();
+        $mspTransaction->method('getId')->willReturn('primary-transaction-id');
+        $mspTransaction->method('getPaymentMethod')->willReturn($mspPaymentMethod);
+
+        $order = $this->getMockBuilder(OrderEntity::class)->disableOriginalConstructor()->getMock();
+        $order->method('getPrimaryOrderTransaction')->willReturn(null);
+        $order->method('getPrimaryOrderTransactionId')->willReturn('primary-transaction-id');
+        $order->method('getTransactions')->willReturn(new OrderTransactionCollection([$mspTransaction]));
+
+        $this->orderUtilMock->expects($this->once())
+            ->method('getOrder')
+            ->with($orderId, $context)
+            ->willReturn($order);
+
+        $this->assertTrue($this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context));
+    }
+
+    public function testIsMultiSafepayPaymentMethodReturnsFalseWhenPrimaryTransactionIdDoesNotMatch(): void
+    {
+        $orderId = 'test-order-id';
+        $context = Context::createDefaultContext();
+
+        $mspPlugin = $this->getMockBuilder(PluginEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPlugin->method('getBaseClass')->willReturn(MltisafeMultiSafepay::class);
+
+        $mspPaymentMethod = $this->getMockBuilder(PaymentMethodEntity::class)->disableOriginalConstructor()->getMock();
+        $mspPaymentMethod->method('getPlugin')->willReturn($mspPlugin);
+
+        $mspTransaction = $this->getMockBuilder(OrderTransactionEntity::class)->disableOriginalConstructor()->getMock();
+        $mspTransaction->method('getId')->willReturn('msp-transaction-id');
+        $mspTransaction->method('getPaymentMethod')->willReturn($mspPaymentMethod);
+
+        $otherTransaction = $this->getMockBuilder(OrderTransactionEntity::class)->disableOriginalConstructor()->getMock();
+        $otherTransaction->method('getId')->willReturn('other-transaction-id');
+        $otherTransaction->method('getPaymentMethod')->willReturn(null);
+
+        $order = $this->getMockBuilder(OrderEntity::class)->disableOriginalConstructor()->getMock();
+        $order->method('getPrimaryOrderTransaction')->willReturn(null);
+        $order->method('getPrimaryOrderTransactionId')->willReturn('missing-transaction-id');
+        $order->method('getTransactions')->willReturn(new OrderTransactionCollection([$otherTransaction, $mspTransaction]));
+
+        $this->orderUtilMock->expects($this->once())
+            ->method('getOrder')
+            ->with($orderId, $context)
+            ->willReturn($order);
+
+        $this->assertFalse($this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context));
     }
 }

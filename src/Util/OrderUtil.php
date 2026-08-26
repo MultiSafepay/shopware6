@@ -84,6 +84,10 @@ class OrderUtil
             ->addAssociation('transactions.stateMachineState')
             ->addAssociation('transactions.paymentMethod')
             ->addAssociation('transactions.paymentMethod.plugin')
+            ->addAssociation('primaryOrderTransaction')
+            ->addAssociation('primaryOrderTransaction.paymentMethod')
+            ->addAssociation('primaryOrderTransaction.paymentMethod.plugin')
+            ->addAssociation('primaryOrderTransaction.stateMachineState')
             ->addAssociation('salesChannel');
 
         return $this->orderRepository->search($criteria, $context)->get($orderId);

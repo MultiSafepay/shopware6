@@ -9,19 +9,24 @@ use Exception;
 use MultiSafepay\Api\Transactions\RefundRequest;
 use MultiSafepay\Api\Transactions\UpdateRequest;
 use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\InvalidArgumentException;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Service\SettingsService;
+use MultiSafepay\Shopware6\Support\MultiSafepayResponsePayload;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use MultiSafepay\ValueObject\CartItem;
 use MultiSafepay\ValueObject\Money;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
+use Random\RandomException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
@@ -39,6 +44,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Throwable;
 
 /**
  * Class PaymentHandler
@@ -87,11 +93,6 @@ class PaymentHandler extends AbstractPaymentHandler
     /**
      * @var EntityRepository
      */
-    private EntityRepository $orderRepository;
-
-    /**
-     * @var EntityRepository
-     */
     private EntityRepository $refundRepository;
 
     /**
@@ -119,7 +120,6 @@ class PaymentHandler extends AbstractPaymentHandler
      * @param CachedSalesChannelContextFactory $cachedSalesChannelContextFactory
      * @param SettingsService $settingsService
      * @param EntityRepository $orderTransactionRepository
-     * @param EntityRepository $orderRepository
      * @param EntityRepository $refundRepository
      * @param OrderTransactionCaptureRefundStateHandler $refundStateHandler
      * @param LoggerInterface $logger
@@ -133,7 +133,6 @@ class PaymentHandler extends AbstractPaymentHandler
         CachedSalesChannelContextFactory $cachedSalesChannelContextFactory,
         SettingsService $settingsService,
         EntityRepository $orderTransactionRepository,
-        EntityRepository $orderRepository,
         EntityRepository $refundRepository,
         OrderTransactionCaptureRefundStateHandler $refundStateHandler,
         LoggerInterface $logger,
@@ -146,7 +145,6 @@ class PaymentHandler extends AbstractPaymentHandler
         $this->cachedSalesChannelContextFactory = $cachedSalesChannelContextFactory;
         $this->settingsService = $settingsService;
         $this->orderTransactionRepository = $orderTransactionRepository;
-        $this->orderRepository = $orderRepository;
         $this->refundRepository = $refundRepository;
         $this->refundStateHandler = $refundStateHandler;
         $this->logger = $logger;
@@ -232,7 +230,6 @@ class PaymentHandler extends AbstractPaymentHandler
                 }
             }
 
-            // Build the order request
             $orderRequest = $this->orderRequestBuilder->build(
                 $transaction,
                 $order,
@@ -243,15 +240,11 @@ class PaymentHandler extends AbstractPaymentHandler
                 $gatewayInfo
             );
 
-            // Launch the event before processing the transaction
+            // Let extension subscribers adjust the MultiSafepay order request before it is sent.
             $event = new FilterOrderRequestEvent($orderRequest, $context);
-            // Dispatch the event
             $this->eventDispatcher->dispatch($event, FilterOrderRequestEvent::NAME);
-
-            // Get the order request probably modified by the event
             $orderRequest = $event->getOrderRequest();
 
-            // Process the transaction
             $response = $this->sdkFactory->create($salesChannelId)->getTransactionManager()->create($orderRequest);
 
             if ($this->settingsService->isDebugMode($salesChannelId)) {
@@ -263,7 +256,6 @@ class PaymentHandler extends AbstractPaymentHandler
                 ]);
             }
 
-            // Return the payment URL
             if ($response->getPaymentUrl()) {
                 return new RedirectResponse($response->getPaymentUrl());
             }
@@ -439,13 +431,16 @@ class PaymentHandler extends AbstractPaymentHandler
     }
 
     /**
-     * Execute a refund via MultiSafepay and update Shopware refund/transaction states.
+     * Execute a Shopware-native refund via MultiSafepay and synchronize Shopware states.
      *
-     * @param RefundPaymentTransactionStruct $transaction
-     * @param Context $context
+     * Loads the capture refund created by Shopware Commercial, validates the linked order, currency, and amount,
+     * sends the refund request to MultiSafepay, stores PSP audit data on the refund entity, and updates the
+     * Shopware refund/payment states best-effort.
+     *
+     * @param RefundPaymentTransactionStruct $transaction Shopware refund transaction data containing the refund ID.
+     * @param Context $context Shopware context used for repository writes and state transitions.
      * @return void
-     * @throws ApiException
-     * @throws ClientExceptionInterface
+     * @throws PaymentException When the refund cannot be loaded, validated or completed by MultiSafepay.
      */
     public function refund(RefundPaymentTransactionStruct $transaction, Context $context): void
     {
@@ -465,57 +460,90 @@ class PaymentHandler extends AbstractPaymentHandler
         $currency = $order->getCurrency();
 
         if (!$currency) {
-            throw PaymentException::invalidTransaction($orderTransaction->getId());
+            throw PaymentException::refundInterrupted($refundId, 'Order currency missing');
         }
 
         $refundAmountUnits = $refund->getAmount()?->getTotalPrice() ?? 0.0;
         $refundAmountInCents = (int)round($refundAmountUnits * 100);
 
+        if ($refundAmountInCents <= 0) {
+            throw PaymentException::refundInterrupted($refundId, 'Refund amount must be greater than 0');
+        }
+
+        // Shopware reaches this handler through native capture refunds, such as Shopware Return.
+        // Regular checkout payments do not use this path.
         try {
             $transactionManager = $this->sdkFactory->create($salesChannelId)->getTransactionManager();
             $transactionData = $transactionManager->get($orderNumber);
 
-            if ($transactionData->requiresShoppingCart()) {
-                $refundRequest = $transactionManager->createRefundRequest($transactionData);
-                $merchantItemId = 'refund_id_' . $orderNumber . '_' . time();
-
-                $refundItem = (new CartItem())
-                    ->addName('Refund')
-                    ->addQuantity(1)
-                    ->addUnitPrice((new Money($refundAmountInCents, $currency->getIsoCode()))->negative())
-                    ->addMerchantItemId($merchantItemId)
-                    ->addTaxRate(0);
-
-                $refundRequest->getCheckoutData()->addItem($refundItem);
-            } else {
-                $refundRequest = (new RefundRequest())->addMoney(
-                    new Money(
-                        $refundAmountInCents,
-                        $currency->getIsoCode()
-                    )
-                );
+            // Native capture refunds can be retried after the PSP refund exists; synchronize before local transitions.
+            if ($this->synchronizeExistingMultiSafepayRefund(
+                $refund,
+                $transactionData,
+                $transactionManager,
+                $orderTransaction,
+                $order,
+                $context
+            )) {
+                return;
             }
 
-            $transactionManager->refund($transactionData, $refundRequest);
+            $this->processRefundIfNotInProgress($refund, $refundId, $context);
 
-            $this->refundStateHandler->complete($refundId, $context);
+            $refundRequest = $this->createMultiSafepayRefundRequest(
+                $transactionManager,
+                $transactionData,
+                $refundAmountInCents,
+                $currency->getIsoCode(),
+                $orderNumber
+            );
 
-            $this->persistRefundedAmountInOrderCustomFields(
-                $order,
+            $refundResponse = $transactionManager->refund($transactionData, $refundRequest);
+
+            $this->persistRefundAuditData(
+                $refund,
+                $refundResponse,
+                $orderNumber,
                 $refundAmountInCents,
                 $context
             );
-        } catch (ApiException | ClientExceptionInterface | Exception $exception) {
+
+            // The PSP refund exists after this point. Shopware synchronization must not trigger a retry that could
+            // create a duplicate refund in MultiSafepay, so the remaining local state updates are best-effort.
+            try {
+                $updatedTransactionData = $transactionManager->get($orderNumber);
+                $this->syncOrderTransactionRefundState($orderTransaction, $order, $updatedTransactionData, $context);
+            } catch (Throwable $exception) {
+                $this->logger->warning('PaymentHandler: Refund succeeded in MultiSafepay, but failed to refresh transaction totals', [
+                    'refundId' => $refundId,
+                    'orderNumber' => $orderNumber,
+                    'orderTransactionId' => $orderTransaction->getId(),
+                    'message' => $exception->getMessage(),
+                    'exceptionClass' => get_class($exception),
+                ]);
+            }
+
+            try {
+                $this->refundStateHandler->complete($refundId, $context);
+            } catch (Throwable $exception) {
+                $this->logger->warning('PaymentHandler: Refund succeeded in MultiSafepay, but failed to complete Shopware refund state', [
+                    'refundId' => $refundId,
+                    'orderNumber' => $orderNumber,
+                    'orderTransactionId' => $orderTransaction->getId(),
+                    'message' => $exception->getMessage(),
+                    'exceptionClass' => get_class($exception),
+                ]);
+            }
+        } catch (Throwable $exception) {
             $this->logger->error('PaymentHandler: Refund failed', [
                 'refundId' => $refundId,
                 'orderNumber' => $orderNumber,
                 'orderTransactionId' => $orderTransaction->getId(),
                 'message' => $exception->getMessage(),
-                'code' => $exception->getCode(),
                 'exceptionClass' => get_class($exception)
             ]);
 
-            throw $exception;
+            throw PaymentException::refundInterrupted($refundId, $exception->getMessage(), $exception);
         }
     }
 
@@ -552,19 +580,23 @@ class PaymentHandler extends AbstractPaymentHandler
     }
 
     /**
-     * Load refund entity with required associations.
+     * Load a Shopware capture refund with the associations required for MultiSafepay processing.
      *
-     * @param string $refundId
-     * @param Context $context
-     * @return OrderTransactionCaptureRefundEntity
+     * @param string $refundId Shopware order transaction capture refund ID.
+     * @param Context $context Shopware context used for the repository lookup.
+     * @return OrderTransactionCaptureRefundEntity Refund entity with capture, transaction, order and currency data.
+     * @throws PaymentException When the refund entity does not exist.
      */
     private function getRefundEntity(string $refundId, Context $context): OrderTransactionCaptureRefundEntity
     {
         $criteria = new Criteria([$refundId]);
         $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('positions');
         $criteria->addAssociation('transactionCapture.transaction.order');
         $criteria->addAssociation('transactionCapture.transaction.order.currency');
         $criteria->addAssociation('transactionCapture.transaction.stateMachineState');
+        $criteria->addAssociation('transactionCapture.transaction.paymentMethod');
+        $criteria->addAssociation('transactionCapture.stateMachineState');
 
         $refund = $this->refundRepository->search($criteria, $context)->getEntities()->first();
 
@@ -576,37 +608,342 @@ class PaymentHandler extends AbstractPaymentHandler
     }
 
     /**
-     * Persist refunded amount accumulator in order customFields.
+     * Build the MultiSafepay refund request for transactions with or without shopping-cart refund support.
      *
-     * @param OrderEntity $order
-     * @param int $amountInCents
-     * @param Context $context
-     * @return void
+     * @param mixed $transactionManager MultiSafepay transaction manager from the SDK.
+     * @param mixed $transactionData MultiSafepay transaction response for the order.
+     * @param int $refundAmountInCents Refund amount in minor units.
+     * @param string $currencyIsoCode ISO currency code used by MultiSafepay Money.
+     * @param string $orderNumber Shopware order number used in generated refund item references.
+     * @return RefundRequest MultiSafepay refund request ready to submit.
+     * @throws InvalidArgumentException
+     * @throws RandomException
      */
-    private function persistRefundedAmountInOrderCustomFields(
+    private function createMultiSafepayRefundRequest(
+        mixed $transactionManager,
+        mixed $transactionData,
+        int $refundAmountInCents,
+        string $currencyIsoCode,
+        string $orderNumber
+    ): RefundRequest {
+        if ($transactionData->requiresShoppingCart()) {
+            // Shopping-cart refunds must send a negative line item; Money expects minor units here.
+            $refundRequest = $transactionManager->createRefundRequest($transactionData);
+            $merchantItemId = 'refund_id_' . $orderNumber . '_' . bin2hex(random_bytes(8));
+
+            $refundItem = (new CartItem())
+                ->addName('Refund')
+                ->addQuantity(1)
+                ->addUnitPrice((new Money($refundAmountInCents, $currencyIsoCode))->negative())
+                ->addMerchantItemId($merchantItemId)
+                ->addTaxRate(0);
+
+            $refundRequest->getCheckoutData()->addItem($refundItem);
+
+            return $refundRequest;
+        }
+
+        return (new RefundRequest())->addMoney(new Money($refundAmountInCents, $currencyIsoCode));
+    }
+
+    /**
+     * Detect and synchronize an already-created MultiSafepay refund to avoid duplicate PSP refunds.
+     *
+     * When a Shopware refund already stores an external PSP refund reference, this method checks the
+     * MultiSafepay transaction payload. Completed refunds are marked completed in Shopware; reserved refunds
+     * are left in progress; failed/voided refunds are allowed to be retried.
+     *
+     * @param OrderTransactionCaptureRefundEntity $refund Shopware refund entity being processed.
+     * @param mixed $transactionData MultiSafepay transaction response containing related transactions.
+     * @param mixed $transactionManager MultiSafepay transaction manager used to re-read totals.
+     * @param OrderTransactionEntity $orderTransaction Shopware order transaction linked to the refund capture.
+     * @param OrderEntity $order Shopware order linked to the refund.
+     * @param Context $context Shopware context used for repository writes and state transitions.
+     * @return bool True when processing should stop because an existing PSP refund was handled.
+     */
+    private function synchronizeExistingMultiSafepayRefund(
+        OrderTransactionCaptureRefundEntity $refund,
+        mixed $transactionData,
+        mixed $transactionManager,
+        OrderTransactionEntity $orderTransaction,
         OrderEntity $order,
-        int $amountInCents,
         Context $context
-    ): void {
-        $customFields = $order->getCustomFields() ?? [];
-        $currentRefundedAmountInCents = (int)($customFields['multisafepay_refunded_amount'] ?? 0);
-        $newRefundedAmountInCents = $currentRefundedAmountInCents + $amountInCents;
-        $customFields['multisafepay_refunded_amount'] = $newRefundedAmountInCents;
+    ): bool {
+        $existingRefundTransactionId = $refund->getExternalReference();
+        if (!is_string($existingRefundTransactionId) || $existingRefundTransactionId === '') {
+            return false;
+        }
+
+        $existingRefundWasFound = false;
+
+        // A stored PSP reference means a previous attempt may already have created the refund remotely.
+        // If verifying that reference fails, interrupt the flow instead of silently leaving the refund processing.
+        $shouldStopProcessingExistingRefund = false;
 
         try {
-            $this->orderRepository->update([
+            $mspTransactionPayload = MultiSafepayResponsePayload::extractAsArray($transactionData);
+            $existingRefund = $this->findMspRelatedRefundByTransactionId(
+                $mspTransactionPayload,
+                $existingRefundTransactionId
+            );
+
+            if ($existingRefund === null) {
+                return false;
+            }
+
+            $existingRefundWasFound = true;
+            $status = $existingRefund['status'] ?? null;
+            $status = is_scalar($status) ? (string)$status : '';
+
+            // Once a completed/reserved PSP refund is found, later Shopware sync failures must still stop processing;
+            // otherwise the caller would create a duplicate refund. Failed refunds keep returning false for retries.
+            $shouldStopProcessingExistingRefund = in_array($status, ['completed', 'reserved'], true);
+
+            $customFields = $refund->getCustomFields() ?? [];
+            $customFields['msp_refund_status'] = $status;
+            $customFields['msp_refund_status_payload'] = $existingRefund;
+
+            $this->refundRepository->update([
                 [
-                    'id' => $order->getId(),
+                    'id' => $refund->getId(),
+                    'versionId' => $refund->getVersionId() ?? $context->getVersionId(),
                     'customFields' => $customFields,
                 ],
             ], $context);
-        } catch (Exception $customFieldException) {
-            $this->logger->warning('Refund succeeded but failed to persist refunded amount in order customFields', [
-                'message' => $customFieldException->getMessage(),
-                'orderId' => $order->getId(),
-                'orderNumber' => $order->getOrderNumber(),
+
+            if ($status === 'completed') {
+                $this->completeRefundIfNotCompleted($refund, $refund->getId(), $context);
+                $updatedTransactionData = $transactionManager->get($order->getOrderNumber());
+                $this->syncOrderTransactionRefundState($orderTransaction, $order, $updatedTransactionData, $context);
+
+                return true;
+            }
+
+            if ($status === 'reserved') {
+                $this->processRefundIfNotInProgress($refund, $refund->getId(), $context);
+            }
+
+            return $shouldStopProcessingExistingRefund;
+        } catch (Throwable $exception) {
+            if (!$existingRefundWasFound) {
+                $this->logger->debug('PaymentHandler: Existing MultiSafepay refund reference could not be verified', [
+                    'refundId' => $refund->getId(),
+                    'orderNumber' => $order->getOrderNumber(),
+                    'message' => $exception->getMessage(),
+                    'exceptionClass' => get_class($exception),
+                ]);
+
+                throw $exception;
+            }
+
+            $this->logger->debug(
+                $shouldStopProcessingExistingRefund
+                    ? 'PaymentHandler: Existing MultiSafepay refund detected, but Shopware synchronization failed'
+                    : 'PaymentHandler: Refund deduplication skipped',
+                [
+                    'refundId' => $refund->getId(),
+                    'orderNumber' => $order->getOrderNumber(),
+                    'message' => $exception->getMessage(),
+                    'exceptionClass' => get_class($exception),
+                ]
+            );
+        }
+
+        return $shouldStopProcessingExistingRefund;
+    }
+
+    /**
+     * Complete a Shopware refund unless it already is.
+     *
+     * PSP deduplication can find a refund after Shopware completed it; repeating transitions would be noisy.
+     *
+     * @param OrderTransactionCaptureRefundEntity $refund Shopware refund entity being completed.
+     * @param string $refundId Refund ID used for the state-machine transition.
+     * @param Context $context Shopware context used for the state transition.
+     * @return void
+     */
+    private function completeRefundIfNotCompleted(
+        OrderTransactionCaptureRefundEntity $refund,
+        string $refundId,
+        Context $context
+    ): void {
+        $currentState = $refund->getStateMachineState()?->getTechnicalName();
+        if ($currentState === OrderTransactionCaptureRefundStates::STATE_COMPLETED) {
+            return;
+        }
+
+        $this->processRefundIfNotInProgress($refund, $refundId, $context);
+        $this->refundStateHandler->complete($refundId, $context);
+    }
+
+    /**
+     * Move a Shopware refund to in-progress unless it already is.
+     *
+     * Retried refunds can already be in progress; calling process again would block PSP deduplication.
+     *
+     * @param OrderTransactionCaptureRefundEntity $refund Shopware refund entity being processed.
+     * @param string $refundId Refund ID used for the state-machine transition.
+     * @param Context $context Shopware context used for the state transition.
+     * @return void
+     */
+    private function processRefundIfNotInProgress(
+        OrderTransactionCaptureRefundEntity $refund,
+        string $refundId,
+        Context $context
+    ): void {
+        $currentState = $refund->getStateMachineState()?->getTechnicalName();
+        if ($currentState === OrderTransactionCaptureRefundStates::STATE_IN_PROGRESS) {
+            return;
+        }
+
+        $this->refundStateHandler->process($refundId, $context);
+    }
+
+    /**
+     * Persist MultiSafepay refund audit fields on the Shopware refund entity.
+     *
+     * Stores the PSP response, refund amount, idempotency key and PSP refund reference for reconciliation
+     * and future deduplication. Persistence errors are logged but do not fail an already-successful PSP refund.
+     *
+     * @param OrderTransactionCaptureRefundEntity $refund Shopware refund entity to update.
+     * @param mixed $refundResponse MultiSafepay refund response object.
+     * @param string $orderNumber Shopware order number used for audit fields and reference replacement.
+     * @param int $refundAmountInCents Refunded amount in minor units.
+     * @param Context $context Shopware context used for the repository update.
+     * @return void
+     */
+    private function persistRefundAuditData(
+        OrderTransactionCaptureRefundEntity $refund,
+        mixed $refundResponse,
+        string $orderNumber,
+        int $refundAmountInCents,
+        Context $context
+    ): void {
+        try {
+            $refundPayload = MultiSafepayResponsePayload::extractAsArray($refundResponse);
+
+            $externalReference = $refundPayload['id']
+                ?? $refundPayload['refund_id']
+                ?? $refundPayload['reference']
+                ?? null;
+
+            if (!is_scalar($externalReference) && $externalReference !== null) {
+                $externalReference = null;
+            }
+
+            $externalReference = $externalReference !== null ? (string)$externalReference : null;
+
+            $customFields = $refund->getCustomFields() ?? [];
+            $customFields['msp_order_number'] = $orderNumber;
+            $customFields['msp_refund_amount_cents'] = $refundAmountInCents;
+            $customFields['msp_refund_idempotency_key'] = $customFields['msp_refund_idempotency_key']
+                ?? ('sw-refund:' . $refund->getId());
+            $customFields['msp_refund_response'] = $refundPayload;
+
+            $updatePayload = [
+                'id' => $refund->getId(),
+                'versionId' => $refund->getVersionId() ?? $context->getVersionId(),
+                'customFields' => $customFields,
+            ];
+
+            $currentExternalReference = $refund->getExternalReference();
+            if ($externalReference !== null
+                && $externalReference !== ''
+                && $currentExternalReference !== $externalReference) {
+                $updatePayload['externalReference'] = $externalReference;
+            }
+
+            $this->refundRepository->update([$updatePayload], $context);
+        } catch (Throwable $exception) {
+            $this->logger->warning('PaymentHandler: Refund succeeded in MultiSafepay, but failed to persist audit data in Shopware', [
+                'refundId' => $refund->getId(),
+                'orderNumber' => $orderNumber,
+                'message' => $exception->getMessage(),
+                'exceptionClass' => get_class($exception),
             ]);
         }
+    }
+
+    /**
+     * Synchronize the Shopware order transaction state from MultiSafepay refunded totals.
+     *
+     * Uses the PSP refunded total as a source of truth and transitions the Shopware transaction to partially
+     * refunded or refunded. State transition failures are logged as warnings and do not fail the refund.
+     *
+     * @param OrderTransactionEntity $orderTransaction Shopware order transaction to transition.
+     * @param OrderEntity $order Shopware order used to calculate full-refund threshold.
+     * @param mixed $transactionData MultiSafepay transaction response with refunded totals.
+     * @param Context $context Shopware context used for state transitions.
+     * @return void
+     */
+    private function syncOrderTransactionRefundState(
+        OrderTransactionEntity $orderTransaction,
+        OrderEntity $order,
+        mixed $transactionData,
+        Context $context
+    ): void {
+        try {
+            $refundedCents = $transactionData->getAmountRefunded() ?? 0;
+            $orderTotalCents = (int)round($order->getAmountTotal() * 100);
+
+            $currentState = $orderTransaction->getStateMachineState()?->getTechnicalName();
+            $isFullRefund = $orderTotalCents > 0 && $refundedCents >= ($orderTotalCents - 1);
+            $isPartialRefund = $refundedCents > 0 && !$isFullRefund;
+
+            if ($isFullRefund && $currentState !== OrderTransactionStates::STATE_REFUNDED) {
+                $this->transactionStateHandler->refund($orderTransaction->getId(), $context);
+            } elseif ($isPartialRefund && $currentState !== OrderTransactionStates::STATE_PARTIALLY_REFUNDED) {
+                $this->transactionStateHandler->refundPartially($orderTransaction->getId(), $context);
+            }
+        } catch (Throwable $exception) {
+            $this->logger->warning('PaymentHandler: Refund succeeded, but failed to update Shopware transaction state', [
+                'orderTransactionId' => $orderTransaction->getId(),
+                'orderNumber' => $order->getOrderNumber(),
+                'message' => $exception->getMessage(),
+                'exceptionClass' => get_class($exception),
+            ]);
+        }
+    }
+
+    /**
+     * Find a related MultiSafepay refund transaction by PSP transaction ID.
+     *
+     * @param array<string, mixed> $mspTransactionData MultiSafepay transaction payload.
+     * @param string $refundTransactionId PSP refund transaction ID stored on the Shopware refund.
+     * @return array<string, mixed>|null Related refund payload when found.
+     */
+    private function findMspRelatedRefundByTransactionId(array $mspTransactionData, string $refundTransactionId): ?array
+    {
+        if ($refundTransactionId === '') {
+            return null;
+        }
+
+        $relatedTransactions = $mspTransactionData['related_transactions'] ?? null;
+        if (!is_array($relatedTransactions) || $relatedTransactions === []) {
+            return null;
+        }
+
+        foreach ($relatedTransactions as $relatedTransaction) {
+            if (!is_array($relatedTransaction)) {
+                continue;
+            }
+
+            $type = $relatedTransaction['type'] ?? null;
+            if (!is_scalar($type) || (string)$type !== 'refund') {
+                continue;
+            }
+
+            $id = $relatedTransaction['transaction_id'] ?? null;
+            if (!is_scalar($id) || (string)$id === '') {
+                continue;
+            }
+
+            if ((string)$id === $refundTransactionId) {
+                return $relatedTransaction;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -631,7 +968,6 @@ class PaymentHandler extends AbstractPaymentHandler
         PaymentTransactionStruct $transaction,
         OrderTransactionEntity $orderTransaction
     ): SalesChannelContext {
-        // Get order directly from the transaction
         $order = $orderTransaction->getOrder();
         if (!$order) {
             throw PaymentException::invalidTransaction(
@@ -641,23 +977,20 @@ class PaymentHandler extends AbstractPaymentHandler
 
         $salesChannelId = $order->getSalesChannelId();
 
-        // Get customer ID if exists
         $customerId = null;
         if (!is_null($order->getOrderCustomer())) {
             $customerId = $order->getOrderCustomer()->getCustomerId();
         }
 
-        // Create unique token for context
+        // Use a stable token per order/customer so Shopware can reuse the cached sales-channel context.
         $orderId = $order->getId();
         $token = $orderId . '-' . ($customerId ?? 'guest');
 
-        // Options for context creation
         $options = [];
         if ($customerId) {
             $options['customerId'] = $customerId;
         }
 
-        // Create the sales channel context
         return $this->cachedSalesChannelContextFactory->create(
             $token,
             $salesChannelId,

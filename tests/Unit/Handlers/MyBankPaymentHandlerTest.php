@@ -74,11 +74,6 @@ class MyBankPaymentHandlerTest extends TestCase
     /**
      * @var EntityRepository|MockObject
      */
-    private EntityRepository|MockObject $orderRepository;
-
-    /**
-     * @var EntityRepository|MockObject
-     */
     private EntityRepository|MockObject $refundRepository;
 
     /**
@@ -111,7 +106,6 @@ class MyBankPaymentHandlerTest extends TestCase
         $this->cachedSalesChannelContextFactory = $this->createMock(CachedSalesChannelContextFactory::class);
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
-        $this->orderRepository = $this->createMock(EntityRepository::class);
         $this->refundRepository = $this->createMock(EntityRepository::class);
         $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
@@ -126,7 +120,6 @@ class MyBankPaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -183,7 +176,6 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
                     $this->logger,
@@ -245,7 +237,6 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
                     $this->logger,
@@ -307,7 +298,6 @@ class MyBankPaymentHandlerTest extends TestCase
                     $this->cachedSalesChannelContextFactory,
                     $this->settingsService,
                     $this->orderTransactionRepository,
-                    $this->orderRepository,
                     $this->refundRepository,
                     $this->refundStateHandler,
                     $this->logger,
@@ -379,7 +369,6 @@ class MyBankPaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,

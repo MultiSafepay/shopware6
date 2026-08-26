@@ -59,6 +59,18 @@ class SettingsService
     public const DEBUG_MODE_CONFIG_NAME = 'debugMode';
 
     /**
+     * Enables automatic MultiSafepay refunds from Shopware Return.
+     *
+     * The stored key name is kept for existing installations.
+     */
+    public const RETURN_MANAGEMENT_REFUND_BRIDGE_ENABLED_CONFIG_NAME = 'returnManagementRefundBridgeEnabled';
+
+    /**
+     * Fixed Shopware Return state that triggers automatic refunding.
+     */
+    public const RETURN_MANAGEMENT_REFUND_BRIDGE_TARGET_STATE = 'done';
+
+    /**
      * @var SystemConfigService
      */
     public SystemConfigService $systemConfigService;
@@ -176,5 +188,26 @@ class SettingsService
     public function isDebugMode(?string $salesChannelId = null): bool
     {
         return (bool)$this->getSetting(self::DEBUG_MODE_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     * Check whether automatic refunds for Shopware Return are enabled.
+     *
+     * @param string|null $salesChannelId Optional sales channel scope.
+     * @return bool True when Shopware Return should trigger MultiSafepay refunds automatically.
+     */
+    public function isReturnManagementRefundBridgeEnabled(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->getSetting(self::RETURN_MANAGEMENT_REFUND_BRIDGE_ENABLED_CONFIG_NAME, $salesChannelId);
+    }
+
+    /**
+     * Get the fixed Shopware Return state technical name that triggers automatic refunds.
+     *
+     * @return string Fixed target state technical name.
+     */
+    public function getReturnManagementRefundBridgeTargetState(): string
+    {
+        return self::RETURN_MANAGEMENT_REFUND_BRIDGE_TARGET_STATE;
     }
 }

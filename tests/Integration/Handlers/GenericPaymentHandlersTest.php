@@ -74,11 +74,6 @@ class GenericPaymentHandlersTest extends TestCase
     /**
      * @var EntityRepository|null
      */
-    private EntityRepository|null $orderRepository;
-
-    /**
-     * @var EntityRepository|null
-     */
     private EntityRepository|null $orderTransactionRepository;
 
     /**
@@ -105,8 +100,6 @@ class GenericPaymentHandlersTest extends TestCase
     {
         parent::setUp();
         $this->customerRepository = self::getContainer()->get('customer.repository');
-        /** @var EntityRepository $orderRepository */
-        $this->orderRepository = self::getContainer()->get('order.repository');
         $this->orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
         $this->paymentMethodRepository = self::getContainer()->get('payment_method.repository');
         $this->context = Context::createDefaultContext();
@@ -227,7 +220,6 @@ class GenericPaymentHandlersTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $cachedSalesChannelContextFactory = self::getContainer()->get(SalesChannelContextFactory::class);
         $orderTransactionRepository = self::getContainer()->get('order_transaction.repository');
-        $orderRepository = self::getContainer()->get('order.repository');
         $refundRepository = self::getContainer()->get('order_transaction_capture_refund.repository');
         $refundStateHandler = self::getContainer()->get(OrderTransactionCaptureRefundStateHandler::class);
 
@@ -260,7 +252,6 @@ class GenericPaymentHandlersTest extends TestCase
             $cachedSalesChannelContextFactory,
             $settingsServiceMock,
             $orderTransactionRepository,
-            $orderRepository,
             $refundRepository,
             $refundStateHandler,
             $logger,
@@ -276,7 +267,6 @@ class GenericPaymentHandlersTest extends TestCase
                 $cachedSalesChannelContextFactory,
                 $settingsServiceMock,
                 $orderTransactionRepository,
-                $orderRepository,
                 $refundRepository,
                 $refundStateHandler,
                 $logger,

@@ -3,6 +3,7 @@
  * Copyright © MultiSafepay, Inc. All rights reserved.
  * See DISCLAIMER.md for disclaimer details.
  */
+
 namespace MultiSafepay\Shopware6\Tests\Unit\Service;
 
 use MultiSafepay\Shopware6\Service\SettingsService;
@@ -14,7 +15,6 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
- * Class SettingsServiceTest
  *
  * @package MultiSafepay\Shopware6\Tests\Unit\Service
  */
@@ -466,5 +466,41 @@ class SettingsServiceTest extends TestCase
 
         $this->assertFalse($result);
         $this->assertIsBool($result);
+    }
+
+    /**
+     * Test isReturnManagementRefundBridgeEnabled method when enabled
+     *
+     * @return void
+     */
+    public function testIsReturnManagementRefundBridgeEnabledWhenEnabled(): void
+    {
+        $salesChannelId = 'test-sales-channel-id';
+
+        $this->systemConfigServiceMock->expects($this->once())
+            ->method('get')
+            ->with(
+                'MltisafeMultiSafepay.config.' . SettingsService::RETURN_MANAGEMENT_REFUND_BRIDGE_ENABLED_CONFIG_NAME,
+                $salesChannelId
+            )
+            ->willReturn(true);
+
+        $result = $this->settingsService->isReturnManagementRefundBridgeEnabled($salesChannelId);
+
+        $this->assertTrue($result);
+    }
+
+    /**
+     * Test getReturnManagementRefundBridgeTargetState method is fixed and does not read config
+     *
+     * @return void
+     */
+    public function testGetReturnManagementRefundBridgeTargetStateIsFixedAndDoesNotReadConfig(): void
+    {
+        $this->systemConfigServiceMock->expects($this->never())->method('get');
+
+        $result = $this->settingsService->getReturnManagementRefundBridgeTargetState();
+
+        $this->assertSame(SettingsService::RETURN_MANAGEMENT_REFUND_BRIDGE_TARGET_STATE, $result);
     }
 }

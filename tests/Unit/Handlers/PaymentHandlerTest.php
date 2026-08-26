@@ -6,6 +6,7 @@
 namespace MultiSafepay\Shopware6\Tests\Unit\Handlers;
 
 use Exception;
+use MultiSafepay\Api\Base\Response;
 use MultiSafepay\Api\TransactionManager;
 use MultiSafepay\Api\Transactions\OrderRequest;
 use MultiSafepay\Api\Transactions\RefundRequest;
@@ -13,6 +14,7 @@ use MultiSafepay\Api\Transactions\RefundRequest\Arguments\CheckoutData;
 use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Api\Transactions\UpdateRequest;
 use MultiSafepay\Exception\ApiException;
+use MultiSafepay\Exception\ApiUnavailableException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Builder\Order\OrderRequestBuilder;
 use MultiSafepay\Shopware6\Event\FilterOrderRequestEvent;
@@ -20,12 +22,14 @@ use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\Handlers\PaymentHandler;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\RequestUtil;
+use MultiSafepay\ValueObject\CartItem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
@@ -37,6 +41,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCapture\OrderTransact
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
@@ -45,6 +50,7 @@ use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -52,6 +58,8 @@ use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\Salutation\SalutationEntity;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
+use stdClass;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -187,7 +195,6 @@ class PaymentHandlerTest extends TestCase
         $this->cachedSalesChannelContextFactory = $this->createMock(CachedSalesChannelContextFactory::class);
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
-        $this->orderRepository = $this->createMock(EntityRepository::class);
         $this->refundRepository = $this->createMock(EntityRepository::class);
         $this->refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $this->logger = $this->createMock(LoggerInterface::class);
@@ -212,7 +219,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -243,7 +249,7 @@ class PaymentHandlerTest extends TestCase
      */
     public function testPaySuccessful(): void
     {
-        // Setup basic transaction data
+        // Set up basic transaction data
         $this->setupBasicOrderTransaction();
 
         // Create a request object - not a RequestDataBag
@@ -292,7 +298,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -345,7 +350,7 @@ class PaymentHandlerTest extends TestCase
         $this->sdkFactory->method('create')
             ->willReturn($sdk);
 
-        // Setup expectations for transaction state handler
+        // Set up expectations for transaction state handler
         $this->transactionStateHandler->expects($this->once())
             ->method('fail')
             ->with($this->orderTransactionId, $this->context);
@@ -391,7 +396,7 @@ class PaymentHandlerTest extends TestCase
         $this->sdkFactory->method('create')
             ->willReturn($sdk);
 
-        // Setup expectations
+        // Set up expectations
         $this->transactionStateHandler->expects($this->once())
             ->method('fail')
             ->with($this->orderTransactionId, $this->context);
@@ -430,7 +435,7 @@ class PaymentHandlerTest extends TestCase
         $this->sdkFactory->method('create')
             ->willReturn($sdk);
 
-        // Setup expectations
+        // Set up expectations
         $this->transactionStateHandler->expects($this->once())
             ->method('fail')
             ->with($this->orderTransactionId, $this->context);
@@ -572,7 +577,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -606,7 +610,7 @@ class PaymentHandlerTest extends TestCase
         $this->salesChannelContext->method('getSalesChannelId')
             ->willReturn($this->salesChannelId);
 
-        // Setup sales channel context factory
+        // Set up sales channel context factory
         $this->cachedSalesChannelContextFactory->method('create')
             ->willReturn($this->salesChannelContext);
     }
@@ -789,7 +793,7 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test getIssuers method returns empty array
+     * Test getIssuers method returns an empty array
      *
      * @return void
      * @throws ReflectionException
@@ -831,7 +835,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -924,7 +927,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1004,7 +1006,7 @@ class PaymentHandlerTest extends TestCase
         $reflectionClass = new ReflectionClass(PaymentHandler::class);
         $method = $reflectionClass->getMethod('createSalesChannelContext');
 
-        // Setup expectations
+        // Set up expectations
         $this->cachedSalesChannelContextFactory->expects($this->once())
             ->method('create')
             ->with(
@@ -1107,11 +1109,11 @@ class PaymentHandlerTest extends TestCase
         // Create an OrderRequest mock
         $orderRequest = $this->createMock(OrderRequest::class);
 
-        // Setup order request builder
+        // Set up order request builder
         $this->orderRequestBuilder->method('build')
             ->willReturn($orderRequest);
 
-        // Setup expectations for the event dispatcher
+        // Set up expectations for the event dispatcher
         $this->eventDispatcher->expects($this->once())
             ->method('dispatch')
             ->with(
@@ -1134,7 +1136,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1267,7 +1268,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1307,7 +1307,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1352,7 +1351,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1397,7 +1395,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1438,7 +1435,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1484,7 +1480,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1533,11 +1528,11 @@ class PaymentHandlerTest extends TestCase
                 return $defaultGenericValue;
             });
 
-        // Setup sales channel context
+        // Set up sales channel context
         $this->salesChannelContext->method('getSalesChannelId')
             ->willReturn($this->salesChannelId);
 
-        // Setup cached sales channel context factory
+        // Set up cached sales channel context factory
         $this->cachedSalesChannelContextFactory->method('create')
             ->willReturn($this->salesChannelContext);
 
@@ -1622,7 +1617,7 @@ class PaymentHandlerTest extends TestCase
         $salesChannelContext->method('getSalesChannelId')
             ->willReturn($this->salesChannelId);
 
-        // Setup order transaction
+        // Set up order transaction
         $this->setupBasicOrderTransaction();
 
         // Create a mock EntitySearchResult for the orderTransaction lookup
@@ -1654,7 +1649,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -1706,7 +1700,7 @@ class PaymentHandlerTest extends TestCase
         // Mock sales channel context
         $salesChannelContext = $this->createMock(SalesChannelContext::class);
 
-        // Setup expected token and options
+        // Set up expected token and options
         $expectedToken = $orderId . '-guest';
         $expectedOptions = [];
 
@@ -1725,7 +1719,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -1770,7 +1763,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $this->orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -1815,7 +1807,7 @@ class PaymentHandlerTest extends TestCase
         // Expect a PaymentException when the transaction cannot be found
         $this->expectException(PaymentException::class);
 
-        // Try to call finalize which internally uses getOrderTransaction
+        // Try to call 'finalize' which internally uses getOrderTransaction
         $this->paymentHandler->finalize(
             new Request(['transactionid' => 'any-id']),
             $this->paymentTransaction,
@@ -1831,7 +1823,7 @@ class PaymentHandlerTest extends TestCase
      */
     public function testPayWithGenderRequirement(): void
     {
-        // Setup basic transaction data
+        // Set up basic transaction data
         $this->setupBasicOrderTransaction();
 
         // Create request and responses for the API chain
@@ -1867,7 +1859,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -1927,7 +1918,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -2005,7 +1995,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -2072,7 +2061,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -2103,7 +2091,7 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test getGatewayFromPaymentMethod logs warning when class is missing
+     * Test getGatewayFromPaymentMethod logs warning when the class is missing
      *
      * @return void
      * @throws ReflectionException
@@ -2142,7 +2130,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -2274,6 +2261,8 @@ class PaymentHandlerTest extends TestCase
         $refundAmount = new CalculatedPrice(10.0, 10.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
 
         $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
         $refund->method('getAmount')
             ->willReturn($refundAmount);
 
@@ -2302,7 +2291,7 @@ class PaymentHandlerTest extends TestCase
         $checkoutData = $this->createMock(CheckoutData::class);
         $checkoutData->expects($this->once())
             ->method('addItem')
-            ->with($this->isInstanceOf(\MultiSafepay\ValueObject\CartItem::class));
+            ->with($this->isInstanceOf(CartItem::class));
 
         $refundRequest = $this->createMock(RefundRequest::class);
         $refundRequest->method('getCheckoutData')
@@ -2331,12 +2320,13 @@ class PaymentHandlerTest extends TestCase
             ->method('complete')
             ->with($refundId, $this->context);
 
-        $this->orderRepository->expects($this->once())
+        $this->refundRepository->expects($this->once())
             ->method('update')
             ->with(
                 $this->callback(static function (array $payload) {
-                    return isset($payload[0]['customFields']['multisafepay_refunded_amount'])
-                        && $payload[0]['customFields']['multisafepay_refunded_amount'] === 1000;
+                    return isset($payload[0]['customFields']['msp_refund_amount_cents'])
+                        && $payload[0]['customFields']['msp_refund_amount_cents'] === 1000
+                        && $payload[0]['customFields']['msp_refund_idempotency_key'] === 'sw-refund:refund-123';
                 }),
                 $this->context
             );
@@ -2374,6 +2364,8 @@ class PaymentHandlerTest extends TestCase
         $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
 
         $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
         $refund->method('getAmount')
             ->willReturn($refundAmount);
 
@@ -2418,28 +2410,152 @@ class PaymentHandlerTest extends TestCase
             ->method('complete')
             ->with($refundId, $this->context);
 
-        $this->orderRepository->method('update')
+        $this->refundRepository->method('update')
             ->willThrowException(new Exception('Persist failed'));
 
         $this->logger->expects($this->once())
             ->method('warning')
             ->with(
-                'Refund succeeded but failed to persist refunded amount in order customFields',
-                $this->arrayHasKey('orderId')
+                'PaymentHandler: Refund succeeded in MultiSafepay, but failed to persist audit data in Shopware',
+                $this->arrayHasKey('refundId')
             );
 
         $this->paymentHandler->refund($refundTransaction, $this->context);
     }
 
     /**
+     * Test post-PSP Shopware sync failures do not fail an already-created MultiSafepay refund
+     *
+     * @return void
+     * @throws ApiException
+     * @throws ApiUnavailableException
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundLogsWarningsButDoesNotRethrowWhenPostMultiSafepaySyncFails(): void
+    {
+        $refundId = 'refund-post-sync-warning';
+        $orderNumber = 'ORDER-POST-SYNC-WARN';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+
+        $this->orderTransaction->method('getId')
+            ->willReturn('tx-post-sync-warning');
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->with($this->isType('array'), $this->context);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+        $transactionData->method('requiresShoppingCart')
+            ->willReturn(false);
+
+        $getCalls = 0;
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturnCallback(static function () use (&$getCalls, $transactionData): TransactionResponse {
+                ++$getCalls;
+
+                if ($getCalls === 1) {
+                    return $transactionData;
+                }
+
+                throw new Exception('Refresh failed');
+            });
+        $transactionManager->expects($this->once())
+            ->method('refund')
+            ->with($transactionData, $this->isInstanceOf(RefundRequest::class))
+            ->willReturn(new Response(
+                ['success' => true, 'data' => ['id' => 'msp-refund-id']],
+                [],
+                '{"id":"msp-refund-id"}'
+            ));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('complete')
+            ->with($refundId, $this->context)
+            ->willThrowException(new Exception('Complete failed'));
+
+        $warningContexts = [];
+        $this->logger->expects($this->exactly(2))
+            ->method('warning')
+            ->willReturnCallback(static function (string $message, array $context) use (&$warningContexts): void {
+                $warningContexts[$message] = $context;
+            });
+        $this->logger->expects($this->never())->method('error');
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+
+        $this->assertSame(2, $getCalls);
+        $this->assertSame(
+            'Refresh failed',
+            $warningContexts[
+                'PaymentHandler: Refund succeeded in MultiSafepay, but failed to refresh transaction totals'
+            ]['message'] ?? null
+        );
+        $this->assertSame(
+            'Complete failed',
+            $warningContexts[
+                'PaymentHandler: Refund succeeded in MultiSafepay, but failed to complete Shopware refund state'
+            ]['message'] ?? null
+        );
+    }
+
+    /**
      * Test refund without shopping cart request
      *
      * @return void
+     * @throws ApiException
+     * @throws ApiUnavailableException
      * @throws \PHPUnit\Framework\MockObject\Exception
      */
     public function testRefundWithoutShoppingCartRequest(): void
     {
         $refundId = 'refund-456';
+        $refundVersionId = 'refund-version-456';
         $orderNumber = 'ORDER-456';
         $salesChannelId = 'sales-channel-id';
 
@@ -2459,6 +2575,12 @@ class PaymentHandlerTest extends TestCase
         $refundAmount = new CalculatedPrice(2.5, 2.5, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
 
         $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
+        $refund->method('getVersionId')
+            ->willReturn($refundVersionId);
+        $refund->method('getExternalReference')
+            ->willReturn($orderNumber);
         $refund->method('getAmount')
             ->willReturn($refundAmount);
 
@@ -2493,7 +2615,12 @@ class PaymentHandlerTest extends TestCase
             ->with(
                 $transactionData,
                 $this->isInstanceOf(RefundRequest::class)
-            );
+            )
+            ->willReturn(new Response(
+                ['success' => true, 'data' => ['id' => 'msp-refund-id']],
+                [],
+                '{"id":"msp-refund-id"}'
+            ));
 
         $sdk = $this->createMock(Sdk::class);
         $sdk->method('getTransactionManager')
@@ -2507,11 +2634,143 @@ class PaymentHandlerTest extends TestCase
             ->method('complete')
             ->with($refundId, $this->context);
 
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(static function (array $payload): bool {
+                    return ($payload[0]['externalReference'] ?? null) === 'msp-refund-id'
+                        && ($payload[0]['versionId'] ?? null) === 'refund-version-456'
+                        && ($payload[0]['customFields']['msp_refund_amount_cents'] ?? null) === 250;
+                }),
+                $this->context
+            );
+
         $this->paymentHandler->refund($refundTransaction, $this->context);
     }
 
     /**
-     * Test pay throws invalid transaction when order is missing
+     * Test retrying a failed MultiSafepay refund replaces the stale external reference
+     *
+     * @return void
+     * @throws ApiException
+     * @throws ApiUnavailableException
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundRetryReplacesStaleExternalReference(): void
+    {
+        $refundId = 'refund-retry';
+        $refundVersionId = 'refund-retry-version';
+        $orderNumber = 'ORDER-RETRY';
+        $salesChannelId = 'sales-channel-id';
+        $staleRefundReference = 'old-failed-refund-id';
+        $newRefundReference = 'new-msp-refund-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+        $this->order->method('getId')
+            ->willReturn($this->orderId);
+
+        $refundAmount = new CalculatedPrice(2.5, 2.5, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
+        $refund->method('getVersionId')
+            ->willReturn($refundVersionId);
+        $refund->method('getExternalReference')
+            ->willReturn($staleRefundReference);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+        $refund->method('getCustomFields')
+            ->willReturn([]);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = new TransactionResponse([
+            'amount_refunded' => 0,
+            'payment_details' => ['type' => 'IDEAL'],
+            'related_transactions' => [
+                [
+                    'type' => 'refund',
+                    'transaction_id' => $staleRefundReference,
+                    'status' => 'failed',
+                ],
+            ],
+        ]);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->expects($this->once())
+            ->method('refund')
+            ->with($transactionData, $this->isInstanceOf(RefundRequest::class))
+            ->willReturn(new Response(
+                ['success' => true, 'data' => ['id' => $newRefundReference]],
+                [],
+                '{"id":"new-msp-refund-id"}'
+            ));
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('complete')
+            ->with($refundId, $this->context);
+
+        $updates = [];
+        $writtenEvent = $this->createMock(EntityWrittenContainerEvent::class);
+        $this->refundRepository->expects($this->exactly(2))
+            ->method('update')
+            ->with($this->isType('array'), $this->context)
+            ->willReturnCallback(
+                static function (array $payload) use (&$updates, $writtenEvent): EntityWrittenContainerEvent {
+                    $updates[] = $payload;
+
+                    return $writtenEvent;
+                }
+            );
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+
+        self::assertSame('failed', $updates[0][0]['customFields']['msp_refund_status'] ?? null);
+        self::assertSame($refundVersionId, $updates[0][0]['versionId'] ?? null);
+        self::assertSame($newRefundReference, $updates[1][0]['externalReference'] ?? null);
+        self::assertSame($refundVersionId, $updates[1][0]['versionId'] ?? null);
+        self::assertSame(250, $updates[1][0]['customFields']['msp_refund_amount_cents'] ?? null);
+    }
+
+    /**
+     * Test pay throws an invalid transaction when the order is missing
      *
      * @return void
      * @throws \PHPUnit\Framework\MockObject\Exception
@@ -2539,7 +2798,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -2599,7 +2857,6 @@ class PaymentHandlerTest extends TestCase
                 $this->cachedSalesChannelContextFactory,
                 $this->settingsService,
                 $this->orderTransactionRepository,
-                $this->orderRepository,
                 $this->refundRepository,
                 $this->refundStateHandler,
                 $this->logger,
@@ -2644,7 +2901,6 @@ class PaymentHandlerTest extends TestCase
             $this->cachedSalesChannelContextFactory,
             $this->settingsService,
             $orderTransactionRepository,
-            $this->orderRepository,
             $this->refundRepository,
             $this->refundStateHandler,
             $this->logger,
@@ -2653,7 +2909,6 @@ class PaymentHandlerTest extends TestCase
 
         $reflectionClass = new ReflectionClass(PaymentHandler::class);
         $method = $reflectionClass->getMethod('getOrderFromTransaction');
-        $method->setAccessible(true);
 
         $this->expectException(PaymentException::class);
 
@@ -2709,7 +2964,7 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test refund throws unknown refund when order is missing
+     * Test refund throws an unknown refund when the order is missing
      *
      * @return void
      * @throws \PHPUnit\Framework\MockObject\Exception
@@ -2743,7 +2998,7 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test refund throws invalid transaction when currency is missing
+     * Test refund throws an invalid transaction when currency is missing
      *
      * @return void
      * @throws \PHPUnit\Framework\MockObject\Exception
@@ -2782,6 +3037,204 @@ class PaymentHandlerTest extends TestCase
         $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
         $refundTransaction->method('getRefundId')
             ->willReturn($refundId);
+
+        $this->expectException(PaymentException::class);
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test a retried refund synchronizes an existing PSP refund before processing the Shopware state again
+     *
+     * @return void
+     * @throws ApiException
+     * @throws ApiUnavailableException
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundSynchronizesExistingMultiSafepayRefundBeforeProcessingStateAgain(): void
+    {
+        $refundId = 'refund-retry-existing';
+        $orderNumber = 'ORDER-RETRY-EXISTING';
+        $salesChannelId = 'sales-channel-id';
+        $existingRefundPayload = [
+            'type' => 'refund',
+            'transaction_id' => 'msp-refund-transaction-id',
+            'status' => 'reserved',
+        ];
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+
+        $state = $this->createMock(StateMachineStateEntity::class);
+        $state->method('getTechnicalName')
+            ->willReturn(OrderTransactionCaptureRefundStates::STATE_IN_PROGRESS);
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')
+            ->willReturn($refundId);
+        $refund->method('getVersionId')
+            ->willReturn('refund-version-id');
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+        $refund->method('getExternalReference')
+            ->willReturn('msp-refund-transaction-id');
+        $refund->method('getCustomFields')
+            ->willReturn([]);
+        $refund->method('getStateMachineState')
+            ->willReturn($state);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(static function (array $payload) use ($existingRefundPayload): bool {
+                    return count($payload) === 1
+                        && ($payload[0]['id'] ?? null) === 'refund-retry-existing'
+                        && ($payload[0]['versionId'] ?? null) === 'refund-version-id'
+                        && ($payload[0]['customFields']['msp_refund_status'] ?? null) === 'reserved'
+                        && ($payload[0]['customFields']['msp_refund_status_payload'] ?? null) === $existingRefundPayload;
+                }),
+                $this->context
+            );
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = new TransactionResponse(['related_transactions' => [$existingRefundPayload]]);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->expects($this->never())->method('createRefundRequest');
+        $transactionManager->expects($this->never())->method('refund');
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->never())->method('process');
+        $this->refundStateHandler->expects($this->never())->method('complete');
+        $this->logger->expects($this->never())->method('error');
+
+        $this->paymentHandler->refund($refundTransaction, $this->context);
+    }
+
+    /**
+     * Test refund logs and wraps state transition failures
+     *
+     * @return void
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
+    public function testRefundLogsAndWrapsStateProcessFailure(): void
+    {
+        $refundId = 'refund-state-fail';
+        $orderNumber = 'ORDER-STATE-FAIL';
+        $salesChannelId = 'sales-channel-id';
+
+        $currency = $this->createMock(CurrencyEntity::class);
+        $currency->method('getIsoCode')
+            ->willReturn('EUR');
+
+        $this->order->method('getOrderNumber')
+            ->willReturn($orderNumber);
+        $this->order->method('getSalesChannelId')
+            ->willReturn($salesChannelId);
+        $this->order->method('getCurrency')
+            ->willReturn($currency);
+
+        $this->orderTransaction->method('getId')
+            ->willReturn('tx-state-fail');
+
+        $refundAmount = new CalculatedPrice(1.0, 1.0, new CalculatedTaxCollection(), new TaxRuleCollection(), 1);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getAmount')
+            ->willReturn($refundAmount);
+
+        $capture = $this->createMock(OrderTransactionCaptureEntity::class);
+        $capture->method('getTransaction')
+            ->willReturn($this->orderTransaction);
+        $refund->method('getTransactionCapture')
+            ->willReturn($capture);
+
+        $refundCollection = new OrderTransactionCaptureRefundCollection([$refund]);
+        $entitySearchResult = $this->createMock(EntitySearchResult::class);
+        $entitySearchResult->method('getEntities')
+            ->willReturn($refundCollection);
+
+        $this->refundRepository->method('search')
+            ->willReturn($entitySearchResult);
+
+        $refundTransaction = $this->createMock(RefundPaymentTransactionStruct::class);
+        $refundTransaction->method('getRefundId')
+            ->willReturn($refundId);
+
+        $transactionData = $this->createMock(TransactionResponse::class);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionData);
+        $transactionManager->expects($this->never())->method('refund');
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactory->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
+
+        $this->refundStateHandler->expects($this->once())
+            ->method('process')
+            ->with($refundId, $this->context)
+            ->willThrowException(new Exception('State transition failed'));
+        $this->refundStateHandler->expects($this->never())
+            ->method('complete');
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with(
+                'PaymentHandler: Refund failed',
+                $this->callback(static function (array $context) use ($refundId, $orderNumber) {
+                    return ($context['refundId'] ?? null) === $refundId
+                        && ($context['orderNumber'] ?? null) === $orderNumber
+                        && ($context['orderTransactionId'] ?? null) === 'tx-state-fail'
+                        && ($context['message'] ?? null) === 'State transition failed'
+                        && ($context['exceptionClass'] ?? null) === Exception::class;
+                })
+            );
 
         $this->expectException(PaymentException::class);
 
@@ -2870,7 +3323,502 @@ class PaymentHandlerTest extends TestCase
     }
 
     /**
-     * Test getRefundEntity throws unknown refund exception
+     * @throws ReflectionException
+     */
+    public function testFindMspRelatedRefundByTransactionIdReturnsMatchingRefund(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'findMspRelatedRefundByTransactionId');
+        $payload = [
+            'related_transactions' => [
+                'skip-me',
+                ['type' => 'payment', 'transaction_id' => 'pay-1'],
+                ['type' => 'refund'],
+                ['type' => 'refund', 'transaction_id' => 'refund-1', 'status' => 'completed'],
+            ],
+        ];
+
+        $this->assertSame(
+            ['type' => 'refund', 'transaction_id' => 'refund-1', 'status' => 'completed'],
+            $method->invoke($this->paymentHandler, $payload, 'refund-1')
+        );
+        $this->assertNull($method->invoke($this->paymentHandler, $payload, ''));
+        $this->assertNull($method->invoke($this->paymentHandler, [], 'refund-1'));
+        $this->assertNull($method->invoke($this->paymentHandler, ['related_transactions' => 'invalid'], 'refund-1'));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSyncOrderTransactionRefundStateMarksPartialRefund(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'syncOrderTransactionRefundState');
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $orderTransaction->method('getId')->willReturn('tx-partial-refund');
+        $orderTransaction->method('getStateMachineState')->willReturn(null);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getAmountTotal')->willReturn(10.00);
+
+        $transactionData = new class {
+            public function getAmountRefunded(): int
+            {
+                return 500;
+            }
+        };
+
+        $this->transactionStateHandler->expects($this->once())
+            ->method('refundPartially')
+            ->with('tx-partial-refund', $this->context);
+        $this->transactionStateHandler->expects($this->never())->method('refund');
+
+        $method->invoke($this->paymentHandler, $orderTransaction, $order, $transactionData, $this->context);
+
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSyncOrderTransactionRefundStateMarksFullRefund(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'syncOrderTransactionRefundState');
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $orderTransaction->method('getId')->willReturn('tx-full-refund');
+        $orderTransaction->method('getStateMachineState')->willReturn(null);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getAmountTotal')->willReturn(10.00);
+
+        $transactionData = new class {
+            public function getAmountRefunded(): int
+            {
+                return 1000;
+            }
+        };
+
+        $this->transactionStateHandler->expects($this->once())
+            ->method('refund')
+            ->with('tx-full-refund', $this->context);
+        $this->transactionStateHandler->expects($this->never())->method('refundPartially');
+
+        $method->invoke($this->paymentHandler, $orderTransaction, $order, $transactionData, $this->context);
+
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSyncOrderTransactionRefundStateSkipsMatchingStateAndLogsFailures(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'syncOrderTransactionRefundState');
+
+        $refundedState = $this->createMock(StateMachineStateEntity::class);
+        $refundedState->method('getTechnicalName')->willReturn('refunded');
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $orderTransaction->method('getId')->willReturn('tx-refunded');
+        $orderTransaction->method('getStateMachineState')->willReturn($refundedState);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getAmountTotal')->willReturn(10.00);
+        $order->method('getOrderNumber')->willReturn('ORDER-123');
+
+        $transactionData = new class {
+            public function getAmountRefunded(): int
+            {
+                return 1000;
+            }
+        };
+
+        $this->transactionStateHandler->expects($this->never())->method('refund');
+        $this->transactionStateHandler->expects($this->never())->method('refundPartially');
+
+        $method->invoke($this->paymentHandler, $orderTransaction, $order, $transactionData, $this->context);
+
+        $failingTransaction = $this->createMock(OrderTransactionEntity::class);
+        $failingTransaction->method('getId')->willReturn('tx-failure');
+        $failingTransaction->method('getStateMachineState')->willReturn(null);
+
+        $this->transactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
+        $this->transactionStateHandler->expects($this->once())
+            ->method('refundPartially')
+            ->with('tx-failure', $this->context)
+            ->willThrowException(new Exception('state transition failed'));
+        $this->transactionStateHandler->expects($this->never())->method('refund');
+
+        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                'PaymentHandler: Refund succeeded, but failed to update Shopware transaction state',
+                $this->callback(static function (array $context): bool {
+                    return ($context['orderTransactionId'] ?? null) === 'tx-failure'
+                        && ($context['orderNumber'] ?? null) === 'ORDER-123'
+                        && ($context['message'] ?? null) === 'state transition failed';
+                })
+            );
+
+        $this->paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $this->orderTransactionRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger,
+            $this->requestUtil
+        );
+
+        $partialRefundTransactionData = new class {
+            public function getAmountRefunded(): int
+            {
+                return 500;
+            }
+        };
+
+        $method->invoke($this->paymentHandler, $failingTransaction, $order, $partialRefundTransactionData, $this->context);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSynchronizeExistingMultiSafepayRefundReturnsFalseWithoutExternalReference(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'synchronizeExistingMultiSafepayRefund');
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getExternalReference')->willReturn('');
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $order = $this->createMock(OrderEntity::class);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->never())->method('get');
+
+        $this->refundRepository->expects($this->never())->method('update');
+
+        $this->assertFalse($method->invoke(
+            $this->paymentHandler,
+            $refund,
+            new stdClass(),
+            $transactionManager,
+            $orderTransaction,
+            $order,
+            $this->context
+        ));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSynchronizeExistingMultiSafepayRefundReturnsTrueForReservedRefund(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'synchronizeExistingMultiSafepayRefund');
+
+        $existingRefundPayload = [
+            'type' => 'refund',
+            'transaction_id' => 'refund-transaction-id',
+            'status' => 'reserved',
+        ];
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')->willReturn('refund-id');
+        $refund->method('getVersionId')->willReturn('refund-version-id');
+        $refund->method('getExternalReference')->willReturn('refund-transaction-id');
+        $refund->method('getCustomFields')->willReturn(['existing' => 'value']);
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn('ORDER-123');
+
+        $transactionData = new class ($existingRefundPayload) {
+            /**
+             * @param array<string, mixed> $existingRefundPayload
+             */
+            public function __construct(private readonly array $existingRefundPayload)
+            {
+            }
+
+            /**
+             * @return array<string, array<int, array<string, string>>>
+             */
+            public function getResponseData(): array
+            {
+                return ['related_transactions' => [$this->existingRefundPayload]];
+            }
+        };
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->never())->method('get');
+
+        $this->refundStateHandler->expects($this->never())->method('complete');
+
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(static function (array $payload) use ($existingRefundPayload): bool {
+                    return count($payload) === 1
+                        && ($payload[0]['id'] ?? null) === 'refund-id'
+                        && ($payload[0]['versionId'] ?? null) === 'refund-version-id'
+                        && ($payload[0]['customFields']['existing'] ?? null) === 'value'
+                        && ($payload[0]['customFields']['msp_refund_status'] ?? null) === 'reserved'
+                        && ($payload[0]['customFields']['msp_refund_status_payload'] ?? null) === $existingRefundPayload;
+                }),
+                $this->context
+            );
+
+        $this->assertTrue($method->invoke(
+            $this->paymentHandler,
+            $refund,
+            $transactionData,
+            $transactionManager,
+            $orderTransaction,
+            $order,
+            $this->context
+        ));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSynchronizeExistingMultiSafepayRefundSkipsStateTransitionsWhenRefundAlreadyCompleted(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'synchronizeExistingMultiSafepayRefund');
+
+        $existingRefundPayload = [
+            'type' => 'refund',
+            'transaction_id' => 'refund-transaction-id',
+            'status' => 'completed',
+        ];
+
+        $completedState = $this->createMock(StateMachineStateEntity::class);
+        $completedState->method('getTechnicalName')
+            ->willReturn(OrderTransactionCaptureRefundStates::STATE_COMPLETED);
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')->willReturn('refund-id');
+        $refund->method('getVersionId')->willReturn('refund-version-id');
+        $refund->method('getExternalReference')->willReturn('refund-transaction-id');
+        $refund->method('getCustomFields')->willReturn(['existing' => 'value']);
+        $refund->method('getStateMachineState')->willReturn($completedState);
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+        $orderTransaction->method('getId')->willReturn('order-transaction-id');
+        $orderTransaction->method('getStateMachineState')->willReturn(null);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn('ORDER-123');
+        $order->method('getAmountTotal')->willReturn(10.00);
+
+        $transactionData = new class ($existingRefundPayload) {
+            /**
+             * @param array<string, mixed> $existingRefundPayload
+             */
+            public function __construct(private readonly array $existingRefundPayload)
+            {
+            }
+
+            /**
+             * @return array<string, array<int, array<string, string>>>
+             */
+            public function getResponseData(): array
+            {
+                return ['related_transactions' => [$this->existingRefundPayload]];
+            }
+        };
+
+        $updatedTransactionData = $this->createMock(TransactionResponse::class);
+        $updatedTransactionData->method('getAmountRefunded')
+            ->willReturn(500);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with('ORDER-123')
+            ->willReturn($updatedTransactionData);
+
+        $this->refundStateHandler->expects($this->never())->method('process');
+        $this->refundStateHandler->expects($this->never())->method('complete');
+        $this->transactionStateHandler->expects($this->once())
+            ->method('refundPartially')
+            ->with('order-transaction-id', $this->context);
+        $this->transactionStateHandler->expects($this->never())->method('refund');
+        $this->logger->expects($this->never())->method('debug');
+
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->callback(static function (array $payload) use ($existingRefundPayload): bool {
+                    return count($payload) === 1
+                        && ($payload[0]['id'] ?? null) === 'refund-id'
+                        && ($payload[0]['versionId'] ?? null) === 'refund-version-id'
+                        && ($payload[0]['customFields']['existing'] ?? null) === 'value'
+                        && ($payload[0]['customFields']['msp_refund_status'] ?? null) === 'completed'
+                        && ($payload[0]['customFields']['msp_refund_status_payload'] ?? null) === $existingRefundPayload;
+                }),
+                $this->context
+            );
+
+        $this->assertTrue($method->invoke(
+            $this->paymentHandler,
+            $refund,
+            $transactionData,
+            $transactionManager,
+            $orderTransaction,
+            $order,
+            $this->context
+        ));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSynchronizeExistingMultiSafepayRefundStopsWhenReservedRefundSyncFails(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'synchronizeExistingMultiSafepayRefund');
+
+        $existingRefundPayload = [
+            'type' => 'refund',
+            'transaction_id' => 'refund-transaction-id',
+            'status' => 'reserved',
+        ];
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')->willReturn('refund-id');
+        $refund->method('getVersionId')->willReturn('refund-version-id');
+        $refund->method('getExternalReference')->willReturn('refund-transaction-id');
+        $refund->method('getCustomFields')->willReturn([]);
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn('ORDER-123');
+
+        $transactionData = new class ($existingRefundPayload) {
+            /**
+             * @param array<string, mixed> $existingRefundPayload
+             */
+            public function __construct(private readonly array $existingRefundPayload)
+            {
+            }
+
+            /**
+             * @return array<string, array<int, array<string, string>>>
+             */
+            public function getResponseData(): array
+            {
+                return ['related_transactions' => [$this->existingRefundPayload]];
+            }
+        };
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->never())->method('get');
+
+        $this->refundStateHandler->expects($this->never())->method('complete');
+        $this->refundRepository->expects($this->once())
+            ->method('update')
+            ->willThrowException(new Exception('Shopware update failed'));
+
+        $this->logger->expects($this->once())
+            ->method('debug')
+            ->with(
+                'PaymentHandler: Existing MultiSafepay refund detected, but Shopware synchronization failed',
+                $this->callback(static function (array $context): bool {
+                    return ($context['refundId'] ?? null) === 'refund-id'
+                        && ($context['orderNumber'] ?? null) === 'ORDER-123'
+                        && ($context['message'] ?? null) === 'Shopware update failed';
+                })
+            );
+
+        $this->assertTrue($method->invoke(
+            $this->paymentHandler,
+            $refund,
+            $transactionData,
+            $transactionManager,
+            $orderTransaction,
+            $order,
+            $this->context
+        ));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSynchronizeExistingMultiSafepayRefundThrowsWhenLookupCannotVerifyExternalReference(): void
+    {
+        $method = new ReflectionMethod(PaymentHandler::class, 'synchronizeExistingMultiSafepayRefund');
+
+        $refund = $this->createMock(OrderTransactionCaptureRefundEntity::class);
+        $refund->method('getId')->willReturn('refund-id');
+        $refund->method('getExternalReference')->willReturn('refund-transaction-id');
+
+        $orderTransaction = $this->createMock(OrderTransactionEntity::class);
+
+        $order = $this->createMock(OrderEntity::class);
+        $order->method('getOrderNumber')->willReturn('ORDER-123');
+
+        $failingTransactionData = new class {
+            /**
+             * @return array<string, mixed>
+             */
+            public function getResponseData(): array
+            {
+                throw new Exception('payload failed');
+            }
+        };
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->never())->method('get');
+
+        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->logger->expects($this->once())
+            ->method('debug')
+            ->with(
+                'PaymentHandler: Existing MultiSafepay refund reference could not be verified',
+                $this->callback(static function (array $context): bool {
+                    return ($context['refundId'] ?? null) === 'refund-id'
+                        && ($context['orderNumber'] ?? null) === 'ORDER-123'
+                        && ($context['message'] ?? null) === 'payload failed';
+                })
+            );
+
+        $this->paymentHandler = new PaymentHandler(
+            $this->sdkFactory,
+            $this->orderRequestBuilder,
+            $this->eventDispatcher,
+            $this->transactionStateHandler,
+            $this->cachedSalesChannelContextFactory,
+            $this->settingsService,
+            $this->orderTransactionRepository,
+            $this->refundRepository,
+            $this->refundStateHandler,
+            $this->logger,
+            $this->requestUtil
+        );
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('payload failed');
+
+        $method->invoke(
+            $this->paymentHandler,
+            $refund,
+            $failingTransactionData,
+            $transactionManager,
+            $orderTransaction,
+            $order,
+            $this->context
+        );
+    }
+
+    /**
+     * Test getRefundEntity throws an unknown refund exception
      *
      * @return void
      * @throws ReflectionException
@@ -2886,7 +3834,6 @@ class PaymentHandlerTest extends TestCase
 
         $reflectionClass = new ReflectionClass(PaymentHandler::class);
         $method = $reflectionClass->getMethod('getRefundEntity');
-        $method->setAccessible(true);
 
         $this->expectException(PaymentException::class);
 

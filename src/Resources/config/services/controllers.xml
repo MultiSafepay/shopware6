@@ -19,10 +19,15 @@
             <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
             <argument type="service" id="multisafepay.logger"/>
             <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\ReturnManagementAvailabilityService"/>
             <argument type="service" id="order_transaction_capture.repository"/>
             <argument type="service" id="order_transaction_capture_refund.repository"/>
             <argument type="service" id="state_machine_state.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\PaymentRefundProcessor"/>
+            <argument type="service" id="order_return.repository" on-invalid="null"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\OrderReturnAmountResolver"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\MultiSafepayRefundDataCache"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -51,6 +56,13 @@
             <argument type="service" id="MultiSafepay\Shopware6\Helper\ManualCaptureHelper"/>
             <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
             <argument type="service" id="multisafepay.logger"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+        <service id="MultiSafepay\Shopware6\Controllers\Administration\ReturnManagementController" public="true">
+            <argument type="service" id="MultiSafepay\Shopware6\Service\ReturnManagementAvailabilityService"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\SettingsService"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

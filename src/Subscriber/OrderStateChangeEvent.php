@@ -79,11 +79,11 @@ class OrderStateChangeEvent implements EventSubscriberInterface
         $orderId = $event->getTransition()->getEntityId();
 
         try {
-            $order = $this->orderUtil->getOrder($orderId, $context);
-
-            if (!$this->paymentUtil->isMultisafepayPaymentMethodForOrder($order)) {
+            if (!$this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context)) {
                 return;
             }
+
+            $order = $this->orderUtil->getOrder($orderId, $context);
         } catch (Throwable $exception) {
             $this->logger->warning('Failed to handle order cancellation for MultiSafepay', [
                 'message' => 'Could not load order/payment data while handling order cancellation',

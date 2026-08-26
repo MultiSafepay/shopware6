@@ -1,118 +1,127 @@
-// Define the API service class
 const ApiService = Shopware.Classes.ApiService;
 
-// Define a new class that extends ApiService
 export default class MultiSafepayApiService extends ApiService {
-    // Constructor for the class
     constructor(httpClient, loginService, apiEndpoint = 'multisafepay')
     {
-        // Call the parent class constructor
         super(httpClient, loginService, apiEndpoint);
     }
 
-    // Method to refund a certain amount for a specific order
     refund(amount, orderId)
     {
-        // Define the API route for refund
         const apiRoute = `${this.getApiBasePath()}/refund`;
 
+        // Send both the normalized decimal and cents so PHP can avoid float ambiguity.
         const numericAmount = typeof amount === 'string' ? Number(amount.replace(',', '.')) : Number(amount);
         const amountInCents = Number.isFinite(numericAmount)
             ? Math.round((numericAmount + Number.EPSILON) * 100)
             : 0;
 
-        // Make a POST request to the refund API route
         return this.httpClient.post(
             apiRoute,
             {
-                amount: amountInCents,
-                orderId: orderId // The ID of the order to refund
+                amount: Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : amount,
+                amountInCents,
+                orderId: orderId
             },
             {
-                headers: this.getBasicHeaders() // Get the basic headers for the request
+                headers: this.getBasicHeaders()
             }
         ).then((response) => {
-            return ApiService.handleResponse(response); // Handle the response from the API
+            return ApiService.handleResponse(response);
         }).catch((response) => {
-            return ApiService.handleResponse(response); // Handle the error response from the API
+            return ApiService.handleResponse(response);
         });
     }
 
-    // Method to get refund data for a specific order
-    getRefundData(orderId)
+    getRefundData(orderId, forceRefresh = false)
     {
-        // Define the API route for getting refund data
         const apiRoute = `${this.getApiBasePath()}/get-refund-data`;
 
-        // Make a POST request to the get refund data API route
+        // The refund block can bypass the short PSP cache after a new refund is created.
         return this.httpClient.post(
             apiRoute,
             {
-                orderId: orderId // The ID of the order to get refund data for
+                orderId: orderId,
+                forceRefresh: Boolean(forceRefresh)
             },
             {
-                headers: this.getBasicHeaders() // Get the basic headers for the request
+                headers: this.getBasicHeaders()
             }
         ).then((response) => {
-            return ApiService.handleResponse(response); // Handle the response from the API
+            return ApiService.handleResponse(response);
         });
     }
 
-    // Method to verify the API key
-    verifyApiKey(globalPluginConfig, actualPluginConfig)
+    dismissReturnManagementRefundError(orderId, error)
     {
-        // Define the API route for verifying the API key
-        const apiRoute = `${this.getApiBasePath()}/verify-api-key`;
-        const headers = this.getBasicHeaders(); // Get the basic headers for the request
+        const apiRoute = `${this.getApiBasePath()}/dismiss-return-management-refund-error`;
 
-        // Make a POST request to the verify API key API route
+        // Dismissals are matched by amount fingerprints, not by translated UI copy.
         return this.httpClient.post(
             apiRoute,
             {
-                globalPluginConfig: globalPluginConfig, // The global plugin configuration
-                actualPluginConfig: actualPluginConfig // The actual plugin configuration
+                orderId: orderId,
+                amounts: error?.amounts || null
+            },
+            {
+                headers: this.getBasicHeaders()
+            }
+        ).then((response) => {
+            return ApiService.handleResponse(response);
+        }).catch((response) => {
+            return ApiService.handleResponse(response);
+        });
+    }
+
+    verifyApiKey(globalPluginConfig, actualPluginConfig)
+    {
+        const apiRoute = `${this.getApiBasePath()}/verify-api-key`;
+        const headers = this.getBasicHeaders();
+
+        // Compare the persisted global config with the current form values before saving.
+        return this.httpClient.post(
+            apiRoute,
+            {
+                globalPluginConfig: globalPluginConfig,
+                actualPluginConfig: actualPluginConfig
             },
             {
                 headers
             }
         ).then((response) => {
-            return ApiService.handleResponse(response); // Handle the response from the API
+            return ApiService.handleResponse(response);
         });
     }
 
-    // Method to check if tokenization is allowed for a specific payment method
     isTokenizationAllowed(paymentMethodId)
     {
-        // Define the API route for checking if tokenization is allowed
         const apiRoute = `${this.getApiBasePath()}/tokenization-allowed`;
 
-        // Make a POST request to the tokenization allowed API route
+        // Payment-method settings use this lightweight check before showing tokenization fields.
         return this.httpClient.post(
             apiRoute,
             {
-                paymentMethodId: paymentMethodId // The ID of the payment method to check
+                paymentMethodId: paymentMethodId
             },
             {
-                headers: this.getBasicHeaders() // Get the basic headers for the request
+                headers: this.getBasicHeaders()
             }
         ).then((response) => {
-            return ApiService.handleResponse(response); // Handle the response from the API
+            return ApiService.handleResponse(response);
         }).catch((response) => {
-            return ApiService.handleResponse(response); // Handle the error response from the API
+            return ApiService.handleResponse(response);
         });
     }
 
-    // Method to check if a component is allowed for a specific payment method
     isComponentAllowed(paymentMethodId)
     {
-        // Define the API route for checking if a component is allowed
         const apiRoute = `${this.getApiBasePath()}/component-allowed`;
 
-        // Make a POST request to the component allowed API route
+        // Components support is payment-method specific, so the admin checks it on demand.
         return this.httpClient.post(
             apiRoute,
             {
-                paymentMethodId: paymentMethodId // The ID of the payment method to check
+                paymentMethodId: paymentMethodId
             },
             {
                 headers: this.getBasicHeaders() // Get the basic headers for the request
@@ -144,5 +153,22 @@ export default class MultiSafepayApiService extends ApiService {
         }).catch((response) => {
             return ApiService.handleResponse(response); // Handle the error response from the API
         });
+    }
+    
+    isReturnManagementAvailable()
+    {
+        const apiRoute = `${this.getApiBasePath()}/return-management-available`;
+        
+        // The settings card is only useful when Shopware Return Management is available at runtime.
+        return this.httpClient.get(
+                                   apiRoute,
+                                   {
+                                   headers: this.getBasicHeaders()
+                                   }
+                                   ).then((response) => {
+                                          return ApiService.handleResponse(response);
+                                          }).catch((response) => {
+                                                   return ApiService.handleResponse(response);
+                                                   });
     }
 }

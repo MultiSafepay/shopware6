@@ -49,7 +49,6 @@ class KlarnaPaymentHandlerTest extends TestCase
         $cachedSalesChannelContextFactoryMock = $this->createMock(CachedSalesChannelContextFactory::class);
         $settingsServiceMock = $this->createMock(SettingsService::class);
         $orderTransactionRepositoryMock = $this->createMock(EntityRepository::class);
-        $orderRepositoryMock = $this->createMock(EntityRepository::class);
         $refundRepositoryMock = $this->createMock(EntityRepository::class);
         $refundStateHandlerMock = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $loggerMock = $this->createMock(LoggerInterface::class);
@@ -64,7 +63,6 @@ class KlarnaPaymentHandlerTest extends TestCase
             $cachedSalesChannelContextFactoryMock,
             $settingsServiceMock,
             $orderTransactionRepositoryMock,
-            $orderRepositoryMock,
             $refundRepositoryMock,
             $refundStateHandlerMock,
             $loggerMock,

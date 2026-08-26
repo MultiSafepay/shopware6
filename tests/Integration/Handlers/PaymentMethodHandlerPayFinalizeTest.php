@@ -91,7 +91,6 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
         $salesChannelContextFactory = $this->createMock(CachedSalesChannelContextFactory::class);
         $settingsService = $this->createMock(SettingsService::class);
         $orderTransactionRepository = $this->createMock(EntityRepository::class);
-        $orderRepository = $this->createMock(EntityRepository::class);
         $refundRepository = $this->createMock(EntityRepository::class);
         $refundStateHandler = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
         $logger = $this->createMock(LoggerInterface::class);
@@ -106,7 +105,6 @@ class PaymentMethodHandlerPayFinalizeTest extends TestCase
             $salesChannelContextFactory,
             $settingsService,
             $orderTransactionRepository,
-            $orderRepository,
             $refundRepository,
             $refundStateHandler,
             $logger,

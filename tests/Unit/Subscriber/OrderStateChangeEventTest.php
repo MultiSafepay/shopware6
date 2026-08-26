@@ -72,7 +72,7 @@ class OrderStateChangeEventTest extends TestCase
             OrderStates::STATE_CANCELLED
         );
 
-        $this->paymentUtil->expects($this->never())->method('isMultisafepayPaymentMethodForOrder');
+        $this->paymentUtil->expects($this->never())->method('isMultiSafepayPaymentMethod');
 
         $this->subscriber->onOrderStateChanged($event);
     }
@@ -84,7 +84,7 @@ class OrderStateChangeEventTest extends TestCase
             OrderStates::STATE_OPEN
         );
 
-        $this->paymentUtil->expects($this->never())->method('isMultisafepayPaymentMethodForOrder');
+        $this->paymentUtil->expects($this->never())->method('isMultiSafepayPaymentMethod');
 
         $this->subscriber->onOrderStateChanged($event);
     }
@@ -98,7 +98,7 @@ class OrderStateChangeEventTest extends TestCase
             $context
         );
 
-        $this->paymentUtil->expects($this->never())->method('isMultisafepayPaymentMethodForOrder');
+        $this->paymentUtil->expects($this->never())->method('isMultiSafepayPaymentMethod');
 
         $this->subscriber->onOrderStateChanged($event);
     }
@@ -113,8 +113,8 @@ class OrderStateChangeEventTest extends TestCase
         $order = $this->createOrder();
         $this->orderUtil->method('getOrder')->willReturn($order);
 
-        $this->paymentUtil->method('isMultisafepayPaymentMethodForOrder')
-            ->with($order)
+        $this->paymentUtil->method('isMultiSafepayPaymentMethod')
+            ->with('order-id', $this->isInstanceOf(Context::class))
             ->willReturn(false);
 
         $this->sdkFactory->expects($this->never())->method('create');
@@ -131,7 +131,7 @@ class OrderStateChangeEventTest extends TestCase
 
         $order = $this->createOrder();
 
-        $this->paymentUtil->method('isMultisafepayPaymentMethodForOrder')->willReturn(true);
+        $this->paymentUtil->method('isMultiSafepayPaymentMethod')->willReturn(true);
         $this->orderUtil->method('getOrder')->with('order-id', $this->isInstanceOf(Context::class))->willReturn($order);
 
         $transactionManager = $this->createMock(TransactionManager::class);
@@ -167,7 +167,7 @@ class OrderStateChangeEventTest extends TestCase
 
         $order = $this->createOrder();
 
-        $this->paymentUtil->method('isMultisafepayPaymentMethodForOrder')->willReturn(true);
+        $this->paymentUtil->method('isMultiSafepayPaymentMethod')->willReturn(true);
         $this->orderUtil->method('getOrder')->willReturn($order);
 
         $nonAuthorizedTransaction = new TransactionResponse([
@@ -197,7 +197,7 @@ class OrderStateChangeEventTest extends TestCase
 
         $order = $this->createOrder();
 
-        $this->paymentUtil->method('isMultisafepayPaymentMethodForOrder')->willReturn(true);
+        $this->paymentUtil->method('isMultiSafepayPaymentMethod')->willReturn(true);
         $this->orderUtil->method('getOrder')->willReturn($order);
 
         $transactionManager = $this->createMock(TransactionManager::class);
@@ -233,7 +233,7 @@ class OrderStateChangeEventTest extends TestCase
 
         $order = $this->createOrder();
 
-        $this->paymentUtil->method('isMultisafepayPaymentMethodForOrder')->willReturn(true);
+        $this->paymentUtil->method('isMultiSafepayPaymentMethod')->willReturn(true);
         $this->orderUtil->method('getOrder')->willReturn($order);
 
         $transactionManager = $this->createMock(TransactionManager::class);

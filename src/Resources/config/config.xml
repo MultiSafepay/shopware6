@@ -171,6 +171,16 @@
         </input-field>
     </card>
     <card>
+        <title>Return Management</title>
+        <title lang="de-DE">Retourenverwaltung</title>
+        <title lang="nl-NL">Retourbeheer</title>
+        <input-field type="bool">
+            <name>returnManagementRefundBridgeEnabled</name>
+            <componentName>multisafepay-return-management-settings</componentName>
+            <defaultValue>false</defaultValue>
+        </input-field>
+    </card>
+    <card>
         <title>Support</title>
         <component name="multisafepay-support">
             <name>support</name>

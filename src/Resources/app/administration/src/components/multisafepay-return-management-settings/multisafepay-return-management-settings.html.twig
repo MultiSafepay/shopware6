@@ -1,0 +1,24 @@
+{# Shopware's config-field renderer needs a concrete root element; an HTML <template> root renders an empty card. #}
+<div class="multisafepay-return-management-settings">
+    {# Show this settings body only when the plugin's PHP endpoint confirms Shopware Return Management is available. #}
+    <div v-if="isAvailable">
+        {# Merchant toggle: link eligible Shopware Return refund amounts to MultiSafepay refund processing. #}
+        <mt-switch
+            v-model="enabledValue"
+            :name="name"
+            :label="$t('multisafepay-return-management.enable')"
+            :help-text="$t('multisafepay-return-management.enable_help')"
+            :disabled="disabled"
+        />
+        {# Read-only target state returned by PHP; this is the Shopware Return state that triggers processing. #}
+        <mt-text-field
+            :model-value="targetStateValue"
+            name="sw-field--multisafepay-return-management-target-state"
+            :label="$t('multisafepay-return-management.target_state')"
+            :disabled="true"
+        />
+        <p class="multisafepay-return-management-settings__target-state-description">
+            {{ $t('multisafepay-return-management.target_state_description') }}
+        </p>
+    </div>
+</div>

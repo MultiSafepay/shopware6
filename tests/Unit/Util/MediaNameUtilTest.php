@@ -9,6 +9,7 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Util;
 use MultiSafepay\Shopware6\PaymentMethods\IngHomePay;
 use MultiSafepay\Shopware6\PaymentMethods\PaymentMethodInterface;
 use MultiSafepay\Shopware6\Util\MediaNameUtil;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class MediaNameUtilTest extends TestCase
@@ -31,12 +32,7 @@ class MediaNameUtilTest extends TestCase
         $this->assertSame('msp_My-Method Name', MediaNameUtil::getMediaName($paymentMethod));
     }
 
-    /**
-     * @dataProvider restrictedCharactersProvider
-     *
-     * @param string $character
-     * @return void
-     */
+    #[DataProvider('restrictedCharactersProvider')]
     public function testSanitizeMediaNameReplacesRestrictedCharacters(string $character): void
     {
         $this->assertSame('a-b', MediaNameUtil::sanitizeMediaName('a' . $character . 'b'));

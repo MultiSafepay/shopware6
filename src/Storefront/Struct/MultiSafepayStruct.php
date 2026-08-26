@@ -57,6 +57,20 @@ class MultiSafepayStruct extends Struct
     public string|null $env;
 
     /**
+     * Whether component flow should be rendered as direct payment.
+     *
+     * @var bool
+     */
+    public bool $direct = true;
+
+    /**
+     * Whether redirect flow should be used instead of direct payment.
+     *
+     * @var bool
+     */
+    public bool $redirect = false;
+
+    /**
      * Locale
      *
      * @var string

@@ -67,12 +67,12 @@ class PaymentUtilTest extends TestCase
     }
 
     /**
-     * Test IsMultisafepayPaymentMethod
+     * Test isMultiSafepayPaymentMethod
      *
      * @throws InconsistentCriteriaIdsException
      * @throws Exception
      */
-    public function testIsMultisafepayPaymentMethod()
+    public function testIsMultiSafepayPaymentMethod(): void
     {
         $orderId = $this->createOrder($this->createCustomer($this->context), $this->context);
         $this->createTransaction(
@@ -81,6 +81,6 @@ class PaymentUtilTest extends TestCase
             $this->context
         );
 
-        $this->assertFalse($this->paymentUtil->isMultisafepayPaymentMethod($orderId, $this->context));
+        $this->assertFalse($this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $this->context));
     }
 }

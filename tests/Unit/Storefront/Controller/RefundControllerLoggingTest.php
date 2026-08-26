@@ -7,11 +7,13 @@ namespace MultiSafepay\Shopware6\Tests\Unit\Storefront\Controller;
 
 use Exception;
 use MultiSafepay\Api\TransactionManager;
+use MultiSafepay\Api\Transactions\TransactionResponse;
 use MultiSafepay\Exception\ApiException;
 use MultiSafepay\Exception\InvalidApiKeyException;
 use MultiSafepay\Sdk;
 use MultiSafepay\Shopware6\Factory\SdkFactory;
 use MultiSafepay\Shopware6\MltisafeMultiSafepay;
+use MultiSafepay\Shopware6\Service\ReturnManagementAvailabilityService;
 use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Storefront\Controller\RefundController;
 use MultiSafepay\Shopware6\Util\OrderUtil;
@@ -32,6 +34,7 @@ use Shopware\Core\Framework\Plugin\PluginEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Symfony\Component\HttpFoundation\Request;
+use Throwable;
 
 /**
  * Class RefundControllerLoggingTest
@@ -56,7 +59,7 @@ class RefundControllerLoggingTest extends TestCase
     private PaymentRefundProcessor|MockObject $paymentRefundProcessorMock;
     private Context $context;
 
-    private function mockMspLastTransactionOnOrder(OrderEntity $order, string $transactionId = 'tx-msp'): void
+    private function mockMspLastTransactionOnOrder(OrderEntity $order): void
     {
         $plugin = $this->createMock(PluginEntity::class);
         $plugin->method('getBaseClass')->willReturn(MltisafeMultiSafepay::class);
@@ -65,7 +68,7 @@ class RefundControllerLoggingTest extends TestCase
         $paymentMethod->method('getPlugin')->willReturn($plugin);
 
         $transaction = $this->createMock(OrderTransactionEntity::class);
-        $transaction->method('getId')->willReturn($transactionId);
+        $transaction->method('getId')->willReturn('tx-msp');
         $transaction->method('getPaymentMethod')->willReturn($paymentMethod);
 
         $transactions = $this->createMock(OrderTransactionCollection::class);
@@ -73,6 +76,29 @@ class RefundControllerLoggingTest extends TestCase
         $transactions->method('getElements')->willReturn([$transaction]);
         $transactions->method('count')->willReturn(1);
         $order->method('getTransactions')->willReturn($transactions);
+    }
+
+    private function mockRemainingRefundAmountLookup(string $salesChannelId, string $orderNumber): void
+    {
+        $transactionResponse = $this->createMock(TransactionResponse::class);
+        $transactionResponse->expects($this->once())->method('getAmountRefunded')->willReturn(0);
+        $transactionResponse->expects($this->once())->method('requiresShoppingCart')->willReturn(false);
+
+        $transactionManager = $this->createMock(TransactionManager::class);
+        $transactionManager->expects($this->once())
+            ->method('get')
+            ->with($orderNumber)
+            ->willReturn($transactionResponse);
+
+        $sdk = $this->createMock(Sdk::class);
+        $sdk->expects($this->once())
+            ->method('getTransactionManager')
+            ->willReturn($transactionManager);
+
+        $this->sdkFactoryMock->expects($this->once())
+            ->method('create')
+            ->with($salesChannelId)
+            ->willReturn($sdk);
     }
 
     /**
@@ -91,6 +117,8 @@ class RefundControllerLoggingTest extends TestCase
         $this->stateMachineRepositoryMock = $this->createMock(EntityRepository::class);
         $this->loggerMock = $this->createMock(LoggerInterface::class);
         $this->settingsServiceMock = $this->createMock(SettingsService::class);
+        $returnManagementAvailabilityServiceMock = $this->createMock(ReturnManagementAvailabilityService::class);
+        $returnManagementAvailabilityServiceMock->method('isAvailable')->willReturn(true);
         $this->paymentRefundProcessorMock = $this->createMock(PaymentRefundProcessor::class);
         $this->context = Context::createDefaultContext();
 
@@ -100,6 +128,7 @@ class RefundControllerLoggingTest extends TestCase
             $this->orderUtilMock,
             $this->loggerMock,
             $this->settingsServiceMock,
+            $returnManagementAvailabilityServiceMock,
             $this->captureRepositoryMock,
             $this->refundRepositoryMock,
             $this->stateMachineRepositoryMock,
@@ -116,7 +145,7 @@ class RefundControllerLoggingTest extends TestCase
      */
     public function testLoggerWarningWhenFailedToGetRefundData(): void
     {
-        $orderId = 'order-refund-123';
+        $orderId = '018f0000000000000000000000000101';
         $orderNumber = 'ORD-2023-REFUND-1';
         $salesChannelId = 'channel-789';
         $exceptionMessage = 'Transaction not found in MultiSafepay';
@@ -134,7 +163,7 @@ class RefundControllerLoggingTest extends TestCase
             ->willReturn($order);
 
         // Mock PaymentUtil to return true for MultiSafepay payment
-        $this->paymentUtilMock->method('isMultisafepayPaymentMethod')
+        $this->paymentUtilMock->method('isMultiSafepayPaymentMethod')
             ->willReturn(true);
 
         // Mock SDK to throw exception
@@ -182,7 +211,7 @@ class RefundControllerLoggingTest extends TestCase
      */
     public function testLoggerInfoWhenRefundSuccessful(): void
     {
-        $orderId = 'order-refund-456';
+        $orderId = '018f0000000000000000000000000102';
         $orderNumber = 'ORD-2023-REFUND-2';
         $salesChannelId = 'channel-456';
         $amount = 50.00;
@@ -204,6 +233,8 @@ class RefundControllerLoggingTest extends TestCase
 
         $this->orderUtilMock->method('getOrder')
             ->willReturn($order);
+
+        $this->mockRemainingRefundAmountLookup($salesChannelId, $orderNumber);
 
         $state = $this->createMock(StateMachineStateEntity::class);
         $state->method('getId')->willReturn('state-id');
@@ -249,7 +280,14 @@ class RefundControllerLoggingTest extends TestCase
             'amount' => $amount,
             'description' => 'Test refund'
         ]);
-        $response = $this->controller->refund($request, $this->context);
+        $response = null;
+        try {
+            $response = $this->controller->refund($request, $this->context);
+        } catch (Throwable $exception) {
+            $this->fail('Unexpected exception while testing successful refund logging: ' . $exception->getMessage());
+        }
+
+        self::assertNotNull($response);
 
         // Verify response content
         $content = json_decode($response->getContent(), true);
@@ -267,7 +305,7 @@ class RefundControllerLoggingTest extends TestCase
      */
     public function testLoggerErrorWhenRefundFails(): void
     {
-        $orderId = 'order-refund-error';
+        $orderId = '018f0000000000000000000000000103';
         $orderNumber = 'ORD-2023-REFUND-ERROR';
         $salesChannelId = 'channel-error';
         $amount = 75.00;
@@ -291,6 +329,8 @@ class RefundControllerLoggingTest extends TestCase
 
         $this->orderUtilMock->method('getOrder')
             ->willReturn($order);
+
+        $this->mockRemainingRefundAmountLookup($salesChannelId, $orderNumber);
 
         $state = $this->createMock(StateMachineStateEntity::class);
         $state->method('getId')->willReturn('state-id');
@@ -329,7 +369,14 @@ class RefundControllerLoggingTest extends TestCase
             'amount' => $amount,
             'description' => 'Test refund failure'
         ]);
-        $response = $this->controller->refund($request, $this->context);
+        $response = null;
+        try {
+            $response = $this->controller->refund($request, $this->context);
+        } catch (Throwable $exception) {
+            $this->fail('Unexpected exception while testing refund failure logging: ' . $exception->getMessage());
+        }
+
+        self::assertNotNull($response);
 
         // Verify response content
         $content = json_decode($response->getContent(), true);

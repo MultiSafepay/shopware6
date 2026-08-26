@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Class RefundControllerDebugModeTest
  *
- * Tests to verify that logger->info calls are controlled by debug mode setting in RefundController
+ * Tests to verify that logger->info calls are controlled by the debug mode setting in RefundController
  *
  * @package MultiSafepay\Shopware6\Tests\Unit\Storefront\Controller
  */
