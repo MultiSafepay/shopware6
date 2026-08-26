@@ -15,6 +15,14 @@
         <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\ManualCaptureController::manualCaptureAllowed</default>
         <default key="_routeScope"><list><string>api</string></list></default>
     </route>
+    <route id="api.action.multisafepay.return-management-available" path="/api/multisafepay/return-management-available" methods="GET">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\ReturnManagementController::isAvailable</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.order-has-return" path="/api/multisafepay/order-has-return/{orderId}" methods="GET">
+        <default key="_controller">MultiSafepay\Shopware6\Controllers\Administration\ReturnManagementController::orderHasReturn</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
     <route id="api.action.multisafepay.verify-api-key" path="/api/multisafepay/verify-api-key" methods="POST">
         <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\ApiController::verifyApiKey</default>
         <default key="_routeScope"><list><string>api</string></list></default>
@@ -25,6 +33,10 @@
     </route>
     <route id="api.action.multisafepay.refund" path="/api/multisafepay/refund" methods="POST">
         <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\RefundController::refund</default>
+        <default key="_routeScope"><list><string>api</string></list></default>
+    </route>
+    <route id="api.action.multisafepay.dismiss-return-management-refund-error" path="/api/multisafepay/dismiss-return-management-refund-error" methods="POST">
+        <default key="_controller">MultiSafepay\Shopware6\Storefront\Controller\RefundController::dismissReturnManagementRefundError</default>
         <default key="_routeScope"><list><string>api</string></list></default>
     </route>
     <route id="frontend.multisafepay.notification" path="/multisafepay/notification" methods="GET">

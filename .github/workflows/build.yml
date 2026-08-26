@@ -44,6 +44,7 @@ jobs:
           # custom ./tests/TestBootstrap.php is called, it will be able to find the plugin
           # as this is the usual path for them
           path: custom/plugins/MltisafeMultiSafepay
+          fetch-depth: 0
 
       # Step to install the dependencies, matching the repository with the usual plugin location,
       - name: Install Shopware 6 MultiSafepay module

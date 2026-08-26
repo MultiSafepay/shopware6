@@ -21,10 +21,12 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
@@ -51,6 +53,8 @@ class AsyncPaymentHandlerLoggingTest extends TestCase
     {
         parent::setUp();
 
+        self::ensureLegacyHandlerInterfacesExist();
+
         $this->sdkFactory = $this->createMock(SdkFactory::class);
         $this->orderRequestBuilder = $this->createMock(OrderRequestBuilder::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -65,6 +69,8 @@ class AsyncPaymentHandlerLoggingTest extends TestCase
             $eventDispatcher,
             $this->transactionStateHandler,
             $this->logger,
+            $this->createMock(EntityRepository::class),
+            $this->createMock(OrderTransactionCaptureRefundStateHandler::class),
             $requestUtil
         );
     }
@@ -433,5 +439,20 @@ class AsyncPaymentHandlerLoggingTest extends TestCase
         $salesChannelContext->method('getContext')->willReturn($context);
 
         return $salesChannelContext;
+    }
+
+    private static function ensureLegacyHandlerInterfacesExist(): void
+    {
+        if (!interface_exists('Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\AsynchronousPaymentHandlerInterface')) {
+            eval('namespace Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler; interface AsynchronousPaymentHandlerInterface {}');
+        }
+
+        if (!interface_exists('Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\RefundPaymentHandlerInterface')) {
+            eval('namespace Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler; interface RefundPaymentHandlerInterface {}');
+        }
+
+        if (!class_exists('Shopware\\Core\\Checkout\\Payment\\Cart\\AsyncPaymentTransactionStruct')) {
+            eval('namespace Shopware\\Core\\Checkout\\Payment\\Cart; class AsyncPaymentTransactionStruct { public function getOrderTransaction() {} public function getOrder() {} }');
+        }
     }
 }

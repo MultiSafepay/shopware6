@@ -12,7 +12,9 @@ use MultiSafepay\Shopware6\Service\SettingsService;
 use MultiSafepay\Shopware6\Util\RequestUtil;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -50,9 +52,11 @@ class GenericPaymentHandler4 extends AsyncPaymentHandler
         EventDispatcherInterface $eventDispatcher,
         OrderTransactionStateHandler $transactionStateHandler,
         LoggerInterface $logger,
+        EntityRepository $refundRepository,
+        OrderTransactionCaptureRefundStateHandler $refundStateHandler,
         RequestUtil $requestUtil
     ) {
-        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler, $logger, $requestUtil);
+        parent::__construct($sdkFactory, $orderRequestBuilder, $eventDispatcher, $transactionStateHandler, $logger, $refundRepository, $refundStateHandler, $requestUtil);
         $this->settingsService = $settingsService;
     }
 

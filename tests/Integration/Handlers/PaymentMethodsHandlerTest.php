@@ -35,6 +35,7 @@ use ReflectionException;
 use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
@@ -228,6 +229,8 @@ class PaymentMethodsHandlerTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $constructorArgs[] = $loggerMock;
+        $constructorArgs[] = $this->createMock(EntityRepository::class);
+        $constructorArgs[] = $this->createMock(OrderTransactionCaptureRefundStateHandler::class);
 
         // Add RequestUtil mock as the last parameter
         $requestUtilMock = $this->createMock(RequestUtil::class);

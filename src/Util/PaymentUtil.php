@@ -76,7 +76,7 @@ use MultiSafepay\Shopware6\PaymentMethods\WijnCadeau;
 use MultiSafepay\Shopware6\PaymentMethods\WinkelCheque;
 use MultiSafepay\Shopware6\PaymentMethods\YourGift;
 use MultiSafepay\Shopware6\PaymentMethods\Zinia;
-use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 
 /**
@@ -189,41 +189,59 @@ class PaymentUtil
     }
 
     /**
-     *  Check if the payment method is a MultiSafepay payment method
+     * Check if the payment method is a MultiSafepay payment method.
      *
      * @param string $orderId
      * @param Context $context
      * @return bool
      */
-    public function isMultisafepayPaymentMethod(string $orderId, Context $context): bool
+    public function isMultiSafepayPaymentMethod(string $orderId, Context $context): bool
     {
         $order = $this->orderUtil->getOrder($orderId, $context);
+        $transactions = $order->getTransactions();
 
-        return $this->isMultisafepayPaymentMethodForOrder($order);
+        if (method_exists($order, 'getPrimaryOrderTransaction')) {
+            $primaryTransaction = $order->getPrimaryOrderTransaction();
+            if ($primaryTransaction instanceof OrderTransactionEntity) {
+                return $this->isMultiSafepayTransaction($primaryTransaction);
+            }
+        }
+
+        if (is_null($transactions)) {
+            return false;
+        }
+
+        if (method_exists($order, 'getPrimaryOrderTransactionId')) {
+            $primaryTransactionId = $order->getPrimaryOrderTransactionId();
+            if (is_string($primaryTransactionId) && $primaryTransactionId !== '') {
+                foreach ($transactions->getElements() as $transaction) {
+                    if ($transaction->getId() === $primaryTransactionId) {
+                        return $this->isMultiSafepayTransaction($transaction);
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        foreach ($transactions->getElements() as $transaction) {
+            if ($this->isMultiSafepayTransaction($transaction)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Check if the payment method of a given order is a MultiSafepay payment method.
+     * Check whether a Shopware order transaction belongs to the MultiSafepay plugin.
      *
-     * Use this variant when the order entity is already loaded to avoid a duplicate DAL query.
-     *
-     * @param OrderEntity $order
-     * @return bool
+     * @param OrderTransactionEntity $transaction Shopware order transaction to inspect.
+     * @return bool True when the transaction uses a MultiSafepay payment method.
      */
-    public function isMultisafepayPaymentMethodForOrder(OrderEntity $order): bool
+    private function isMultiSafepayTransaction(OrderTransactionEntity $transaction): bool
     {
-        $getTransactions = $order->getTransactions();
-
-        if (is_null($getTransactions)) {
-            return false;
-        }
-
-        $transaction = $getTransactions->first();
-        if (!$transaction || !$transaction->getPaymentMethod() || !$transaction->getPaymentMethod()->getPlugin()) {
-            return false;
-        }
-
-        return $transaction->getPaymentMethod()->getPlugin()->getBaseClass() === MltisafeMultiSafepay::class;
+        return $transaction->getPaymentMethod()?->getPlugin()?->getBaseClass() === MltisafeMultiSafepay::class;
     }
 
     /**

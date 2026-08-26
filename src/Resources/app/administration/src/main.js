@@ -1,6 +1,7 @@
 import './components/multisafepay-refund';
 import './components/multisafepay-verify-api-key';
 import './components/multisafepay-support';
+import './components/multisafepay-return-management-settings';
 import './paymentMethodSettings'
 import './override/sw-order-detail-general';
 import './override/sw-order-detail'

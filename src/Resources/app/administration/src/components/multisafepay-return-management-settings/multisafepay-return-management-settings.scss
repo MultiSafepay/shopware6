@@ -1,0 +1,15 @@
+.multisafepay-return-management-settings {
+    margin-top: calc(-1 * var(--scale-size-24));
+
+    .sw-field--switch,
+    .sw-field--text {
+        margin-bottom: var(--scale-size-16);
+    }
+
+    .multisafepay-return-management-settings__target-state-description {
+        margin: 0 0 var(--scale-size-24);
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+    }
+}

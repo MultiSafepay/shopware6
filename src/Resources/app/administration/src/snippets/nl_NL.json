@@ -26,13 +26,50 @@
         "integration": "Integratie"
     },
     "multisafepay-refund": {
+        "refund_title": "Terugbetaling in MultiSafepay",
         "refund_options": "MultiSafepay terugbetalingsopties",
+        "refund": "Terugbetaling",
         "process_refund": "Terugbetaling verwerken",
+        "invalid_amount_title": "Ongeldig bedrag",
+        "invalid_amount_message": "Vul een geldig bedrag in",
+        "amount_exceeds_refundable_total": "Het bedrag is hoger dan het terugbetaalbare totaal",
+        "refund_failed_title": "Terugbetaling mislukt",
+        "refund_failed_message": "De terugbetaling kon niet worden verwerkt. Controleer de betaalstatus en probeer het opnieuw. Foutdetails: {details}",
+        "refund_success_title": "Gelukt",
+        "refund_success_message": "Terugbetaling succesvol verwerkt",
+        "refund_unexpected_error_title": "Fout",
+        "refund_unexpected_error_message": "Er is een onverwachte fout opgetreden tijdens het verwerken van de terugbetaling. Neem contact op met support als dit probleem blijft bestaan. Foutdetails: {details}",
         "total_amount_refunded": "Totaal terugbetaald bedrag",
+        "amount": "Bedrag",
+        "amount_refunded": "Terugbetaald bedrag",
         "confirm_refund": "Terugbetaling bevestigen",
+        "confirm_refund_title": "MultiSafepay-terugbetaling",
+        "confirm_refund_message": "Weet u zeker dat u {amount} wilt terugbetalen?",
         "cancel_refund": "Terugbetaling annuleren",
         "confirm_process_refund": "Bevestigen en terugbetaling verwerken",
-        "confirm": "Bevestigen"
+        "confirm": "Bevestigen",
+        "dismiss_error_message": "Terugbetalingswaarschuwing verbergen",
+        "confirm_dismiss_error_title": "Terugbetalingsfoutwaarschuwing verbergen?",
+        "confirm_dismiss_error_message": "Deze waarschuwing werd getoond omdat een terugbetalingspoging niet correct kon worden verwerkt. Als u deze verbergt, verschijnt deze pas opnieuw wanneer er een nieuwe fout van dit type optreedt voor deze specifieke bestelling.",
+        "cancel_dismiss_error": "Waarschuwing zichtbaar houden",
+        "confirm_dismiss_error": "Waarschuwing verbergen",
+        "dismiss_error_failed_title": "Fout",
+        "dismiss_error_failed_message": "Het terugbetalingsbericht kon niet worden verborgen",
+        "return_refund_error_intro_generic": "De terugbetaling via {source} kon niet in MultiSafepay worden verwerkt.",
+        "return_refund_error_intro_limit": "De terugbetaling via {source} kon niet in MultiSafepay worden verwerkt, omdat het aangevraagde bedrag hoger is dan het resterende terugbetaalbare bedrag.",
+        "manual_refund_error_source": "MultiSafepay-tool",
+        "manual_refund_error_exceeds_remaining": "Het terugbetalingsbedrag mag niet hoger zijn dan het resterende terugbetaalbare bedrag",
+        "return_refund_error_already_refunded": "Al terugbetaald in MultiSafepay",
+        "return_refund_error_requested_by": "Aangevraagd door {source}",
+        "return_refund_error_original_order_amount": "Oorspronkelijk bestelbedrag",
+        "return_refund_error_remaining_refundable_amount": "Resterend terugbetaalbaar bedrag",
+        "return_refund_error_action": "Pas het terugbetalingsbedrag in Shopware Return aan door de status terug te zetten naar \"Open\", of gebruik de MultiSafepay-tool om een bedrag binnen het resterende terugbetaalbare saldo aan te vragen.",
+        "manual_refund_error_action": "Vraag een bedrag aan binnen het resterende terugbetaalbare saldo.",
+        "return_refund_error_action_no_remaining_refundable_amount": "Er is geen terugbetaalbaar saldo meer beschikbaar voor deze bestelling in MultiSafepay. Als dit onverwacht lijkt, of als u een onderdeel van deze transactie wilt laten controleren, neem dan contact op met het MultiSafepay-supportteam met de bestel- en transactiegegevens.",
+        "return_refund_error_response": "MultiSafepay-reactie",
+        "return_refund_error_response_code": "code",
+        "return_refund_error_unknown": "Onbekende fout",
+        "refund_missing_in_multisafepay": "Verwachte terugbetaling via Shopware Return is niet volledig geregistreerd in MultiSafepay"
     },
     "multisafepay-tokenization": {
         "help_text": "Bekijk ons <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentatiecentrum</a> voor meer informatie over tokenization. Het is vereist om de betalingscomponent in te schakelen."
@@ -42,6 +79,18 @@
     },
     "multisafepay-direct": {
         "help_text": "Activeer de betaling binnen de afrekenpagina."
+    },
+    "multisafepay-return-management": {
+        "enable": "Terugbetalingen via Shopware Returns verwerken",
+        "enable_help": "Wanneer ingeschakeld, moeten terugbetalingen via Shopware Returns worden beheerd. MultiSafepay verwerkt de terugbetaling wanneer de retour de status \"done\" bereikt en een terugbetalingsbedrag bevat.",
+        "target_state": "Retour doelstatus:",
+        "target_state_description": "Wanneer ingeschakeld, wordt een terugbetaling ook pas door MultiSafepay verwerkt nadat de Shopware-retour de status \"done\" heeft bereikt en een terugbetalingsbedrag bevat. Retours zonder terugbetalingsbedrag worden genegeerd. Returnless wordt ook ondersteund.",
+        "states": {
+            "open": "Open",
+            "in_progress": "In behandeling",
+            "done": "Voltooid",
+            "cancelled": "Geannuleerd"
+        }
     },
     "multisafepay-manual-capture": {
         "help_text": "Schakel handmatige capture in voor deze betaalmethode."

@@ -3,8 +3,27 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="MultiSafepay\Shopware6\Service\SettingsService">
+        <service id="MultiSafepay\Shopware6\Service\SettingsService" public="true">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+        <service id="MultiSafepay\Shopware6\Service\ReturnManagementAvailabilityService">
+            <argument type="service" id="service_container"/>
+        </service>
+        <service id="MultiSafepay\Shopware6\Service\OrderReturnAmountResolver"/>
+        <service id="MultiSafepay\Shopware6\Service\MultiSafepayRefundDataCache">
+            <argument type="service" id="cache.app"/>
+            <argument type="service" id="multisafepay.logger"/>
+        </service>
+        <service id="MultiSafepay\Shopware6\Service\RefundProcessor">
+            <argument type="service" id="MultiSafepay\Shopware6\Factory\SdkFactory"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Util\OrderUtil"/>
+            <argument type="service" id="multisafepay.logger"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="order_transaction_capture.repository"/>
+            <argument type="service" id="order_transaction_capture_refund.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader"/>
+            <argument type="service" id="MultiSafepay\Shopware6\Service\MultiSafepayRefundDataCache"/>
         </service>
         <service id="MultiSafepay\Shopware6\Util\VersionUtil"/>
     </services>

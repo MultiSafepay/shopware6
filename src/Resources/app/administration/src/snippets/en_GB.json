@@ -26,13 +26,50 @@
         "integration": "Integration"
     },
     "multisafepay-refund": {
+        "refund_title": "Refund in MultiSafepay",
         "refund_options": "MultiSafepay refund options",
+        "refund": "Refund",
         "process_refund": "Process refund",
+        "invalid_amount_title": "Invalid amount",
+        "invalid_amount_message": "Fill in a valid amount",
+        "amount_exceeds_refundable_total": "The amount exceeds the refundable total",
+        "refund_failed_title": "Failed to refund",
+        "refund_failed_message": "The refund could not be processed. Please check the payment status and try again. Error details: {details}",
+        "refund_success_title": "Success",
+        "refund_success_message": "Successfully refunded",
+        "refund_unexpected_error_title": "Error",
+        "refund_unexpected_error_message": "An unexpected error occurred while processing the refund. Please contact support if this problem persists. Error details: {details}",
         "total_amount_refunded": "Total amount refunded",
+        "amount": "Amount",
+        "amount_refunded": "Amount refunded",
         "confirm_refund": "Confirm refund",
+        "confirm_refund_title": "MultiSafepay refund",
+        "confirm_refund_message": "Are you sure you want to refund {amount}?",
         "cancel_refund": "Cancel refund",
         "confirm_process_refund": "Confirm and process refund",
-        "confirm": "Confirm"
+        "confirm": "Confirm",
+        "dismiss_error_message": "Dismiss refund warning",
+        "confirm_dismiss_error_title": "Hide refund error warning?",
+        "confirm_dismiss_error_message": "This warning was shown because a refund attempt could not be processed correctly. If you hide it, it will not appear again until a new error of this type occurs for this specific order.",
+        "cancel_dismiss_error": "Keep warning visible",
+        "confirm_dismiss_error": "Hide warning",
+        "dismiss_error_failed_title": "Error",
+        "dismiss_error_failed_message": "The refund message could not be dismissed",
+        "return_refund_error_intro_generic": "The {source} refund could not be processed in MultiSafepay.",
+        "return_refund_error_intro_limit": "The {source} refund could not be processed in MultiSafepay because the requested amount exceeds the remaining refundable amount.",
+        "manual_refund_error_source": "MultiSafepay tool",
+        "manual_refund_error_exceeds_remaining": "Refund amount cannot exceed the remaining refundable amount",
+        "return_refund_error_already_refunded": "Already refunded in MultiSafepay",
+        "return_refund_error_requested_by": "Requested by {source}",
+        "return_refund_error_original_order_amount": "Original order amount",
+        "return_refund_error_remaining_refundable_amount": "Remaining refundable amount",
+        "return_refund_error_action": "Please adjust the refund amount in Shopware Return by changing the status back to \"Open\", or use the MultiSafepay tool to request an amount within the remaining refundable balance.",
+        "manual_refund_error_action": "Please request an amount within the remaining refundable balance.",
+        "return_refund_error_action_no_remaining_refundable_amount": "There is no refundable balance left for this order in MultiSafepay. If this looks unexpected, or if you would like us to review any detail of the transaction, please contact the MultiSafepay Support team with the order and transaction details.",
+        "return_refund_error_response": "MultiSafepay response",
+        "return_refund_error_response_code": "code",
+        "return_refund_error_unknown": "Unknown error",
+        "refund_missing_in_multisafepay": "Expected Shopware Return refund is not fully registered in MultiSafepay"
     },
     "multisafepay-tokenization": {
         "help_text": "Check out our <a href=\"https://docs.multisafepay.com/docs/recurring-payments/\" target=\"_blank\" style=\"color:#fff\">documentation center</a> to found more about tokenization. It requires enabling the Payment Component."
@@ -42,6 +79,9 @@
     },
     "multisafepay-direct": {
         "help_text": "Enable the payment inside the checkout page"
+    },
+    "multisafepay-manual-capture": {
+        "help_text": "Enable manual capture for this payment method."
     },
     "multisafepay-manual-capture": {
         "help_text": "Enable manual capture for this payment method."

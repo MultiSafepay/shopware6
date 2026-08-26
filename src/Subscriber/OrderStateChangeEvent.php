@@ -81,7 +81,7 @@ class OrderStateChangeEvent implements EventSubscriberInterface
         try {
             $order = $this->orderUtil->getOrder($orderId, $context);
 
-            if (!$this->paymentUtil->isMultisafepayPaymentMethodForOrder($order)) {
+            if (!$this->paymentUtil->isMultiSafepayPaymentMethod($orderId, $context)) {
                 return;
             }
         } catch (Throwable $exception) {

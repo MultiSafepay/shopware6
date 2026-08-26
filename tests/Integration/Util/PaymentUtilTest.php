@@ -63,7 +63,7 @@ class PaymentUtilTest extends TestCase
      * @throws StateMachineNotFoundException
      * @throws StateMachineWithoutInitialStateException
      */
-    public function testIsMultisafepayPaymentMethod()
+    public function testIsMultisafepayPaymentMethod(): void
     {
         $orderId = $this->createOrder($this->createCustomer($this->context), $this->context);
         $this->createTransaction(
