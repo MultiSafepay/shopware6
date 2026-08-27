@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.7.0] - 2026-08-27
+### Added
+- PLGSHPS6-419: Add returnless support
+
+### Fixed
+- PLGSHPS6-421: Payment method translations overwritten
+
 ## [3.6.0] - 2026-06-24
 ### Added
 - DAVAMS-1030: Add manual capture support
